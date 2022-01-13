@@ -1,6 +1,8 @@
 using MonkeyLang
 using Test
 
+const m = MonkeyLang
+
 @testset "MonkeyLang.jl" begin
-    # Write your tests here.
+    include("lexer.jl")
 end
