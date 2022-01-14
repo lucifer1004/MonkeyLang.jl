@@ -4,7 +4,7 @@ abstract type Expression <: Node end
 
 Base.show(io::IO, node::Node) = print(io, string(node))
 
-struct Program
+struct Program <: Node
   statements::Vector{Statement}
 end
 
@@ -21,14 +21,14 @@ expression_node(::Identifier) = nothing
 token_literal(i::Identifier) = i.token.literal
 Base.string(i::Identifier) = i.value
 
-struct Boolean <: Expression
+struct BooleanLiteral <: Expression
   token::Token
   value::Bool
 end
 
-expression_node(::Boolean) = nothing
-token_literal(b::Boolean) = b.token.literal
-Base.string(b::Boolean) = b.token.literal
+expression_node(::BooleanLiteral) = nothing
+token_literal(b::BooleanLiteral) = b.token.literal
+Base.string(b::BooleanLiteral) = b.token.literal
 
 struct IntegerLiteral <: Expression
   token::Token

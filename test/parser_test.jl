@@ -20,7 +20,7 @@ function test_integer_literal(il::m.Expression, value::Int64)
 end
 
 function test_boolean_literal(bl::m.Expression, value::Bool)
-  @assert isa(bl, m.Boolean) "il is not a Boolean. Got $(typeof(bl)) instead."
+  @assert isa(bl, m.BooleanLiteral) "il is not a BooleanLiteral. Got $(typeof(bl)) instead."
   @assert bl.value == value "bl.value is not $value. Got $(bl.value) instead."
   @assert m.token_literal(bl) == string(value) "token_literal(bl) is not $value. Got $(m.token_literal(bl)) instead."
 end
@@ -122,7 +122,7 @@ end
   end
 end
 
-@testset "Test Parsing Boolean Expression" begin
+@testset "Test Parsing BooleanLiteral Expression" begin
   for (input, value) in [
     ("true;", true),
     ("false;", false),

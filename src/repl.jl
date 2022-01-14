@@ -14,7 +14,11 @@ function start_repl()
         println(join(p.errors, "\n"))
         continue
       end
-      println(program)
+
+      evaluated = evaluate(program)
+      if !isnothing(evaluated)
+        println(evaluated)
+      end
     end
   end
 end

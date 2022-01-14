@@ -156,7 +156,7 @@ function parse_expression!(p::Parser, order::ExpressionOrder)
   end
 end
 
-parse_boolean!(p::Parser) = Boolean(p.cur_token, p.cur_token.type == TRUE)
+parse_boolean!(p::Parser) = BooleanLiteral(p.cur_token, p.cur_token.type == TRUE)
 
 parse_identifier!(p::Parser) = Identifier(p.cur_token, p.cur_token.literal)
 
