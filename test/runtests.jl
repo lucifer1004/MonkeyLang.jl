@@ -4,5 +4,7 @@ using Test
 const m = MonkeyLang
 
 @testset "MonkeyLang.jl" begin
-    include("lexer.jl")
+    include("lexer_test.jl")
+    include("ast_test.jl")
+    include("parser_test.jl")
 end

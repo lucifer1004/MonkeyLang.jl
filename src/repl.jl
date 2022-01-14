@@ -8,10 +8,15 @@ function start_repl()
       break
     else
       l = Lexer(line)
-      token = next_token!(l)
-      while token.type != EOF
-        println(token)
-        token = next_token!(l)
+      p = Parser(l)
+      try
+        program = parse!(p)
+        println(program)
+      catch
+        if !isempty(p.errors)
+          println(join(p.errors, "\n"))
+          continue
+        end
       end
     end
   end
