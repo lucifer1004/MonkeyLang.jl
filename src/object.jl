@@ -1,6 +1,10 @@
 abstract type Object end
 
-@enum ObjectType INTEGER BOOLEAN NULL RETURN_VALUE
+const INTEGER = "INTEGER"
+const BOOLEAN = "BOOLEAN"
+const NULL = "NULL"
+const RETURN_VALUE = "RETURN_VALUE"
+const ERROR = "ERROR"
 
 Base.show(io::IO, object::Object) = print(io, string(object))
 
@@ -29,3 +33,10 @@ end
 
 type_of(::ReturnValue) = RETURN_VALUE
 Base.string(i::ReturnValue) = string(i.value)
+
+struct Error <: Object
+  message::String
+end
+
+type_of(::Error) = ERROR
+Base.string(e::Error) = "ERROR: " * e.message

@@ -15,18 +15,21 @@ function evaluate(node::Node)
     return node.value ? _TRUE : _FALSE
   elseif isa(node, PrefixExpression)
     right = evaluate(node.right)
-    return evaluate_prefix_expression(node.operator, right)
+    return isa(right, Error) ? right : evaluate_prefix_expression(node.operator, right)
   elseif isa(node, InfixExpression)
     left = evaluate(node.left)
+    if isa(left, Error)
+      return left
+    end
     right = evaluate(node.right)
-    return evaluate_infix_expression(node.operator, left, right)
+    return isa(right, Error) ? right : evaluate_infix_expression(node.operator, left, right)
   elseif isa(node, IfExpression)
     return evaluate_if_expression(node)
   elseif isa(node, BlockStatement)
     return evaluate_block_statement(node)
   elseif isa(node, ReturnStatement)
     val = evaluate(node.return_value)
-    return ReturnValue(val)
+    return isa(val, Error) ? val : ReturnValue(val)
   else
     return _NULL
   end
@@ -38,11 +41,15 @@ function evaluate_prefix_expression(operator::String, right::Object)
   elseif operator == "-"
     return evaluate_minus_prefix_operator_expression(right)
   else
-    return _NULL
+    return Error("unknown operator: " * operator * type_of(right))
   end
 end
 
 function evaluate_infix_expression(operator::String, left::Object, right::Object)
+  if type_of(left) != type_of(right)
+    return Error("type mismatch: " * type_of(left) * " " * operator * " " * type_of(right))
+  end
+
   if isa(left, Integer) && isa(right, Integer)
     return evaluate_integer_infix_expression(operator, left, right)
   elseif operator == "=="
@@ -50,7 +57,7 @@ function evaluate_infix_expression(operator::String, left::Object, right::Object
   elseif operator == "!="
     return left !== right ? _TRUE : _FALSE
   else
-    return _NULL
+    return Error("unknown operator: " * type_of(left) * " " * operator * " " * type_of(right))
   end
 end
 
@@ -72,7 +79,7 @@ function evaluate_integer_infix_expression(operator::String, left::Integer, righ
   elseif operator == "!="
     return left.value != right.value ? _TRUE : _FALSE
   else
-    return _NULL
+    return Error("unknown operator: " * type_of(left) * " " * operator * type_of(right))
   end
 end
 
@@ -88,14 +95,16 @@ function evaluate_minus_prefix_operator_expression(right::Object)
   if isa(right, Integer)
     return Integer(-right.value)
   else
-    return _NULL
+    return return Error("unknown operator: -" * type_of(right))
   end
 end
 
 function evaluate_if_expression(ie::IfExpression)
   condition = evaluate(ie.condition)
 
-  if is_truthy(condition)
+  if isa(condition, Error)
+    return condition
+  elseif is_truthy(condition)
     return evaluate(ie.consequence)
   elseif !isnothing(ie.alternative)
     return evaluate(ie.alternative)
@@ -109,7 +118,7 @@ function evaluate_block_statement(block::BlockStatement)
 
   for statement in block.statements
     result = evaluate(statement)
-    if isa(result, ReturnValue)
+    if isa(result, ReturnValue) || isa(result, Error)
       return result
     end
   end
@@ -124,6 +133,8 @@ function evaluate_program(program::Program)
     result = evaluate(statement)
     if isa(result, ReturnValue)
       return result.value
+    elseif isa(result, Error)
+      return result
     end
   end
 

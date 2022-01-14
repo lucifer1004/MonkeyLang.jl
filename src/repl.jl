@@ -11,7 +11,7 @@ function start_repl()
       p = Parser(l)
       program = parse!(p)
       if !isempty(p.errors)
-        println(join(p.errors, "\n"))
+        println(join(map(string, p.errors), "\n"))
         continue
       end
 
