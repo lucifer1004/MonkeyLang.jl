@@ -344,11 +344,16 @@ function parse!(p::Parser)
   program = Program([])
 
   while p.cur_token.type != EOF
-    statement = parse_statement!(p)
-    if !isnothing(statement)
-      push!(program.statements, statement)
+    try
+      statement = parse_statement!(p)
+      if !isnothing(statement)
+        push!(program.statements, statement)
+      end
+    catch e
+      @warn e
+    finally
+      next_token!(p)
     end
-    next_token!(p)
   end
 
   return program

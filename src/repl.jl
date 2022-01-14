@@ -9,15 +9,12 @@ function start_repl()
     else
       l = Lexer(line)
       p = Parser(l)
-      try
-        program = parse!(p)
-        println(program)
-      catch
-        if !isempty(p.errors)
-          println(join(p.errors, "\n"))
-          continue
-        end
+      program = parse!(p)
+      if !isempty(p.errors)
+        println(join(p.errors, "\n"))
+        continue
       end
+      println(program)
     end
   end
 end
