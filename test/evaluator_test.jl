@@ -37,6 +37,15 @@ function test_error_object(obj::m.Object, expected::String)
   true
 end
 
+function test_string_object(obj::m.Object, expected::String)
+  @assert isa(obj, m.StringObj) "no string object returned. Got $(m.type_of(obj)) instead."
+
+  @assert obj.value == expected "Expected $expected. Got $(obj.value) instead."
+
+  true
+end
+
+
 @testset "Test Evaluating Integer Expressions" begin
   for (input, expected) in [
     ("5", 5),
@@ -56,8 +65,8 @@ end
     ("(5 + 10 * 2 + 15 / 3) * 2 + -10", 50),
   ]
     @test begin
-      evaluted = test_evaluate(input)
-      test_integer_object(evaluted, expected)
+      evaluated = test_evaluate(input)
+      test_integer_object(evaluated, expected)
     end
   end
 end
@@ -85,8 +94,8 @@ end
     ("(1 > 2) == false", true),
   ]
     @test begin
-      evaluted = test_evaluate(input)
-      test_boolean_object(evaluted, expected)
+      evaluated = test_evaluate(input)
+      test_boolean_object(evaluated, expected)
     end
   end
 end
@@ -101,8 +110,8 @@ end
     ("!!5", true),
   ]
     @test begin
-      evaluted = test_evaluate(input)
-      test_boolean_object(evaluted, expected)
+      evaluated = test_evaluate(input)
+      test_boolean_object(evaluated, expected)
     end
   end
 end
@@ -118,11 +127,11 @@ end
     ("if (1 < 2) { 10 } else { 20 }", 10),
   ]
     @test begin
-      evaluted = test_evaluate(input)
+      evaluated = test_evaluate(input)
       if isa(expected, Integer)
-        test_integer_object(evaluted, expected)
+        test_integer_object(evaluated, expected)
       else
-        test_null_object(evaluted)
+        test_null_object(evaluated)
       end
     end
   end
@@ -145,8 +154,8 @@ end
     """, 10)
   ]
     @test begin
-      evaluted = test_evaluate(input)
-      test_integer_object(evaluted, expected)
+      evaluated = test_evaluate(input)
+      test_integer_object(evaluated, expected)
     end
   end
 end
@@ -195,12 +204,12 @@ end
 @testset "Test Function Object" begin
   @test begin
     input = "fn(x) { x + 2; };"
-    evaluted = test_evaluate(input)
-    @assert isa(evaluted, m.FunctionObj) "object is not a FUNCTION. Got $(m.type_of(evaluted)) instead."
+    evaluated = test_evaluate(input)
+    @assert isa(evaluated, m.FunctionObj) "object is not a FUNCTION. Got $(m.type_of(evaluated)) instead."
 
-    @assert string(evaluted.parameters[1]) == "x" "parameters[1] is not 'x'. Got $(string(evaluted.parameters[1])) instead."
+    @assert string(evaluated.parameters[1]) == "x" "parameters[1] is not 'x'. Got $(string(evaluated.parameters[1])) instead."
 
-    @assert string(evaluted.body) == "(x + 2)" "body is not '(x + 2)'. Got $(evaluted.body) instead."
+    @assert string(evaluated.body) == "(x + 2)" "body is not '(x + 2)'. Got $(evaluated.body) instead."
 
     true
   end
@@ -240,10 +249,10 @@ end
   input = "\"Hello World!\""
 
   @test begin
-    evaluted = test_evaluate(input)
-    @assert isa(evaluted, m.StringObj) "object is not a STRING. Got $(m.type_of(evaluted)) instead."
+    evaluated = test_evaluate(input)
+    @assert isa(evaluated, m.StringObj) "object is not a STRING. Got $(m.type_of(evaluated)) instead."
 
-    @assert evaluted.value == "Hello World!" "value is not 'Hello World!'. Got $(evaluted.value) instead."
+    @assert evaluated.value == "Hello World!" "value is not 'Hello World!'. Got $(evaluated.value) instead."
 
     true
   end
@@ -253,10 +262,10 @@ end
   input = """"Hello" + " " + "World!\""""
 
   @test begin
-    evaluted = test_evaluate(input)
-    @assert isa(evaluted, m.StringObj) "object is not a STRING. Got $(m.type_of(evaluted)) instead."
+    evaluated = test_evaluate(input)
+    @assert isa(evaluated, m.StringObj) "object is not a STRING. Got $(m.type_of(evaluated)) instead."
 
-    @assert evaluted.value == "Hello World!" "value is not 'Hello World!'. Got $(evaluted.value) instead."
+    @assert evaluated.value == "Hello World!" "value is not 'Hello World!'. Got $(evaluated.value) instead."
 
     true
   end
@@ -269,6 +278,23 @@ end
     ("len(\"hello world\")", 11),
     ("len(1),", "argument error: argument to `len` is not supported, got INTEGER"),
     ("len(\"one\", \"two\")", "argument error: wrong number of arguments. Got 2 instead of 1"),
+    ("""
+      let map = fn(arr, f) {
+        let iter = fn(arr, accumulated) { 
+          if (len(arr) == 0) {  
+            accumulated 
+          } else { 
+            iter(rest(arr), push(accumulated, f(first(arr)))); 
+          } 
+        };
+
+        iter(arr, []);
+      };
+
+      let a = [1, 2, 3, 4];
+      let double = fn(x) { x * 2};
+      map(a, double)[3]
+    """, 8),
     ("""
     let reduce = fn(arr, initial, f) {
       let iter = fn(arr, result) {
@@ -288,18 +314,40 @@ end
 
     sum([1, 2, 3, 4, 5])
     """, 15),
+    ("first([1, 2, 3])", 1),
+    ("first([])", nothing),
+    ("first(\"hello\")", "h"),
+    ("first(\"\")", nothing),
+    ("last([1, 2, 3])", 3),
+    ("last([])", nothing),
+    ("last(\"hello\")", "o"),
+    ("last(\"\")", nothing),
+    ("rest([1, 2, 3])[0]", 2),
+    ("rest([])", nothing),
+    ("rest(\"hello\")", "ello"),
+    ("rest(\"\")", nothing),
     ("push([], 2)[0]", 2),
     ("push({2: 3}, 4, 5)[4]", 5),
-    ("puts(123)", nothing),
+    ("puts()", nothing),
+    ("type(false)", "BOOLEAN"),
+    ("type(0)", "INTEGER"),
+    ("type(fn (x) { x })", "FUNCTION"),
+    ("type(\"hello\")", "STRING"),
+    ("type([1, 2])", "ARRAY"),
+    ("type({1:2})", "HASH"),
   ]
     @test begin
-      evaluted = test_evaluate(input)
+      evaluated = test_evaluate(input)
       if isa(expected, String)
-        test_error_object(evaluted, expected)
+        if occursin("error", expected)
+          test_error_object(evaluated, expected)
+        else
+          test_string_object(evaluated, expected)
+        end
       elseif isa(expected, Integer)
-        test_integer_object(evaluted, expected)
+        test_integer_object(evaluated, expected)
       elseif isnothing(expected)
-        test_null_object(evaluted)
+        test_null_object(evaluated)
       end
     end
   end
@@ -335,11 +383,11 @@ end
     ("[1, 2, 3][-1]", nothing),
   ]
     @test begin
-      evaluted = test_evaluate(input)
+      evaluated = test_evaluate(input)
       if isa(expected, Int)
-        test_integer_object(evaluted, expected)
+        test_integer_object(evaluated, expected)
       else
-        test_null_object(evaluted)
+        test_null_object(evaluated)
       end
     end
   end

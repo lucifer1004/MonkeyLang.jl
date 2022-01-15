@@ -94,5 +94,12 @@ const BUILTINS = Dict{String,Builtin}(
     end
 
     return _NULL
+  end),
+  "type" => Builtin(function (args::Vararg{Object})
+    if length(args) != 1
+      return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 1.")
+    end
+
+    return StringObj(type_of(args[1]))
   end)
 )
