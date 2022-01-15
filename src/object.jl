@@ -5,6 +5,7 @@ const BOOLEAN = "BOOLEAN"
 const NULL = "NULL"
 const RETURN_VALUE = "RETURN_VALUE"
 const ERROR = "ERROR"
+const FUNCTION_OBJ = "FUNCTION"
 
 is_truthy(::Object) = true
 Base.show(io::IO, object::Object) = print(io, string(object))
@@ -49,8 +50,25 @@ Base.string(e::Error) = "ERROR: " * e.message
 
 struct Environment
   store::Dict{String,Object}
+  outer::Union{Environment,Nothing}
 end
 
-Environment() = Environment(Dict())
-get(env::Environment, name::String) = Base.get(env.store, name, nothing)
+Environment() = Environment(Dict(), nothing)
+Environment(outer::Environment) = Environment(Dict(), outer)
+get(env::Environment, name::String) = begin
+  result = Base.get(env.store, name, nothing)
+  if isnothing(result) && !isnothing(env.outer)
+    return get(env.outer, name)
+  end
+  return result
+end
 set!(env::Environment, name::String, value::Object) = push!(env.store, name => value)
+
+struct FunctionObj <: Object
+  parameters::Vector{Identifier}
+  body::BlockStatement
+  env::Environment
+end
+
+type_of(::FunctionObj) = FUNCTION_OBJ
+Base.string(f::FunctionObj) = "fn(" * join(map(string, f.parameters), ", ") * ") {\n" * string(f.body) * "\n}"

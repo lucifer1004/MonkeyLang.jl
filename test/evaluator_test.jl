@@ -192,3 +192,51 @@ end
     end
   end
 end
+
+@testset "Test Function Object" begin
+  @test begin
+    input = "fn(x) { x + 2; };"
+    evaluted = test_evaluate(input)
+    @assert isa(evaluted, m.FunctionObj) "object is not a FunctionObj. Got $(typeof(evaluted)) instead."
+
+    @assert string(evaluted.parameters[1]) == "x" "parameters[1] is not 'x'. Got $(string(evaluted.parameters[1])) instead."
+
+    @assert string(evaluted.body) == "(x + 2)" "body is not '(x + 2)'. Got $(evaluted.body) instead."
+
+    true
+  end
+end
+
+@testset "Test Function Application" begin
+  for (input, expected) in [
+    ("let identity = fn(x) { x; }; identity(5);", 5),
+    ("let identity = fn(x) { return x; }; identity(5);", 5),
+    ("let double = fn(x) { x * 2; }; double(5);", 10),
+    ("let add = fn(x, y) { x + y; }; add(5, 5);", 10),
+    ("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20),
+    ("fn(x) { x; }(5)", 5),
+  ]
+    @test begin
+      test_integer_object(test_evaluate(input), expected)
+
+      true
+    end
+  end
+end
+
+@testset "Test Closures" begin
+  input = """
+  let newAdder = fn(x) { 
+    fn(y) { x + y };
+  }
+
+  let addTwo = newAdder(2);
+  addTwo(2);
+  """
+
+  @test begin
+    test_integer_object(test_evaluate(input), 4)
+
+    true
+  end
+end

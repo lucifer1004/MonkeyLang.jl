@@ -7,6 +7,7 @@ function evaluate(node::Node, env::Environment)
       return val
     end
     set!(env, node.name.value, val)
+    return val
   elseif isa(node, ExpressionStatement)
     return evaluate(node.expression, env)
   elseif isa(node, IntegerLiteral)
@@ -32,6 +33,20 @@ function evaluate(node::Node, env::Environment)
     return isa(val, Error) ? val : ReturnValue(val)
   elseif isa(node, Identifier)
     return evaluate_identifier(node, env)
+  elseif isa(node, FunctionLiteral)
+    return FunctionObj(node.parameters, node.body, env)
+  elseif isa(node, CallExpression)
+    fn = evaluate(node.fn, env)
+    if isa(fn, Error)
+      return fn
+    end
+
+    args = evaluate_expressions(node.arguments, env)
+    if length(args) == 1 && isa(args[1], Error)
+      return args[1]
+    end
+
+    return apply_function(fn, args)
   else
     return _NULL
   end
@@ -121,6 +136,44 @@ function evaluate_if_expression(ie::IfExpression, env::Environment)
     return evaluate(ie.alternative, env)
   else
     return _NULL
+  end
+end
+
+function evaluate_expressions(expressions::Vector{Expression}, env::Environment)
+  results = Object[]
+
+  for expression in expressions
+    evaluated = evaluate(expression, env)
+    if isa(evaluated, Error)
+      return [evaluated]
+    end
+    push!(results, evaluated)
+  end
+
+  return results
+end
+
+function apply_function(fn::FunctionObj, args::Vector{Object})
+  extended_env = extend_function_environment(fn, args)
+  evaluated = evaluate(fn.body, extended_env)
+  return unwrap_return_value(evaluated)
+end
+
+function extend_function_environment(fn::FunctionObj, args::Vector{Object})
+  env = Environment(fn.env)
+
+  for (param, arg) in zip(fn.parameters, args)
+    set!(env, param.value, arg)
+  end
+
+  return env
+end
+
+function unwrap_return_value(obj::Object)
+  if isa(obj, ReturnValue)
+    return obj.value
+  else
+    return obj
   end
 end
 
