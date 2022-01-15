@@ -1,3 +1,7 @@
+test_token(token::m.Token, expected::m.Token) = begin
+  @assert token == expected "Expected $(expected.type), got $(token.type) instead"
+end
+
 @testset "Test Next Token" begin
   @testset "Simple Test" begin
     expected = map(x -> m.Token(x...), [
@@ -16,7 +20,9 @@
 
     for token in expected
       @test begin
-        m.next_token!(l) == token
+        test_token(m.next_token!(l), token)
+
+        true
       end
     end
   end
@@ -98,6 +104,12 @@
       (m.SEMICOLON, ";"),
       (m.STRING, "foobar"),
       (m.STRING, "foo bar"),
+      (m.LBRACKET, "["),
+      (m.INT, "1"),
+      (m.COMMA, ","),
+      (m.INT, "2"),
+      (m.RBRACKET, "]"),
+      (m.SEMICOLON, ";"),
       (m.EOF, ""),
     ])
 
@@ -123,11 +135,14 @@
       10 != 9;
       "foobar"
       "foo bar"
+      [1, 2];
     """)
 
     for token in expected
       @test begin
-        m.next_token!(l) == token
+        test_token(m.next_token!(l), token)
+
+        true
       end
     end
   end

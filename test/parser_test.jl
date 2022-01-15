@@ -423,6 +423,49 @@ end
   end
 end
 
+@testset "Test Parsing Array Literal" begin
+  input = "[1, 2 * 2, 3 + 3]"
+
+  @test begin
+    l = m.Lexer(input)
+    p = m.Parser(l)
+    program = m.parse!(p)
+
+    check_parser_errors(p)
+
+    arr = program.statements[1].expression
+    @assert isa(arr, m.ArrayLiteral) "expr is not a ArrayLiteral. Got $(typeof(arr)) instead."
+
+    @assert length(arr.elements) == 3 "length(arr.elements) is not 3. Got $(length(arr.elements)) instead."
+
+    test_integer_literal(arr.elements[1], 1)
+    test_infix_expression(arr.elements[2], 2, "*", 2)
+    test_infix_expression(arr.elements[3], 3, "+", 3)
+
+    true
+  end
+end
+
+@testset "Test Parsing Index Expression" begin
+  input = "myArray[1 + 1]"
+
+  @test begin
+    l = m.Lexer(input)
+    p = m.Parser(l)
+    program = m.parse!(p)
+
+    check_parser_errors(p)
+
+    expr = program.statements[1].expression
+    @assert isa(expr, m.IndexExpression) "expr is not an IndexExpression. Got $(typeof(expr)) instead."
+
+    test_identifier(expr.left, "myArray")
+    test_infix_expression(expr.index, 1, "+", 1)
+
+    true
+  end
+end
+
 @testset "Test Operator Order" begin
   for (input, expected) in [
     ("-a * b", "((-a) * b)"),
@@ -449,6 +492,8 @@ end
     ("a + add(b * c) + d", "((a + add((b * c))) + d)"),
     ("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"),
     ("add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))"),
+    ("a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)"),
+    ("add(a * b[2], b[1], 2 * [1, 2][1])", "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))"),
   ]
     @test begin
       l = m.Lexer(input)

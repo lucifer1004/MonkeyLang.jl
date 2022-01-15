@@ -8,25 +8,33 @@ function test_evaluate(input::String)
 end
 
 function test_integer_object(obj::m.Object, expected::Int64)
-  @assert isa(obj, m.Integer) "obj is not an Integer. Got $(typeof(obj)) instead."
+  @assert isa(obj, m.IntegerObj) "obj is not an INTEGER. Got $(m.type_of(obj)) instead."
 
   @assert obj.value == expected "obj.value is not $expected. Got $(obj.value) instead."
+
+  true
 end
 
 function test_boolean_object(obj::m.Object, expected::Bool)
-  @assert isa(obj, m.Boolean) "obj is not a Boolean. Got $(typeof(obj)) instead."
+  @assert isa(obj, m.Boolean) "obj is not a Boolean. Got $(m.type_of(obj)) instead."
 
   @assert obj.value == expected "obj.value is not $expected. Got $(obj.value) instead."
+
+  true
 end
 
 function test_null_object(obj::m.Object)
   @assert obj === m._NULL "object is not NULL. Got $(obj) instead."
+
+  true
 end
 
 function test_error_object(obj::m.Object, expected::String)
-  @assert isa(obj, m.Error) "no error object returned. Got $(typeof(obj)) instead."
+  @assert isa(obj, m.Error) "no error object returned. Got $(m.type_of(obj)) instead."
 
   @assert obj.message == expected "wrong error message. Got $(obj.message) instead."
+
+  true
 end
 
 @testset "Test Evaluating Integer Expressions" begin
@@ -50,8 +58,6 @@ end
     @test begin
       evaluted = test_evaluate(input)
       test_integer_object(evaluted, expected)
-
-      true
     end
   end
 end
@@ -81,8 +87,6 @@ end
     @test begin
       evaluted = test_evaluate(input)
       test_boolean_object(evaluted, expected)
-
-      true
     end
   end
 end
@@ -99,8 +103,6 @@ end
     @test begin
       evaluted = test_evaluate(input)
       test_boolean_object(evaluted, expected)
-
-      true
     end
   end
 end
@@ -122,8 +124,6 @@ end
       else
         test_null_object(evaluted)
       end
-
-      true
     end
   end
 end
@@ -147,8 +147,6 @@ end
     @test begin
       evaluted = test_evaluate(input)
       test_integer_object(evaluted, expected)
-
-      true
     end
   end
 end
@@ -190,8 +188,6 @@ end
   ]
     @test begin
       test_integer_object(test_evaluate(input), expected)
-
-      true
     end
   end
 end
@@ -200,7 +196,7 @@ end
   @test begin
     input = "fn(x) { x + 2; };"
     evaluted = test_evaluate(input)
-    @assert isa(evaluted, m.FunctionObj) "object is not a FunctionObj. Got $(typeof(evaluted)) instead."
+    @assert isa(evaluted, m.FunctionObj) "object is not a FUNCTION. Got $(m.type_of(evaluted)) instead."
 
     @assert string(evaluted.parameters[1]) == "x" "parameters[1] is not 'x'. Got $(string(evaluted.parameters[1])) instead."
 
@@ -221,8 +217,6 @@ end
   ]
     @test begin
       test_integer_object(test_evaluate(input), expected)
-
-      true
     end
   end
 end
@@ -239,8 +233,6 @@ end
 
   @test begin
     test_integer_object(test_evaluate(input), 4)
-
-    true
   end
 end
 
@@ -249,7 +241,7 @@ end
 
   @test begin
     evaluted = test_evaluate(input)
-    @assert isa(evaluted, m.StringObj) "object is not a StringObj. Got $(typeof(evaluted)) instead."
+    @assert isa(evaluted, m.StringObj) "object is not a STRING. Got $(m.type_of(evaluted)) instead."
 
     @assert evaluted.value == "Hello World!" "value is not 'Hello World!'. Got $(evaluted.value) instead."
 
@@ -262,7 +254,7 @@ end
 
   @test begin
     evaluted = test_evaluate(input)
-    @assert isa(evaluted, m.StringObj) "object is not a StringObj. Got $(typeof(evaluted)) instead."
+    @assert isa(evaluted, m.StringObj) "object is not a STRING. Got $(m.type_of(evaluted)) instead."
 
     @assert evaluted.value == "Hello World!" "value is not 'Hello World!'. Got $(evaluted.value) instead."
 
@@ -277,6 +269,25 @@ end
     ("len(\"hello world\")", 11),
     ("len(1),", "argument error: argument to `len` is not supported, got INTEGER"),
     ("len(\"one\", \"two\")", "argument error: wrong number of arguments. Got 2 instead of 1"),
+    ("""
+    let reduce = fn(arr, initial, f) {
+      let iter = fn(arr, result) {
+        if (len(arr) == 0) {
+          result
+        } else { 
+          iter(rest(arr), f(result, first(arr)))
+        }
+      }
+
+      iter(arr, initial)
+    }
+
+    let sum = fn(arr) { 
+      reduce(arr, 0, fn(initial, el) { initial + el })
+    }
+
+    sum([1, 2, 3, 4, 5])
+    """, 15),
   ]
     @test begin
       evaluted = test_evaluate(input)
@@ -285,8 +296,46 @@ end
       else
         test_integer_object(evaluted, expected)
       end
+    end
+  end
+end
 
-      true
+@testset "Test Array Literal" begin
+  input = "[1, 2 * 2, 3 + 3]"
+
+  @test begin
+    evaluated = test_evaluate(input)
+
+    @assert isa(evaluated, m.ArrayObj) "evaluated is not an ARRAY. Got $(m.type_of(evaluated)) instead."
+
+    @assert length(evaluated.elements) == 3 "length(evaluated.elements) is not 3. Got $(length(evaluated.elements)) instead."
+
+    test_integer_object(evaluated.elements[1], 1)
+    test_integer_object(evaluated.elements[2], 4)
+    test_integer_object(evaluated.elements[3], 6)
+  end
+end
+
+@testset "Test Array Index Expressions" begin
+  for (input, expected) in [
+    ("[1, 2, 3][0]", 1),
+    ("[1, 2, 3][1]", 2),
+    ("[1, 2, 3][2]", 3),
+    ("let i = 0; [1][i]", 1),
+    ("[1, 2, 3][1 + 1]", 3),
+    ("let myArray = [1, 2, 3]; myArray[2];", 3),
+    ("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2]", 6),
+    ("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2),
+    ("[1, 2, 3][3]", nothing),
+    ("[1, 2, 3][-1]", nothing),
+  ]
+    @test begin
+      evaluted = test_evaluate(input)
+      if isa(expected, Int)
+        test_integer_object(evaluted, expected)
+      else
+        test_null_object(evaluted)
+      end
     end
   end
 end

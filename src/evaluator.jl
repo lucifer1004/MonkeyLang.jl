@@ -1,10 +1,18 @@
 evaluate(::Node, ::Environment) = _NULL
 
 evaluate(node::ExpressionStatement, env::Environment) = evaluate(node.expression, env)
-evaluate(node::IntegerLiteral, ::Environment) = Integer(node.value)
+evaluate(node::IntegerLiteral, ::Environment) = IntegerObj(node.value)
 evaluate(node::BooleanLiteral, ::Environment) = node.value ? _TRUE : _FALSE
 evaluate(node::StringLiteral, ::Environment) = StringObj(node.value)
 evaluate(node::FunctionLiteral, env::Environment) = FunctionObj(node.parameters, node.body, env)
+
+evaluate(node::ArrayLiteral, env::Environment) = begin
+  elements = evaluate_expressions(node.elements, env)
+  if length(elements) == 1 && isa(elements[1], Error)
+    return elements[1]
+  end
+  return ArrayObj(elements)
+end
 
 evaluate(node::Identifier, env::Environment) = begin
   val = get(env, node.value)
@@ -64,6 +72,20 @@ evaluate(node::CallExpression, env::Environment) = begin
   return apply_function(fn, args)
 end
 
+evaluate(node::IndexExpression, env::Environment) = begin
+  left = evaluate(node.left, env)
+  if isa(left, Error)
+    return left
+  end
+
+  index = evaluate(node.index, env)
+  if isa(index, Error)
+    return index
+  end
+
+  return evaluate_index_expression(left, index)
+end
+
 evaluate(node::LetStatement, env::Environment) = begin
   val = evaluate(node.value, env)
   if isa(val, Error)
@@ -121,9 +143,7 @@ function evaluate_infix_expression(operator::String, left::Object, right::Object
     return Error("type mismatch: " * type_of(left) * " " * operator * " " * type_of(right))
   end
 
-  if isa(left, Integer) && isa(right, Integer)
-    return evaluate_integer_infix_expression(operator, left, right)
-  elseif operator == "=="
+  if operator == "=="
     return left === right ? _TRUE : _FALSE
   elseif operator == "!="
     return left !== right ? _TRUE : _FALSE
@@ -140,15 +160,15 @@ function evaluate_infix_expression(operator::String, left::StringObj, right::Str
   end
 end
 
-function evaluate_integer_infix_expression(operator::String, left::Integer, right::Integer)
+function evaluate_infix_expression(operator::String, left::IntegerObj, right::IntegerObj)
   if operator == "+"
-    return Integer(left.value + right.value)
+    return IntegerObj(left.value + right.value)
   elseif operator == "-"
-    return Integer(left.value - right.value)
+    return IntegerObj(left.value - right.value)
   elseif operator == "*"
-    return Integer(left.value * right.value)
+    return IntegerObj(left.value * right.value)
   elseif operator == "/"
-    return Integer(left.value ÷ right.value)
+    return IntegerObj(left.value ÷ right.value)
   elseif operator == "<"
     return left.value < right.value ? _TRUE : _FALSE
   elseif operator == ">"
@@ -170,12 +190,15 @@ function evaluate_bang_operator_expression(right::Object)
   end
 end
 
-function evaluate_minus_prefix_operator_expression(right::Object)
-  if isa(right, Integer)
-    return Integer(-right.value)
-  else
-    return return Error("unknown operator: -" * type_of(right))
-  end
+evaluate_minus_prefix_operator_expression(right::Object) = Error("unknown operator: -" * type_of(right))
+evaluate_minus_prefix_operator_expression(right::IntegerObj) = IntegerObj(-right.value)
+
+evaluate_index_expression(left::Object, ::Object) = Error("index operator not supported: $(type_of(left))")
+evaluate_index_expression(::ArrayObj, index::Object) = Error("unsupported index type: $(type_of(index))")
+evaluate_index_expression(left::ArrayObj, index::IntegerObj) = begin
+  idx = index.value
+  max_idx = length(left.elements) - 1
+  return 0 <= idx <= max_idx ? left.elements[idx+1] : _NULL
 end
 
 function evaluate_expressions(expressions::Vector{Expression}, env::Environment)
@@ -198,9 +221,8 @@ function apply_function(fn::FunctionObj, args::Vector{Object})
   return unwrap_return_value(evaluated)
 end
 
-apply_function(fn::Builtin, args::Vector{Object}) = fn.fn(args...)
-
 apply_function(fn::Object, ::Vector{Object}) = Error("not a function: " * type_of(fn))
+apply_function(fn::Builtin, args::Vector{Object}) = fn.fn(args...)
 
 function extend_function_environment(fn::FunctionObj, args::Vector{Object})
   env = Environment(fn.env)

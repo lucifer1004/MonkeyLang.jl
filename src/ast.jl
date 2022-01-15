@@ -83,6 +83,16 @@ Base.string(ie::IfExpression) = begin
   return isnothing(ie.alternative) ? left : left * "else " * string(ie.alternative)
 end
 
+struct IndexExpression <: Expression
+  token::Token
+  left::Expression
+  index::Expression
+end
+
+expression_node(::IndexExpression) = nothing
+token_literal(ie::IndexExpression) = ie.token.literal
+Base.string(ie::IndexExpression) = "(" * string(ie.left) * "[" * string(ie.index) * "])"
+
 struct StringLiteral <: Expression
   token::Token
   value::String
@@ -91,6 +101,15 @@ end
 expression_node(::StringLiteral) = nothing
 token_literal(sl::StringLiteral) = sl.token.literal
 Base.string(sl::StringLiteral) = sl.token.literal
+
+struct ArrayLiteral <: Expression
+  token::Token
+  elements::Vector{Expression}
+end
+
+expression_node(::ArrayLiteral) = nothing
+token_literal(ar::ArrayLiteral) = ar.token.literal
+Base.string(al::ArrayLiteral) = "[" * join(map(string, al.elements), ", ") * "]"
 
 struct FunctionLiteral <: Expression
   token::Token

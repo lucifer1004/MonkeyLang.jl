@@ -77,6 +77,10 @@ function next_token!(l::Lexer)
     token = Token(RBRACE, "}")
   elseif ch == '"'
     return read_string!(l)
+  elseif ch == '['
+    token = Token(LBRACKET, "[")
+  elseif ch == ']'
+    token = Token(RBRACKET, "]")
   elseif isnothing(ch)
     token = Token(EOF, "")
   elseif isidentletter(ch)
