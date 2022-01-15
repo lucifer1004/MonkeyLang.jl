@@ -62,18 +62,37 @@ const BUILTINS = Dict{String,Builtin}(
     return ErrorObj("argument error: argument to `rest` is not supported, got $(type_of(arg))")
   end),
   "push" => Builtin(function (args::Vararg{Object})
-    if length(args) != 2
-      return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 2")
+    if length(args) != 2 && length(args) != 3
+      return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 2 or 3.")
     end
 
-    if !isa(args[1], ArrayObj)
-      return ErrorObj("argument error: argument to `push` is not supported, got $(type_of(arg))")
+    if length(args) == 2
+      if !isa(args[1], ArrayObj)
+        return ErrorObj("argument error: argument to `push` is not supported, got $(type_of(arg))")
+      end
+
+      arr = args[1]
+      elements = copy(arr.elements)
+      push!(elements, args[2])
+
+      return ArrayObj(elements)
+    else
+      if !isa(args[1], HashObj)
+        return ErrorObj("argument error: argument to `push` is not supported, got $(type_of(arg))")
+      end
+
+      hash = args[1]
+      pairs = copy(hash.pairs)
+      push!(pairs, args[2] => args[3])
+
+      return HashObj(pairs)
+    end
+  end),
+  "puts" => Builtin(function (args::Vararg{Object})
+    for arg in args
+      println(arg)
     end
 
-    arr = args[1]
-    elements = copy(arr.elements)
-    push!(elements, args[2])
-
-    return ArrayObj(elements)
+    return _NULL
   end)
 )

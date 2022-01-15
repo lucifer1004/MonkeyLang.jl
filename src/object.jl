@@ -29,7 +29,7 @@ const _TRUE = BooleanObj(true)
 const _FALSE = BooleanObj(false)
 is_truthy(i::BooleanObj) = i.value
 type_of(::BooleanObj) = BOOLEAN_OBJ
-Base.string(i::BooleanObj) = string(i.value)
+Base.string(i::BooleanObj) = "\"" * string(i.value) * "\""
 
 struct NullObj <: Object end
 

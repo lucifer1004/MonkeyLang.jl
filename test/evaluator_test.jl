@@ -288,13 +288,18 @@ end
 
     sum([1, 2, 3, 4, 5])
     """, 15),
+    ("push([], 2)[0]", 2),
+    ("push({2: 3}, 4, 5)[4]", 5),
+    ("puts(123)", nothing),
   ]
     @test begin
       evaluted = test_evaluate(input)
       if isa(expected, String)
         test_error_object(evaluted, expected)
-      else
+      elseif isa(expected, Integer)
         test_integer_object(evaluted, expected)
+      elseif isnothing(expected)
+        test_null_object(evaluted)
       end
     end
   end
