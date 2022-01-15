@@ -170,6 +170,7 @@ end
     """, "unknown operator: BOOLEAN + BOOLEAN"),
     ("foobar", "identifier not found: foobar"),
     ("\"Hello\" - \"World\"", "unknown operator: STRING - STRING"),
+    ("5 / 0", "divide error: division by zero")
   ]
     @test begin
       test_error_object(m.evaluate(input), expected_message)

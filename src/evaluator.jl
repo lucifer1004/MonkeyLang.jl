@@ -189,6 +189,9 @@ function evaluate_infix_expression(operator::String, left::IntegerObj, right::In
   elseif operator == "*"
     return IntegerObj(left.value * right.value)
   elseif operator == "/"
+    if right.value == 0
+      return ErrorObj("divide error: division by zero")
+    end
     return IntegerObj(left.value ÷ right.value)
   elseif operator == "<"
     return left.value < right.value ? _TRUE : _FALSE
