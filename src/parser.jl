@@ -38,6 +38,7 @@ function Parser(l::Lexer)
   register_prefix!(p, FUNCTION, parse_function_literal!)
   register_prefix!(p, STRING, parse_string_literal!)
   register_prefix!(p, LBRACKET, parse_array_literal!)
+  register_prefix!(p, LBRACE, parse_hash_literal!)
 
   register_infix!(p, PLUS, parse_infix_expression!)
   register_infix!(p, MINUS, parse_infix_expression!)
@@ -183,6 +184,33 @@ function parse_array_literal!(p::Parser)
   token = p.cur_token
   elements = parse_expression_list!(p, RBRACKET)
   return ArrayLiteral(token, elements)
+end
+
+function parse_hash_literal!(p::Parser)
+  token = p.cur_token
+  pairs = Dict{Expression,Expression}()
+
+  while p.peek_token.type != RBRACE
+    next_token!(p)
+    key = parse_expression!(p, LOWEST)
+    if !expect_peek!(p, COLON)
+      return nothing
+    end
+
+    next_token!(p)
+    val = parse_expression!(p, LOWEST)
+    pairs[key] = val
+
+    if p.peek_token.type != RBRACE && !expect_peek!(p, COMMA)
+      return nothing
+    end
+  end
+
+  if !expect_peek!(p, RBRACE)
+    return nothing
+  end
+
+  return HashLiteral(token, pairs)
 end
 
 function parse_index_expression!(p::Parser, left::Expression)

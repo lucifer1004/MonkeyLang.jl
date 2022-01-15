@@ -1,7 +1,7 @@
 abstract type Object end
 
 const INTEGER_OBJ = "INTEGER"
-const BOOLEAN = "BOOLEAN"
+const BOOLEAN_OBJ = "BOOLEAN"
 const NULL = "NULL"
 const RETURN_VALUE = "RETURN_VALUE"
 const ERROR = "ERROR"
@@ -9,6 +9,7 @@ const FUNCTION_OBJ = "FUNCTION"
 const STRING_OBJ = "STRING"
 const BUILTIN_OBJ = "BUILTIN"
 const ARRAY_OBJ = "ARRAY"
+const HASH_OBJ = "HASH"
 
 is_truthy(::Object) = true
 Base.show(io::IO, object::Object) = print(io, string(object))
@@ -20,15 +21,15 @@ end
 type_of(::IntegerObj) = INTEGER_OBJ
 Base.string(i::IntegerObj) = string(i.value)
 
-struct Boolean <: Object
+struct BooleanObj <: Object
   value::Bool
 end
 
-const _TRUE = Boolean(true)
-const _FALSE = Boolean(false)
-is_truthy(i::Boolean) = i.value
-type_of(::Boolean) = BOOLEAN
-Base.string(i::Boolean) = string(i.value)
+const _TRUE = BooleanObj(true)
+const _FALSE = BooleanObj(false)
+is_truthy(i::BooleanObj) = i.value
+type_of(::BooleanObj) = BOOLEAN_OBJ
+Base.string(i::BooleanObj) = string(i.value)
 
 struct Null <: Object end
 
@@ -96,3 +97,10 @@ end
 
 type_of(::Builtin) = BUILTIN_OBJ
 Base.string(b::Builtin) = "builtin function"
+
+struct HashObj <: Object
+  pairs::Dict{Object,Object}
+end
+
+type_of(::HashObj) = HASH_OBJ
+Base.string(h::HashObj) = "{" * join(map(x -> string(x[1]) * ":" * string(x[2]), collect(h.pairs)), ", ") * "}"

@@ -11,18 +11,24 @@ function test_identifier(expr::m.Expression, value::String)
   @assert expr.value == value "expr.value is not $value. Got $(expr.value) instead."
 
   @assert m.token_literal(expr) == value "token_literal(expr) is not $value. Got $(m.token_literal(expr)) instead."
+
+  true
 end
 
 function test_integer_literal(il::m.Expression, value::Int64)
   @assert isa(il, m.IntegerLiteral) "il is not an IntegerLiteral. Got $(typeof(il)) instead."
   @assert il.value == value "il.value is not $value. Got $(il.value) instead."
   @assert m.token_literal(il) == string(value) "token_literal(il) is not $value. Got $(m.token_literal(il)) instead."
+
+  true
 end
 
 function test_boolean_literal(bl::m.Expression, value::Bool)
   @assert isa(bl, m.BooleanLiteral) "il is not a BooleanLiteral. Got $(typeof(bl)) instead."
   @assert bl.value == value "bl.value is not $value. Got $(bl.value) instead."
   @assert m.token_literal(bl) == string(value) "token_literal(bl) is not $value. Got $(m.token_literal(bl)) instead."
+
+  true
 end
 
 function test_literal_expression(expr::m.Expression, expected)
@@ -35,6 +41,8 @@ function test_literal_expression(expr::m.Expression, expected)
   else
     error("unexpected type for expected")
   end
+
+  true
 end
 
 function test_infix_expression(expr::m.Expression, left, operator::String, right)
@@ -45,6 +53,8 @@ function test_infix_expression(expr::m.Expression, left, operator::String, right
   @assert expr.operator == operator "expr.operator is not $operator. Got $(expr.operator) instead."
 
   test_literal_expression(expr.right, right)
+
+  true
 end
 
 @testset "Test Parsing Let Statements" begin
@@ -69,8 +79,6 @@ end
 
       val = statement.value
       test_literal_expression(val, expected_value)
-
-      true
     end
   end
 end
@@ -92,8 +100,6 @@ end
 
       statement = program.statements[1]
       test_literal_expression(statement.return_value, expected_value)
-
-      true
     end
   end
 end
@@ -116,8 +122,6 @@ end
       statement = program.statements[1]
       ident = statement.expression
       test_literal_expression(ident, value)
-
-      true
     end
   end
 end
@@ -141,8 +145,6 @@ end
       statement = program.statements[1]
       bool = statement.expression
       test_literal_expression(bool, value)
-
-      true
     end
   end
 end
@@ -164,8 +166,6 @@ end
       statement = program.statements[1]
       il = statement.expression
       test_literal_expression(il, value)
-
-      true
     end
   end
 end
@@ -194,8 +194,6 @@ end
       @assert expr.operator == operator "expr.operator is not $operator. Got $(expr.operator) instead."
 
       test_literal_expression(expr.right, right_value)
-
-      true
     end
   end
 end
@@ -227,8 +225,6 @@ end
       statement = program.statements[1]
       expr = statement.expression
       test_infix_expression(expr, left_value, operator, right_value)
-
-      true
     end
   end
 end
@@ -300,8 +296,6 @@ end
       @assert isa(alternative, m.ExpressionStatement) "alternative.statements[1] is not an ExpressionStatement. Got $(typeof(alternative.statements[1])) instead."
 
       test_identifier(alternative.expression, "y")
-
-      true
     end
   end
 end
@@ -336,8 +330,6 @@ end
       @assert isa(body_statement, m.ExpressionStatement) "body.statement[1] is not an ExpressionStatement. Got $(typeof(body_statement)) instead."
 
       test_infix_expression(body_statement.expression, "x", "+", "y")
-
-      true
     end
   end
 end
@@ -398,8 +390,6 @@ end
       test_literal_expression(expr.arguments[1], 1)
       test_infix_expression(expr.arguments[2], 2, "*", 3)
       test_infix_expression(expr.arguments[3], 4, "+", 5)
-
-      true
     end
   end
 end
@@ -461,8 +451,143 @@ end
 
     test_identifier(expr.left, "myArray")
     test_infix_expression(expr.index, 1, "+", 1)
+  end
+end
 
-    true
+@testset "Test Parsing Hash Literal" begin
+  @testset "Test Parsing Hash Literal with String Keys" begin
+    input = """{"one": 1, "two": 2, "three": 3}"""
+    expected = Dict("one" => 1, "two" => 2, "three" => 3)
+
+    @test begin
+      l = m.Lexer(input)
+      p = m.Parser(l)
+      program = m.parse!(p)
+
+      check_parser_errors(p)
+
+      hash = program.statements[1].expression
+      @assert isa(hash, m.HashLiteral) "hash is not a HashLiteral. Got $(typeof(hash)) instead."
+
+      @assert length(hash.pairs) == 3 "length(hash.pairs) is not 3. Got $(length(hash.pairs)) instead."
+
+      for (key, value) in hash.pairs
+        @assert isa(key, m.StringLiteral) "key is not a StringLiteral. Got $(typeof(key)) instead."
+
+        @assert string(key) ∈ keys(expected) "$key should not exist"
+
+        test_integer_literal(value, expected[string(key)])
+      end
+
+      true
+    end
+  end
+
+  @testset "Test Parsing Hash Literal with String Keys and Expression Values" begin
+    input = """{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}"""
+    tests = Dict(
+      "one" => x -> test_infix_expression(x, 0, "+", 1),
+      "two" => x -> test_infix_expression(x, 10, "-", 8),
+      "three" => x -> test_infix_expression(x, 15, "/", 5),
+    )
+
+    @test begin
+      l = m.Lexer(input)
+      p = m.Parser(l)
+      program = m.parse!(p)
+
+      check_parser_errors(p)
+
+      hash = program.statements[1].expression
+      @assert isa(hash, m.HashLiteral) "hash is not a HashLiteral. Got $(typeof(hash)) instead."
+
+      @assert length(hash.pairs) == 3 "length(hash.pairs) is not 3. Got $(length(hash.pairs)) instead."
+
+      for (key, value) in hash.pairs
+        @assert isa(key, m.StringLiteral) "key is not a StringLiteral. Got $(typeof(key)) instead."
+
+        @assert key.value ∈ keys(tests) "$key should not exist"
+
+        tests[key.value](value)
+      end
+
+      true
+    end
+  end
+
+  @testset "Test Parsing Hash Literal with Integer Keys" begin
+    input = "{1: 1, 2: 2, 3: 3}"
+    expected = Dict(1 => 1, 2 => 2, 3 => 3)
+
+    @test begin
+      l = m.Lexer(input)
+      p = m.Parser(l)
+      program = m.parse!(p)
+
+      check_parser_errors(p)
+
+      hash = program.statements[1].expression
+      @assert isa(hash, m.HashLiteral) "hash is not a HashLiteral. Got $(typeof(hash)) instead."
+
+      @assert length(hash.pairs) == 3 "length(hash.pairs) is not 3. Got $(length(hash.pairs)) instead."
+
+      for (key, value) in hash.pairs
+        @assert isa(key, m.IntegerLiteral) "key is not an IntegerLiteral. Got $(typeof(key)) instead."
+
+        @assert key.value ∈ keys(expected) "$key should not exist"
+
+        test_integer_literal(value, expected[key.value])
+      end
+
+      true
+    end
+  end
+
+  @testset "Test Parsing Hash Literal with Boolean Keys" begin
+    input = "{false: 0, true: 1}"
+    expected = Dict(false => 0, true => 1)
+
+    @test begin
+      l = m.Lexer(input)
+      p = m.Parser(l)
+      program = m.parse!(p)
+
+      check_parser_errors(p)
+
+      hash = program.statements[1].expression
+      @assert isa(hash, m.HashLiteral) "hash is not a HashLiteral. Got $(typeof(hash)) instead."
+
+      @assert length(hash.pairs) == 2 "length(hash.pairs) is not 2. Got $(length(hash.pairs)) instead."
+
+      for (key, value) in hash.pairs
+        @assert isa(key, m.BooleanLiteral) "key is not a BooleanLiteral. Got $(typeof(key)) instead."
+
+        @assert key.value ∈ keys(expected) "$key should not exist"
+
+        test_integer_literal(value, expected[key.value])
+      end
+
+      true
+    end
+  end
+
+  @testset "Test Parsing Empty Hash Literal" begin
+    input = "{}"
+
+    @test begin
+      l = m.Lexer(input)
+      p = m.Parser(l)
+      program = m.parse!(p)
+
+      check_parser_errors(p)
+
+      hash = program.statements[1].expression
+      @assert isa(hash, m.HashLiteral) "hash is not a HashLiteral. Got $(typeof(hash)) instead."
+
+      @assert length(hash.pairs) == 0 "length(hash.pairs) is not 0. Got $(length(hash.pairs)) instead."
+
+      true
+    end
   end
 end
 

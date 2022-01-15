@@ -16,7 +16,7 @@ function test_integer_object(obj::m.Object, expected::Int64)
 end
 
 function test_boolean_object(obj::m.Object, expected::Bool)
-  @assert isa(obj, m.Boolean) "obj is not a Boolean. Got $(m.type_of(obj)) instead."
+  @assert isa(obj, m.BooleanObj) "obj is not a BooleanObj. Got $(m.type_of(obj)) instead."
 
   @assert obj.value == expected "obj.value is not $expected. Got $(obj.value) instead."
 
@@ -335,6 +335,64 @@ end
         test_integer_object(evaluted, expected)
       else
         test_null_object(evaluted)
+      end
+    end
+  end
+end
+
+@testset "Test Hash Literal" begin
+  input = """
+    let two = "two";
+    {
+      "one": 10 - 9,
+      two: 1 + 1,
+      "thr" + "ee": 6 / 2,
+      4: 4,
+      true: 5,
+      false: 6,
+    }
+  """
+
+  @test begin
+    hash = test_evaluate(input)
+
+    expected = [
+      (m.StringObj("one"), 1),
+      (m.StringObj("two"), 2),
+      (m.StringObj("three"), 3),
+      (m.IntegerObj(4), 4),
+      (m.BooleanObj(true), 5),
+      (m.BooleanObj(false), 6),
+    ]
+
+    @assert length(hash.pairs) == 6 "length(hash.pairs) is not 6. Got $(length(hash.pairs)) instead."
+
+    for (key, value) in expected
+      @assert key ∈ keys(hash.pairs) "$key not found."
+
+      test_integer_object(hash.pairs[key], value)
+    end
+
+    true
+  end
+end
+
+@testset "Test Hash Index Expressions" begin
+  for (input, expected) in [
+    ("{\"foo\": 5}[\"foo\"]", 5),
+    ("{\"foo\": 5}[\"bar\"]", nothing),
+    ("let key = \"foo\"; {\"foo\": 5}[key]", 5),
+    ("{}[\"foo\"]", nothing),
+    ("{5: 5}[5]", 5),
+    ("{true: 5}[true]", 5),
+    ("{false: 5}[false]", 5),
+  ]
+    @test begin
+      evaluated = test_evaluate(input)
+      if isa(expected, Integer)
+        test_integer_object(evaluated, expected)
+      else
+        test_null_object(evaluated)
       end
     end
   end

@@ -110,6 +110,11 @@ end
       (m.INT, "2"),
       (m.RBRACKET, "]"),
       (m.SEMICOLON, ";"),
+      (m.LBRACE, "{"),
+      (m.STRING, "foo"),
+      (m.COLON, ":"),
+      (m.STRING, "bar"),
+      (m.RBRACE, "}"),
       (m.EOF, ""),
     ])
 
@@ -136,6 +141,7 @@ end
       "foobar"
       "foo bar"
       [1, 2];
+      {"foo": "bar"}
     """)
 
     for token in expected

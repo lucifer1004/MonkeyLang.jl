@@ -81,6 +81,8 @@ function next_token!(l::Lexer)
     token = Token(LBRACKET, "[")
   elseif ch == ']'
     token = Token(RBRACKET, "]")
+  elseif ch == ':'
+    token = Token(COLON, ":")
   elseif isnothing(ch)
     token = Token(EOF, "")
   elseif isidentletter(ch)

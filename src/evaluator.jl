@@ -14,6 +14,26 @@ evaluate(node::ArrayLiteral, env::Environment) = begin
   return ArrayObj(elements)
 end
 
+evaluate(node::HashLiteral, env::Environment) = begin
+  pairs = Dict{Object,Object}()
+
+  for (key_node, value_node) in node.pairs
+    key = evaluate(key_node, env)
+    if isa(key, Error)
+      return key
+    end
+
+    value = evaluate(value_node, env)
+    if isa(value, Error)
+      return value
+    end
+
+    pairs[key] = value
+  end
+
+  return HashObj(pairs)
+end
+
 evaluate(node::Identifier, env::Environment) = begin
   val = get(env, node.value)
 
@@ -195,6 +215,7 @@ evaluate_minus_prefix_operator_expression(right::IntegerObj) = IntegerObj(-right
 
 evaluate_index_expression(left::Object, ::Object) = Error("index operator not supported: $(type_of(left))")
 evaluate_index_expression(::ArrayObj, index::Object) = Error("unsupported index type: $(type_of(index))")
+evaluate_index_expression(hash::HashObj, key::Object) = Base.get(hash.pairs, key, _NULL)
 evaluate_index_expression(left::ArrayObj, index::IntegerObj) = begin
   idx = index.value
   max_idx = length(left.elements) - 1
