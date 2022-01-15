@@ -7,6 +7,7 @@ const RETURN_VALUE = "RETURN_VALUE"
 const ERROR = "ERROR"
 const FUNCTION_OBJ = "FUNCTION"
 const STRING_OBJ = "STRING"
+const BUILTIN_OBJ = "BUILTIN"
 
 is_truthy(::Object) = true
 Base.show(io::IO, object::Object) = print(io, string(object))
@@ -80,3 +81,10 @@ end
 
 type_of(::StringObj) = STRING_OBJ
 Base.string(s::StringObj) = s.value
+
+struct Builtin <: Object
+  fn::Function
+end
+
+type_of(::Builtin) = BUILTIN_OBJ
+Base.string(b::Builtin) = "builtin function"

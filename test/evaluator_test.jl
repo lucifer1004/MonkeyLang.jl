@@ -23,6 +23,12 @@ function test_null_object(obj::m.Object)
   @assert obj === m._NULL "object is not NULL. Got $(obj) instead."
 end
 
+function test_error_object(obj::m.Object, expected::String)
+  @assert isa(obj, m.Error) "no error object returned. Got $(typeof(obj)) instead."
+
+  @assert obj.message == expected "wrong error message. Got $(obj.message) instead."
+end
+
 @testset "Test Evaluating Integer Expressions" begin
   for (input, expected) in [
     ("5", 5),
@@ -168,10 +174,7 @@ end
     ("\"Hello\" - \"World\"", "unknown operator: STRING - STRING"),
   ]
     @test begin
-      evaluted = test_evaluate(input)
-      @assert isa(evaluted, m.Error) "no error object returned. Got $(typeof(evaluted)) instead."
-
-      @assert evaluted.message == expected_message "wrong error message. Got $(evaluted.message) instead."
+      test_error_object(test_evaluate(input), expected_message)
 
       true
     end
@@ -264,5 +267,26 @@ end
     @assert evaluted.value == "Hello World!" "value is not 'Hello World!'. Got $(evaluted.value) instead."
 
     true
+  end
+end
+
+@testset "Test Builtin Functions" begin
+  for (input, expected) in [
+    ("len(\"\")", 0),
+    ("len(\"four\")", 4),
+    ("len(\"hello world\")", 11),
+    ("len(1),", "argument error: argument to `len` is not supported, got INTEGER"),
+    ("len(\"one\", \"two\")", "argument error: wrong number of arguments. Got 2 instead of 1"),
+  ]
+    @test begin
+      evaluted = test_evaluate(input)
+      if isa(expected, String)
+        test_error_object(evaluted, expected)
+      else
+        test_integer_object(evaluted, expected)
+      end
+
+      true
+    end
   end
 end

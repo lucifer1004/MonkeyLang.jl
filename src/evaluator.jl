@@ -56,11 +56,18 @@ end
 
 function evaluate_identifier(node::Identifier, env::Environment)
   val = get(env, node.value)
-  if isnothing(val)
-    return Error("identifier not found: $(node.value)")
+
+  if !isnothing(val)
+    return val
   end
 
-  return val
+  builtin = Base.get(BUILTINS, node.value, nothing)
+
+  if !isnothing(builtin)
+    return builtin
+  end
+
+  return Error("identifier not found: $(node.value)")
 end
 
 function evaluate_prefix_expression(operator::String, right::Object)
@@ -168,6 +175,10 @@ function apply_function(fn::FunctionObj, args::Vector{Object})
   evaluated = evaluate(fn.body, extended_env)
   return unwrap_return_value(evaluated)
 end
+
+apply_function(fn::Builtin, args::Vector{Object}) = fn.fn(args...)
+
+apply_function(fn::Object, ::Vector{Object}) = Error("not a function: " * type_of(fn))
 
 function extend_function_environment(fn::FunctionObj, args::Vector{Object})
   env = Environment(fn.env)
