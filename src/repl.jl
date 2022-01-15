@@ -1,6 +1,8 @@
 const PROMPT = ">> "
 
 function start_repl()
+  env = Environment()
+
   while true
     print(PROMPT)
     line = readline()
@@ -15,7 +17,7 @@ function start_repl()
         continue
       end
 
-      evaluated = evaluate(program)
+      evaluated = evaluate(program, env)
       if !isnothing(evaluated)
         println(evaluated)
       end

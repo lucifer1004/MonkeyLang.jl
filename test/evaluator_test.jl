@@ -2,8 +2,9 @@ function test_evaluate(input::String)
   l = m.Lexer(input)
   p = m.Parser(l)
   program = m.parse!(p)
+  env = m.Environment()
 
-  return m.evaluate(program)
+  return m.evaluate(program, env)
 end
 
 function test_integer_object(obj::m.Object, expected::Int64)
@@ -163,6 +164,7 @@ end
       return 1;
     }
     """, "unknown operator: BOOLEAN + BOOLEAN"),
+    ("foobar", "identifier not found: foobar"),
   ]
 
     @test begin
@@ -170,6 +172,21 @@ end
       @assert isa(evaluted, m.Error) "no error object returned. Got $(typeof(evaluted)) instead."
 
       @assert evaluted.message == expected_message "wrong error message. Got $(evaluted.message) instead."
+
+      true
+    end
+  end
+end
+
+@testset "Test Let Statements" begin
+  for (input, expected) in [
+    ("let a = 5; a;", 5),
+    ("let a = 5 * 5; a;", 25),
+    ("let a = 5; let b = a; b;", 5),
+    ("let a = 5; let b = a; let c = a + b + 5; c;", 15),
+  ]
+    @test begin
+      test_integer_object(test_evaluate(input), expected)
 
       true
     end
