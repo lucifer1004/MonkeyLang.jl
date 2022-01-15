@@ -1,3 +1,4 @@
+evaluate(input::String) = evaluate(parse!(Parser(Lexer(input))), Environment())
 evaluate(::Node, ::Environment) = _NULL
 
 evaluate(node::ExpressionStatement, env::Environment) = evaluate(node.expression, env)

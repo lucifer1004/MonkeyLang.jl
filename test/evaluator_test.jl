@@ -1,12 +1,3 @@
-function test_evaluate(input::String)
-  l = m.Lexer(input)
-  p = m.Parser(l)
-  program = m.parse!(p)
-  env = m.Environment()
-
-  return m.evaluate(program, env)
-end
-
 function test_integer_object(obj::m.Object, expected::Int64)
   @assert isa(obj, m.IntegerObj) "obj is not an INTEGER. Got $(m.type_of(obj)) instead."
 
@@ -65,7 +56,7 @@ end
     ("(5 + 10 * 2 + 15 / 3) * 2 + -10", 50),
   ]
     @test begin
-      evaluated = test_evaluate(input)
+      evaluated = m.evaluate(input)
       test_integer_object(evaluated, expected)
     end
   end
@@ -94,7 +85,7 @@ end
     ("(1 > 2) == false", true),
   ]
     @test begin
-      evaluated = test_evaluate(input)
+      evaluated = m.evaluate(input)
       test_boolean_object(evaluated, expected)
     end
   end
@@ -110,7 +101,7 @@ end
     ("!!5", true),
   ]
     @test begin
-      evaluated = test_evaluate(input)
+      evaluated = m.evaluate(input)
       test_boolean_object(evaluated, expected)
     end
   end
@@ -127,7 +118,7 @@ end
     ("if (1 < 2) { 10 } else { 20 }", 10),
   ]
     @test begin
-      evaluated = test_evaluate(input)
+      evaluated = m.evaluate(input)
       if isa(expected, Integer)
         test_integer_object(evaluated, expected)
       else
@@ -154,7 +145,7 @@ end
     """, 10)
   ]
     @test begin
-      evaluated = test_evaluate(input)
+      evaluated = m.evaluate(input)
       test_integer_object(evaluated, expected)
     end
   end
@@ -181,7 +172,7 @@ end
     ("\"Hello\" - \"World\"", "unknown operator: STRING - STRING"),
   ]
     @test begin
-      test_error_object(test_evaluate(input), expected_message)
+      test_error_object(m.evaluate(input), expected_message)
 
       true
     end
@@ -196,7 +187,7 @@ end
     ("let a = 5; let b = a; let c = a + b + 5; c;", 15),
   ]
     @test begin
-      test_integer_object(test_evaluate(input), expected)
+      test_integer_object(m.evaluate(input), expected)
     end
   end
 end
@@ -204,7 +195,7 @@ end
 @testset "Test Function Object" begin
   @test begin
     input = "fn(x) { x + 2; };"
-    evaluated = test_evaluate(input)
+    evaluated = m.evaluate(input)
     @assert isa(evaluated, m.FunctionObj) "object is not a FUNCTION. Got $(m.type_of(evaluated)) instead."
 
     @assert string(evaluated.parameters[1]) == "x" "parameters[1] is not 'x'. Got $(string(evaluated.parameters[1])) instead."
@@ -225,7 +216,7 @@ end
     ("fn(x) { x; }(5)", 5),
   ]
     @test begin
-      test_integer_object(test_evaluate(input), expected)
+      test_integer_object(m.evaluate(input), expected)
     end
   end
 end
@@ -241,7 +232,7 @@ end
   """
 
   @test begin
-    test_integer_object(test_evaluate(input), 4)
+    test_integer_object(m.evaluate(input), 4)
   end
 end
 
@@ -249,7 +240,7 @@ end
   input = "\"Hello World!\""
 
   @test begin
-    evaluated = test_evaluate(input)
+    evaluated = m.evaluate(input)
     @assert isa(evaluated, m.StringObj) "object is not a STRING. Got $(m.type_of(evaluated)) instead."
 
     @assert evaluated.value == "Hello World!" "value is not 'Hello World!'. Got $(evaluated.value) instead."
@@ -262,7 +253,7 @@ end
   input = """"Hello" + " " + "World!\""""
 
   @test begin
-    evaluated = test_evaluate(input)
+    evaluated = m.evaluate(input)
     @assert isa(evaluated, m.StringObj) "object is not a STRING. Got $(m.type_of(evaluated)) instead."
 
     @assert evaluated.value == "Hello World!" "value is not 'Hello World!'. Got $(evaluated.value) instead."
@@ -337,7 +328,7 @@ end
     ("type({1:2})", "HASH"),
   ]
     @test begin
-      evaluated = test_evaluate(input)
+      evaluated = m.evaluate(input)
       if isa(expected, String)
         if occursin("error", expected)
           test_error_object(evaluated, expected)
@@ -357,7 +348,7 @@ end
   input = "[1, 2 * 2, 3 + 3]"
 
   @test begin
-    evaluated = test_evaluate(input)
+    evaluated = m.evaluate(input)
 
     @assert isa(evaluated, m.ArrayObj) "evaluated is not an ARRAY. Got $(m.type_of(evaluated)) instead."
 
@@ -383,7 +374,7 @@ end
     ("[1, 2, 3][-1]", nothing),
   ]
     @test begin
-      evaluated = test_evaluate(input)
+      evaluated = m.evaluate(input)
       if isa(expected, Int)
         test_integer_object(evaluated, expected)
       else
@@ -407,7 +398,7 @@ end
   """
 
   @test begin
-    hash = test_evaluate(input)
+    hash = m.evaluate(input)
 
     expected = [
       (m.StringObj("one"), 1),
@@ -441,12 +432,35 @@ end
     ("{false: 5}[false]", 5),
   ]
     @test begin
-      evaluated = test_evaluate(input)
+      evaluated = m.evaluate(input)
       if isa(expected, Integer)
         test_integer_object(evaluated, expected)
       else
         test_null_object(evaluated)
       end
     end
+  end
+end
+
+@testset "Test Recursive Function Call" begin
+  input = """
+  let fibonacci = fn(x) {
+    if (x == 0) {
+      0
+    } else {
+      if (x == 1) {
+        return 1;
+      } else {
+        fibonacci(x - 1) + fibonacci(x - 2);
+      }
+    }
+  };
+
+  fibonacci(10)
+  """
+
+  @test begin
+    evaluated = m.evaluate(input)
+    test_integer_object(evaluated, 55)
   end
 end
