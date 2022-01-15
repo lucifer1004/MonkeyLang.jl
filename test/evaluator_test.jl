@@ -30,7 +30,7 @@ function test_null_object(obj::m.Object)
 end
 
 function test_error_object(obj::m.Object, expected::String)
-  @assert isa(obj, m.Error) "no error object returned. Got $(m.type_of(obj)) instead."
+  @assert isa(obj, m.ErrorObj) "no error object returned. Got $(m.type_of(obj)) instead."
 
   @assert obj.message == expected "wrong error message. Got $(obj.message) instead."
 

@@ -1,7 +1,7 @@
 const BUILTINS = Dict{String,Builtin}(
   "len" => Builtin(function (args::Vararg{Object})
     if length(args) != 1
-      return Error("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
+      return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
     end
 
     arg = args[1]
@@ -11,11 +11,11 @@ const BUILTINS = Dict{String,Builtin}(
       return IntegerObj(length(arg.elements))
     end
 
-    return Error("argument error: argument to `len` is not supported, got $(type_of(arg))")
+    return ErrorObj("argument error: argument to `len` is not supported, got $(type_of(arg))")
   end),
   "first" => Builtin(function (args::Vararg{Object})
     if length(args) != 1
-      return Error("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
+      return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
     end
 
     arg = args[1]
@@ -25,11 +25,11 @@ const BUILTINS = Dict{String,Builtin}(
       return length(arg.elements) >= 1 ? first(arg.elements) : _NULL
     end
 
-    return Error("argument error: argument to `first` is not supported, got $(type_of(arg))")
+    return ErrorObj("argument error: argument to `first` is not supported, got $(type_of(arg))")
   end),
   "last" => Builtin(function (args::Vararg{Object})
     if length(args) != 1
-      return Error("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
+      return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
     end
 
     arg = args[1]
@@ -39,11 +39,11 @@ const BUILTINS = Dict{String,Builtin}(
       return length(arg.elements) >= 1 ? last(arg.elements) : _NULL
     end
 
-    return Error("argument error: argument to `last` is not supported, got $(type_of(arg))")
+    return ErrorObj("argument error: argument to `last` is not supported, got $(type_of(arg))")
   end),
   "rest" => Builtin(function (args::Vararg{Object})
     if length(args) != 1
-      return Error("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
+      return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
     end
 
     arg = args[1]
@@ -59,15 +59,15 @@ const BUILTINS = Dict{String,Builtin}(
       return l >= 1 ? ArrayObj(arg.elements[2:end]) : _NULL
     end
 
-    return Error("argument error: argument to `rest` is not supported, got $(type_of(arg))")
+    return ErrorObj("argument error: argument to `rest` is not supported, got $(type_of(arg))")
   end),
   "push" => Builtin(function (args::Vararg{Object})
     if length(args) != 2
-      return Error("argument error: wrong number of arguments. Got $(length(args)) instead of 2")
+      return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 2")
     end
 
     if !isa(args[1], ArrayObj)
-      return Error("argument error: argument to `push` is not supported, got $(type_of(arg))")
+      return ErrorObj("argument error: argument to `push` is not supported, got $(type_of(arg))")
     end
 
     arr = args[1]

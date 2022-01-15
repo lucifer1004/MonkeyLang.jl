@@ -2,9 +2,9 @@ abstract type Object end
 
 const INTEGER_OBJ = "INTEGER"
 const BOOLEAN_OBJ = "BOOLEAN"
-const NULL = "NULL"
+const NULL_OBJ = "NULL"
 const RETURN_VALUE = "RETURN_VALUE"
-const ERROR = "ERROR"
+const ERROR_OBJ = "ERROR"
 const FUNCTION_OBJ = "FUNCTION"
 const STRING_OBJ = "STRING"
 const BUILTIN_OBJ = "BUILTIN"
@@ -31,12 +31,12 @@ is_truthy(i::BooleanObj) = i.value
 type_of(::BooleanObj) = BOOLEAN_OBJ
 Base.string(i::BooleanObj) = string(i.value)
 
-struct Null <: Object end
+struct NullObj <: Object end
 
-const _NULL = Null()
-is_truthy(::Null) = false
-type_of(::Null) = NULL
-Base.string(::Null) = "null"
+const _NULL = NullObj()
+is_truthy(::NullObj) = false
+type_of(::NullObj) = NULL_OBJ
+Base.string(::NullObj) = "null"
 
 struct ReturnValue <: Object
   value::Object
@@ -45,12 +45,12 @@ end
 type_of(::ReturnValue) = RETURN_VALUE
 Base.string(i::ReturnValue) = string(i.value)
 
-struct Error <: Object
+struct ErrorObj <: Object
   message::String
 end
 
-type_of(::Error) = ERROR
-Base.string(e::Error) = "ERROR: " * e.message
+type_of(::ErrorObj) = ERROR_OBJ
+Base.string(e::ErrorObj) = "ERROR: " * e.message
 
 struct Environment
   store::Dict{String,Object}

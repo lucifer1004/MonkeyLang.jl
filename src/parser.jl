@@ -15,7 +15,7 @@ const ORDERS = Dict{TokenType,ExpressionOrder}(
 
 mutable struct Parser
   l::Lexer
-  errors::Vector{Error}
+  errors::Vector{ErrorObj}
   cur_token::Token
   peek_token::Token
   prefix_parse_functions::Dict{TokenType,Function}
@@ -141,7 +141,7 @@ end
 
 function parse_expression!(p::Parser, order::ExpressionOrder)
   if p.cur_token.type ∉ keys(p.prefix_parse_functions)
-    push!(p.errors, Error("parse error: no prefix parse function for $(p.cur_token.type) found"))
+    push!(p.errors, ErrorObj("parse error: no prefix parse function for $(p.cur_token.type) found"))
     return nothing
   else
     prefix_fn = p.prefix_parse_functions[p.cur_token.type]
@@ -171,7 +171,7 @@ function parse_integer_literal!(p::Parser)
     value = parse(Int64, p.cur_token.literal)
     return IntegerLiteral(token, value)
   catch
-    push!(p.errors, Error("parse error: could not parse $(p.cur_token.literal) as integer"))
+    push!(p.errors, ErrorObj("parse error: could not parse $(p.cur_token.literal) as integer"))
     return nothing
   end
 end
@@ -374,7 +374,7 @@ function expect_peek!(p::Parser, t::TokenType)
 end
 
 function peek_error!(p::Parser, t::TokenType)
-  push!(p.errors, Error("parse error: expected next token to be $t, got $(p.peek_token.type) instead"))
+  push!(p.errors, ErrorObj("parse error: expected next token to be $t, got $(p.peek_token.type) instead"))
 end
 
 function cur_order(p::Parser)
