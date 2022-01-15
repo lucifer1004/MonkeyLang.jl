@@ -96,6 +96,8 @@
       (m.NOT_EQ, "!="),
       (m.INT, "9"),
       (m.SEMICOLON, ";"),
+      (m.STRING, "foobar"),
+      (m.STRING, "foo bar"),
       (m.EOF, ""),
     ])
 
@@ -119,6 +121,8 @@
 
       10 == 10;
       10 != 9;
+      "foobar"
+      "foo bar"
     """)
 
     for token in expected

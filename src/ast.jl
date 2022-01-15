@@ -83,6 +83,15 @@ Base.string(ie::IfExpression) = begin
   return isnothing(ie.alternative) ? left : left * "else " * string(ie.alternative)
 end
 
+struct StringLiteral <: Expression
+  token::Token
+  value::String
+end
+
+expression_node(::StringLiteral) = nothing
+token_literal(sl::StringLiteral) = sl.token.literal
+Base.string(sl::StringLiteral) = sl.token.literal
+
 struct FunctionLiteral <: Expression
   token::Token
   parameters::Vector{Identifier}

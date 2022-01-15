@@ -14,6 +14,8 @@ function evaluate(node::Node, env::Environment)
     return Integer(node.value)
   elseif isa(node, BooleanLiteral)
     return node.value ? _TRUE : _FALSE
+  elseif isa(node, StringLiteral)
+    return StringObj(node.value)
   elseif isa(node, PrefixExpression)
     right = evaluate(node.right, env)
     return isa(right, Error) ? right : evaluate_prefix_expression(node.operator, right)
@@ -82,6 +84,14 @@ function evaluate_infix_expression(operator::String, left::Object, right::Object
     return left === right ? _TRUE : _FALSE
   elseif operator == "!="
     return left !== right ? _TRUE : _FALSE
+  else
+    return Error("unknown operator: " * type_of(left) * " " * operator * " " * type_of(right))
+  end
+end
+
+function evaluate_infix_expression(operator::String, left::StringObj, right::StringObj)
+  if operator == "+"
+    return StringObj(left.value * right.value)
   else
     return Error("unknown operator: " * type_of(left) * " " * operator * " " * type_of(right))
   end

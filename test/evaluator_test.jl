@@ -165,8 +165,8 @@ end
     }
     """, "unknown operator: BOOLEAN + BOOLEAN"),
     ("foobar", "identifier not found: foobar"),
+    ("\"Hello\" - \"World\"", "unknown operator: STRING - STRING"),
   ]
-
     @test begin
       evaluted = test_evaluate(input)
       @assert isa(evaluted, m.Error) "no error object returned. Got $(typeof(evaluted)) instead."
@@ -236,6 +236,32 @@ end
 
   @test begin
     test_integer_object(test_evaluate(input), 4)
+
+    true
+  end
+end
+
+@testset "Test String Literal" begin
+  input = "\"Hello World!\""
+
+  @test begin
+    evaluted = test_evaluate(input)
+    @assert isa(evaluted, m.StringObj) "object is not a StringObj. Got $(typeof(evaluted)) instead."
+
+    @assert evaluted.value == "Hello World!" "value is not 'Hello World!'. Got $(evaluted.value) instead."
+
+    true
+  end
+end
+
+@testset "Test String Concatenation" begin
+  input = """"Hello" + " " + "World!\""""
+
+  @test begin
+    evaluted = test_evaluate(input)
+    @assert isa(evaluted, m.StringObj) "object is not a StringObj. Got $(typeof(evaluted)) instead."
+
+    @assert evaluted.value == "Hello World!" "value is not 'Hello World!'. Got $(evaluted.value) instead."
 
     true
   end

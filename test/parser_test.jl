@@ -404,6 +404,25 @@ end
   end
 end
 
+@testset "Test Parsing String Literal Expression" begin
+  input = "\"hello world\""
+
+  @test begin
+    l = m.Lexer(input)
+    p = m.Parser(l)
+    program = m.parse!(p)
+
+    check_parser_errors(p)
+
+    expr = program.statements[1].expression
+    @assert isa(expr, m.StringLiteral) "expr is not a StringLiteral. Got $(typeof(expr)) instead."
+
+    @assert expr.value == "hello world" "expr.value is not \"hello world\". Got $(expr.value) instead."
+
+    true
+  end
+end
+
 @testset "Test Operator Order" begin
   for (input, expected) in [
     ("-a * b", "((-a) * b)"),

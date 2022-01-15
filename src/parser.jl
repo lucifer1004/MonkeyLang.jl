@@ -35,6 +35,7 @@ function Parser(l::Lexer)
   register_prefix!(p, LPAREN, parse_grouped_expression!)
   register_prefix!(p, IF, parse_if_expression!)
   register_prefix!(p, FUNCTION, parse_function_literal!)
+  register_prefix!(p, STRING, parse_string_literal!)
 
   register_infix!(p, PLUS, parse_infix_expression!)
   register_infix!(p, MINUS, parse_infix_expression!)
@@ -169,6 +170,10 @@ function parse_integer_literal!(p::Parser)
     push!(p.errors, Error("parse error: could not parse $(p.cur_token.literal) as integer"))
     return nothing
   end
+end
+
+function parse_string_literal!(p::Parser)
+  return StringLiteral(p.cur_token, p.cur_token.literal)
 end
 
 function parse_prefix_expression!(p::Parser)
