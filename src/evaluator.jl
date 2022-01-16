@@ -80,6 +80,10 @@ evaluate(node::IfExpression, env::Environment) = begin
 end
 
 evaluate(node::CallExpression, env::Environment) = begin
+  if token_literal(node.fn) == "quote"
+    return QuoteObj(evaluate_unquote_calls(node.arguments[1], env))
+  end
+
   fn = evaluate(node.fn, env)
   if isa(fn, ErrorObj)
     return fn
@@ -240,6 +244,12 @@ function evaluate_expressions(expressions::Vector{Expression}, env::Environment)
   return results
 end
 
+evaluate_unquote_calls(quoted::Node, env::Environment) =
+  modify(quoted, (node::Node) -> (!is_unquote_call(node) || length(node.arguments) != 1) ? node : Node(evaluate(node.arguments[1], env)))
+
+is_unquote_call(node::Node) = false
+is_unquote_call(node::CallExpression) = token_literal(node.fn) == "unquote"
+
 function apply_function(fn::FunctionObj, args::Vector{Object})
   extended_env = extend_function_environment(fn, args)
   evaluated = evaluate(fn.body, extended_env)
@@ -266,3 +276,18 @@ function unwrap_return_value(obj::Object)
     return obj
   end
 end
+
+Node(::Object) = NullLiteral(Token(NULL, "null"))
+Node(obj::IntegerObj) =
+  IntegerLiteral(Token(INT, string(obj.value)), obj.value)
+Node(obj::StringObj) =
+  StringLiteral(Token(STRING, obj.value), obj.value)
+Node(obj::BooleanObj) =
+  BooleanLiteral(Token(obj.value ? TRUE : FALSE, string(obj.value)), obj.value)
+Node(obj::HashObj) =
+  HashLiteral(Token(LBRACE, "{"), Dict(Node(key) => Node(value) for (key, value) in collect(obj.pairs)))
+Node(obj::ArrayObj) =
+  ArrayLiteral(Token(LBRACKET, "["), map(Node, obj.elements))
+Node(obj::FunctionObj) =
+  FunctionLiteral(Token(FUNCTION, "fn"), obj.parameters, obj.body)
+Node(obj::QuoteObj) = obj.node

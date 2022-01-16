@@ -10,6 +10,7 @@
   fn = m.evaluate("fn(x) { x + 2 }")
   len = m.BUILTINS["len"]
   ret = m.ReturnValue(m._TRUE)
+  qt = m.QuoteObj(m.NullLiteral(m.Token(m.NULL, "null")))
 
   @test m.is_truthy(m.IntegerObj(1))
   @test m.is_truthy(m.IntegerObj(0))
@@ -27,6 +28,7 @@
   @test m.is_truthy(fn)
   @test m.is_truthy(len)
   @test m.is_truthy(ret)
+  @test m.is_truthy(qt)
 
   @test m.type_of(int_obj) == "INTEGER"
   @test m.type_of(str_obj) == "STRING"
@@ -39,6 +41,7 @@
   @test m.type_of(fn) == "FUNCTION"
   @test m.type_of(len) == "BUILTIN"
   @test m.type_of(ret) == "RETURN_VALUE"
+  @test m.type_of(qt) == "QUOTE"
 
   @test string(int_obj) == "123"
   @test string(true_obj) == "true"
@@ -51,4 +54,5 @@
   @test string(fn) == "fn(x) {\n(x + 2)\n}"
   @test string(len) == "builtin function"
   @test string(ret) == "true"
+  @test string(qt) == "QUOTE(null)"
 end

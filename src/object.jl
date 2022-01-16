@@ -10,6 +10,7 @@ const STRING_OBJ = "STRING"
 const BUILTIN_OBJ = "BUILTIN"
 const ARRAY_OBJ = "ARRAY"
 const HASH_OBJ = "HASH"
+const QUOTE_OBJ = "QUOTE"
 
 is_truthy(::Object) = true
 Base.show(io::IO, object::Object) = print(io, string(object))
@@ -104,3 +105,10 @@ end
 
 type_of(::HashObj) = HASH_OBJ
 Base.string(h::HashObj) = "{" * join(map(x -> string(x[1]) * ":" * string(x[2]), collect(h.pairs)), ", ") * "}"
+
+struct QuoteObj <: Object
+  node::Node
+end
+
+type_of(::QuoteObj) = QUOTE_OBJ
+Base.string(q::QuoteObj) = "QUOTE(" * string(q.node) * ")"

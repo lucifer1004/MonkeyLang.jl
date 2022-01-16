@@ -10,6 +10,7 @@ include("lexer.jl")
 include("parser.jl")
 include("builtins.jl")
 include("evaluator.jl")
+include("ast_modify.jl")
 include("repl.jl")
 
 end
