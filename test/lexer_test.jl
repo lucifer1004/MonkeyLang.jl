@@ -1,5 +1,20 @@
 test_token(token::m.Token, expected::m.Token) = begin
   @assert token == expected "Expected $(expected.type), got $(token.type) instead"
+
+  true
+end
+
+@testset "Test basic functions" begin
+  l = m.Lexer("1 + 1")
+
+  @test m.read_char(l) == '1'
+  @test m.peek_char(l) == ' '
+  @test m.read_char!(l) == '1'
+  @test m.read_char!(l) == ' '
+  @test m.read_char!(l) == '+'
+  @test m.read_char!(l) == ' '
+  @test m.read_char!(l) == '1'
+  @test isnothing(m.peek_char(l))
 end
 
 @testset "Test Next Token" begin
@@ -13,10 +28,11 @@ end
       (m.RBRACE, "}"),
       (m.COMMA, ","),
       (m.SEMICOLON, ";"),
+      (m.ILLEGAL, "~"),
       (m.EOF, ""),
     ])
 
-    l = m.Lexer("=+(){},;")
+    l = m.Lexer("=+(){},;~")
 
     for token in expected
       @test begin
@@ -149,11 +165,7 @@ end
     """)
 
     for token in expected
-      @test begin
-        test_token(m.next_token!(l), token)
-
-        true
-      end
+      @test test_token(m.next_token!(l), token)
     end
   end
 end

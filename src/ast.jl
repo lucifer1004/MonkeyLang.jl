@@ -4,7 +4,6 @@ abstract type Expression <: Node end
 
 token_literal(node::Node) = node.token.literal
 Base.string(node::Node) = node.token.literal
-Base.show(io::IO, node::Node) = print(io, string(node))
 
 struct Program <: Node
   statements::Vector{Statement}
@@ -12,7 +11,6 @@ end
 
 token_literal(p::Program) = length(p.statements) > 0 ? token_literal(p.statements[1]) : ""
 Base.string(p::Program) = join(map(string, p.statements))
-Base.show(io::IO, p::Program) = print(io, string(p))
 
 struct Identifier <: Expression
   token::Token

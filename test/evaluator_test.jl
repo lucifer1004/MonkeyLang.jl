@@ -180,6 +180,7 @@ end
     ("(5 / 0)()", "divide error: division by zero"),
     ("let a = fn(x) { x }; a(5 / 0);", "divide error: division by zero"),
     ("{1:2}[5 / 0]", "divide error: division by zero"),
+    ("(5 / 0)[2]", "divide error: division by zero"),
     ("let a = 5 / 0", "divide error: division by zero"),
     ("\"str\"[1]", "index operator not supported: STRING"),
     ("[1, 2, 3][\"23\"]", "unsupported index type: STRING"),
