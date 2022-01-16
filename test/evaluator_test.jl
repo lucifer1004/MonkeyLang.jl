@@ -171,7 +171,20 @@ end
     """, "unknown operator: BOOLEAN + BOOLEAN"),
     ("foobar", "identifier not found: foobar"),
     ("\"Hello\" - \"World\"", "unknown operator: STRING - STRING"),
-    ("5 / 0", "divide error: division by zero")
+    ("5 / 0", "divide error: division by zero"),
+    ("[5 / 0]", "divide error: division by zero"),
+    ("{5 / 0: 2}", "divide error: division by zero"),
+    ("{2: 5 / 0}", "divide error: division by zero"),
+    ("(5 / 0) + (5 / 0)", "divide error: division by zero"),
+    ("if (5 / 0) { 2 }", "divide error: division by zero"),
+    ("(5 / 0)()", "divide error: division by zero"),
+    ("let a = fn(x) { x }; a(5 / 0);", "divide error: division by zero"),
+    ("{1:2}[5 / 0]", "divide error: division by zero"),
+    ("let a = 5 / 0", "divide error: division by zero"),
+    ("\"str\"[1]", "index operator not supported: STRING"),
+    ("[1, 2, 3][\"23\"]", "unsupported index type: STRING"),
+    ("if (true) { 5 / 0; 2 + 3; 4; }", "divide error: division by zero"),
+    ("2(3)", "not a function: INTEGER"),
   ]
     @test begin
       test_error_object(m.evaluate(input), expected_message)
