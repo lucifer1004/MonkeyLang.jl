@@ -657,6 +657,8 @@ end
     ("if (x", ["ERROR: parse error: expected next token to be RPAREN, got EOF instead"]),
     ("if (x) c", ["ERROR: parse error: expected next token to be LBRACE, got IDENT instead"]),
     ("if (x) { 1 } else 2", ["ERROR: parse error: expected next token to be LBRACE, got INT instead"]),
+    ("let 5", ["ERROR: parse error: expected next token to be IDENT, got INT instead"]),
+    ("let x 3", ["ERROR: parse error: expected next token to be ASSIGN, got INT instead"]),
   ]
     @test begin
       l = m.Lexer(input)

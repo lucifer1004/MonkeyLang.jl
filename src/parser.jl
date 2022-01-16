@@ -209,9 +209,7 @@ function parse_hash_literal!(p::Parser)
     end
   end
 
-  if !expect_peek!(p, RBRACE)
-    return nothing
-  end
+  next_token!(p)
 
   return HashLiteral(token, pairs)
 end
