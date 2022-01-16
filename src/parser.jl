@@ -40,6 +40,7 @@ function Parser(l::Lexer)
   register_prefix!(p, STRING, parse_string_literal!)
   register_prefix!(p, LBRACKET, parse_array_literal!)
   register_prefix!(p, LBRACE, parse_hash_literal!)
+  register_prefix!(p, MACRO, parse_macro_literal!)
 
   register_infix!(p, PLUS, parse_infix_expression!)
   register_infix!(p, MINUS, parse_infix_expression!)
@@ -313,7 +314,7 @@ function parse_if_expression!(p::Parser)
   return IfExpression(token, condition, consequence, alternative)
 end
 
-function parse_function_parameters!(p::Parser)
+function parse_function_or_macro_parameters!(p::Parser)
   identifiers = Identifier[]
 
   if p.peek_token.type == RPAREN
@@ -339,14 +340,14 @@ function parse_function_parameters!(p::Parser)
   return identifiers
 end
 
-function parse_function_literal!(p::Parser)
+function parse_function_or_macro_literal!(p::Parser)
   token = p.cur_token
 
   if !expect_peek!(p, LPAREN)
     return nothing
   end
 
-  parameters = parse_function_parameters!(p)
+  parameters = parse_function_or_macro_parameters!(p)
 
   if !expect_peek!(p, LBRACE)
     return nothing
@@ -354,8 +355,12 @@ function parse_function_literal!(p::Parser)
 
   body = parse_block_statement!(p)
 
-  return FunctionLiteral(token, parameters, body)
+  return (token, parameters, body)
 end
+
+parse_function_literal!(p::Parser) = FunctionLiteral(parse_function_or_macro_literal!(p)...)
+
+parse_macro_literal!(p::Parser) = MacroLiteral(parse_function_or_macro_literal!(p)...)
 
 function parse_call_expression!(p::Parser, fn::Expression)
   token = p.cur_token

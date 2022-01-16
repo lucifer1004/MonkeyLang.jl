@@ -134,6 +134,19 @@ end
       (m.SEMICOLON, ";"),
       (m.NULL, "null"),
       (m.SEMICOLON, ";"),
+      (m.MACRO, "macro"),
+      (m.LPAREN, "("),
+      (m.IDENT, "x"),
+      (m.COMMA, ","),
+      (m.IDENT, "y"),
+      (m.RPAREN, ")"),
+      (m.LBRACE, "{"),
+      (m.IDENT, "x"),
+      (m.PLUS, "+"),
+      (m.IDENT, "y"),
+      (m.SEMICOLON, ";"),
+      (m.RBRACE, "}"),
+      (m.SEMICOLON, ";"),
       (m.EOF, ""),
     ])
 
@@ -162,6 +175,7 @@ end
       [1, 2];
       {"foo": "bar"};
       null;
+      macro(x, y) { x + y; };
     """)
 
     for token in expected

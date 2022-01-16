@@ -104,6 +104,14 @@ end
 
 Base.string(fl::FunctionLiteral) = fl.token.literal * "(" * join(map(string, fl.parameters), ", ") * ") {" * string(fl.body) * "}"
 
+struct MacroLiteral <: Expression
+  token::Token
+  parameters::Vector{Identifier}
+  body::BlockStatement
+end
+
+Base.string(ml::MacroLiteral) = ml.token.literal * "(" * join(map(string, ml.parameters), ", ") * ") {" * string(ml.body) * "}"
+
 struct CallExpression <: Expression
   token::Token
   fn::Expression

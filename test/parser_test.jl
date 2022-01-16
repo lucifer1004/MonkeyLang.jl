@@ -600,6 +600,30 @@ end
   end
 end
 
+@testset "Test Parsing Macro Literal" begin
+  input = "macro(x, y) { x + y; }"
+
+  @test begin
+    l = m.Lexer(input)
+    p = m.Parser(l)
+    program = m.parse!(p)
+
+    check_parser_errors(p)
+
+    ml = program.statements[1].expression
+    @assert isa(ml, m.MacroLiteral) "ml is not a MacroLiteral. Got $(typeof(ml)) instead."
+
+    @assert length(ml.parameters) == 2 "length(ml.parameters) is not 2. Got $(length(ml.parameters)) instead."
+
+    test_literal_expression(ml.parameters[1], "x")
+    test_literal_expression(ml.parameters[2], "y")
+
+    @assert length(ml.body.statements) == 1 "length(ml.body.statements) is not 1. Got $(length(ml.body.statements)) instead."
+
+    test_infix_expression(ml.body.statements[1].expression, "x", "+", "y")
+  end
+end
+
 @testset "Test Operator Order" begin
   for (input, expected) in [
     ("-a * b", "((-a) * b)"),
