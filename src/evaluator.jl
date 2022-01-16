@@ -80,7 +80,11 @@ evaluate(node::IfExpression, env::Environment) = begin
 end
 
 evaluate(node::CallExpression, env::Environment) = begin
+  # TODO: Currently, `quote()` only processes its first argument
   if token_literal(node.fn) == "quote"
+    if isempty(node.arguments)
+      return _NULL
+    end
     return QuoteObj(evaluate_unquote_calls(node.arguments[1], env))
   end
 
@@ -291,3 +295,74 @@ Node(obj::ArrayObj) =
 Node(obj::FunctionObj) =
   FunctionLiteral(Token(FUNCTION, "fn"), obj.parameters, obj.body)
 Node(obj::QuoteObj) = obj.node
+
+# TODO: Currently, only top-level macro definitions are allowed. We don’t walk down the Statements and check the child nodes for more.
+function define_macros!(env::Environment, program::Program)
+  new_statements = []
+
+  for statement in program.statements
+    if is_macro_definition(statement)
+      add_macro!(env, statement)
+    else
+      push!(new_statements, statement)
+    end
+  end
+
+  return Program(new_statements)
+end
+
+is_macro_definition(::Node) = false
+is_macro_definition(ls::LetStatement) = isa(ls.value, MacroLiteral)
+
+add_macro!(env::Environment, ls::LetStatement) = begin
+  name = ls.name.value
+  value = ls.value
+  set!(env, name, MacroObj(value.parameters, value.body, env))
+end
+
+function expand_macros(program::Program, env::Environment)
+  return modify(program, (node::Node) -> begin
+    if !isa(node, CallExpression)
+      return node
+    end
+
+    mc = get_macro_call(node, env)
+    if isnothing(mc)
+      return node
+    end
+
+    args = quote_args(node)
+    eval_env = extend_macro_env(mc, args)
+    evaluated = evaluate(mc.body, eval_env)
+
+    if !isa(evaluated, QuoteObj)
+      error("macro error: we only support returning AST-nodes from macros")
+    end
+
+    return evaluated.node
+  end)
+end
+
+function get_macro_call(node::CallExpression, env::Environment)
+  ident = node.fn
+  if !isa(ident, Identifier)
+    return nothing
+  end
+
+  mc = get(env, ident.value)
+  if !isa(mc, MacroObj)
+    return nothing
+  end
+
+  return mc
+end
+
+quote_args(node::CallExpression) = map(QuoteObj, node.arguments)
+
+function extend_macro_env(mc::MacroObj, args::Vector{QuoteObj})
+  extended_env = Environment(mc.env)
+  for (parameter, argument) in zip(mc.parameters, args)
+    set!(extended_env, parameter.value, argument)
+  end
+  return extended_env
+end

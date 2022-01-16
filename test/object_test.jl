@@ -7,7 +7,8 @@
   error_obj = m.ErrorObj("error")
   arr_obj = m.ArrayObj([])
   hash_obj = m.HashObj(Dict())
-  fn = m.evaluate("fn(x) { x + 2 }")
+  function_obj = m.evaluate("fn(x) { x + 2 }")
+  macro_obj = m.MacroObj([m.Identifier(m.Token(m.IDENT, "x"), "x")], m.BlockStatement(m.Token(m.LBRACE, "{"), []), m.Environment())
   len = m.BUILTINS["len"]
   ret = m.ReturnValue(m._TRUE)
   qt = m.QuoteObj(m.NullLiteral(m.Token(m.NULL, "null")))
@@ -25,7 +26,8 @@
   @test m.is_truthy(error_obj)
   @test m.is_truthy(arr_obj)
   @test m.is_truthy(hash_obj)
-  @test m.is_truthy(fn)
+  @test m.is_truthy(function_obj)
+  @test m.is_truthy(macro_obj)
   @test m.is_truthy(len)
   @test m.is_truthy(ret)
   @test m.is_truthy(qt)
@@ -38,7 +40,8 @@
   @test m.type_of(error_obj) == "ERROR"
   @test m.type_of(arr_obj) == "ARRAY"
   @test m.type_of(hash_obj) == "HASH"
-  @test m.type_of(fn) == "FUNCTION"
+  @test m.type_of(function_obj) == "FUNCTION"
+  @test m.type_of(macro_obj) == "MACRO"
   @test m.type_of(len) == "BUILTIN"
   @test m.type_of(ret) == "RETURN_VALUE"
   @test m.type_of(qt) == "QUOTE"
@@ -51,7 +54,8 @@
   @test string(error_obj) == "ERROR: error"
   @test string(arr_obj) == "[]"
   @test string(hash_obj) == "{}"
-  @test string(fn) == "fn(x) {\n(x + 2)\n}"
+  @test string(function_obj) == "fn(x) {\n(x + 2)\n}"
+  @test string(macro_obj) == "macro(x) {\n\n}"
   @test string(len) == "builtin function"
   @test string(ret) == "true"
   @test string(qt) == "QUOTE(null)"

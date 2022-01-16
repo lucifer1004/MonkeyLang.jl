@@ -4,6 +4,7 @@ abstract type Expression <: Node end
 
 token_literal(node::Node) = node.token.literal
 Base.string(node::Node) = node.token.literal
+Base.show(io::IO, node::Node) = print(io, string(node))
 
 struct Program <: Node
   statements::Vector{Statement}
@@ -81,6 +82,8 @@ struct StringLiteral <: Expression
   token::Token
   value::String
 end
+
+Base.string(sl::StringLiteral) = "\"" * string(sl.value) * "\""
 
 struct ArrayLiteral <: Expression
   token::Token

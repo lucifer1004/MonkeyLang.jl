@@ -7,39 +7,41 @@
 
 > Monkey Programming Language written in Julia.
 
-## Table of Contents
+**Table of Contents**
 
-- [Start the REPL](#start-the-repl)
-- [Documentation](#documentation)
-  - [Summary](#summary)
-  - [Syntax overview](#syntax-overview)
-    - [If](#if)
-    - [Operators](#operators)
-    - [Return](#return)
-  - [Variable bindings](#variable-bindings)
-  - [Literals](#literals)
-    - [INTEGER](#integer)
-    - [BOOLEAN](#boolean)
-    - [NULL](#null)
-    - [STRING](#string)
-    - [ARRAY](#array)
-    - [HASH](#hash)
-    - [FUNCTION](#function)
-  - [Built-in Functions](#built-in-functions)
-    - [`type(<arg1>): STRING`](#typearg1-string)
-    - [`puts(<arg1>, <arg2>, ...): NULL`](#putsarg1-arg2--null)
-    - [`len(<arg>): INTEGER`](#lenarg-integer)
-    - [`first(<arg: STRING>): STRING | NULL`](#firstarg-string-string--null)
-    - [`first(<arg: Array>): any`](#firstarg-array-any)
-    - [`last(<arg: String>): STRING | NULL`](#lastarg-string-string--null)
-    - [`last(<arg: Array>): any`](#lastarg-array-any)
-    - [`rest(<arg: STRING>): STRING | NULL`](#restarg-string-string--null)
-    - [`rest(<arg: ARRAY>): ARRAY | NULL`](#restarg-array-array--null)
-    - [`push(<arg1: ARRAY>, <arg2>): ARRAY`](#pusharg1-array-arg2-array)
-    - [`push(<arg1: HASH>, <arg2>, <arg3>): HASH`](#pusharg1-hash-arg2-arg3-hash)
-  - [Advanced examples](#advanced-examples)
-    - [A custom `map` function](#a-custom-map-function)
-    - [A custom `reduce` function](#a-custom-reduce-function)
+- [MonkeyLang](#monkeylang)
+  - [Start the REPL](#start-the-repl)
+  - [Documentation](#documentation)
+    - [Summary](#summary)
+    - [Syntax overview](#syntax-overview)
+      - [If](#if)
+      - [Operators](#operators)
+      - [Return](#return)
+    - [Variable bindings](#variable-bindings)
+    - [Literals](#literals)
+      - [INTEGER](#integer)
+      - [BOOLEAN](#boolean)
+      - [NULL](#null)
+      - [STRING](#string)
+      - [ARRAY](#array)
+      - [HASH](#hash)
+      - [FUNCTION](#function)
+    - [Built-in Functions](#built-in-functions)
+      - [`type(<arg1>): STRING`](#typearg1-string)
+      - [`puts(<arg1>, <arg2>, ...): NULL`](#putsarg1-arg2--null)
+      - [`len(<arg>): INTEGER`](#lenarg-integer)
+      - [`first(<arg: STRING>): STRING | NULL`](#firstarg-string-string--null)
+      - [`first(<arg: Array>): any`](#firstarg-array-any)
+      - [`last(<arg: String>): STRING | NULL`](#lastarg-string-string--null)
+      - [`last(<arg: Array>): any`](#lastarg-array-any)
+      - [`rest(<arg: STRING>): STRING | NULL`](#restarg-string-string--null)
+      - [`rest(<arg: ARRAY>): ARRAY | NULL`](#restarg-array-array--null)
+      - [`push(<arg1: ARRAY>, <arg2>): ARRAY`](#pusharg1-array-arg2-array)
+      - [`push(<arg1: HASH>, <arg2>, <arg3>): HASH`](#pusharg1-hash-arg2-arg3-hash)
+    - [Advanced examples](#advanced-examples)
+      - [A custom `map` function](#a-custom-map-function)
+      - [A custom `reduce` function](#a-custom-reduce-function)
+    - [Macro System](#macro-system)
 
 ## Start the REPL
 
@@ -463,6 +465,26 @@ let sum = fn(arr) {
 
 sum([1, 2, 3, 4, 5]); # 15
 ```
+
+### Macro System
+
+Now that the [Lost Chapter](https://interpreterbook.com/lost/) has been implemented, `MonkeyLang.jl` provides a powerful macro system.
+
+Here is an example:
+
+```julia
+let unless = macro(condition, consequence, alternative) {
+    quote(if (!(unquote(condition))) {
+        unquote(consequence);
+    } else {
+        unquote(alternative);
+    });
+};
+
+unless(10 > 5, puts("not greater"), puts("greater")); # greater
+```
+
+> In the REPL, you need to enter all the contents in a single line without `\n` characters.
 
 ---
 

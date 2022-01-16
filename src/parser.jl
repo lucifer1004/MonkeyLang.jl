@@ -122,7 +122,7 @@ function parse_expression_statement!(p::Parser)
   return ExpressionStatement(token, expression)
 end
 
-function parse_block_statement!(p::Parser)
+function parse_block_statement!(p::Parser; must_close = false)
   token = p.cur_token
   statements = Statement[]
 
@@ -136,6 +136,11 @@ function parse_block_statement!(p::Parser)
     end
 
     next_token!(p)
+  end
+
+  if must_close && p.cur_token.type != RBRACE
+    push!(p.errors, ErrorObj("parse error: braces must be closed"))
+    return nothing
   end
 
   return BlockStatement(token, statements)
@@ -353,14 +358,23 @@ function parse_function_or_macro_literal!(p::Parser)
     return nothing
   end
 
-  body = parse_block_statement!(p)
+  body = parse_block_statement!(p; must_close = true)
+  if isnothing(body)
+    return nothing
+  end
 
   return (token, parameters, body)
 end
 
-parse_function_literal!(p::Parser) = FunctionLiteral(parse_function_or_macro_literal!(p)...)
+parse_function_literal!(p::Parser) = begin
+  result = parse_function_or_macro_literal!(p)
+  return isnothing(result) ? nothing : FunctionLiteral(result...)
+end
 
-parse_macro_literal!(p::Parser) = MacroLiteral(parse_function_or_macro_literal!(p)...)
+parse_macro_literal!(p::Parser) = begin
+  result = parse_function_or_macro_literal!(p)
+  return isnothing(result) ? nothing : MacroLiteral(result...)
+end
 
 function parse_call_expression!(p::Parser, fn::Expression)
   token = p.cur_token

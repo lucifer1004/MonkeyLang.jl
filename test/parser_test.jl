@@ -483,9 +483,9 @@ end
       for (key, value) in hash.pairs
         @assert isa(key, m.StringLiteral) "key is not a StringLiteral. Got $(typeof(key)) instead."
 
-        @assert string(key) ∈ keys(expected) "$key should not exist"
+        @assert key.value ∈ keys(expected) "$key should not exist"
 
-        test_integer_literal(value, expected[string(key)])
+        test_integer_literal(value, expected[key.value])
       end
 
       true
@@ -677,12 +677,17 @@ end
     ("fn x", ["ERROR: parse error: expected next token to be LPAREN, got IDENT instead"]),
     ("fn (x {x}", ["ERROR: parse error: expected next token to be RPAREN, got LBRACE instead"]),
     ("fn (x) x", ["ERROR: parse error: expected next token to be LBRACE, got IDENT instead"]),
+    ("fn (x) {x", ["ERROR: parse error: braces must be closed"]),
     ("if x", ["ERROR: parse error: expected next token to be LPAREN, got IDENT instead"]),
     ("if (x", ["ERROR: parse error: expected next token to be RPAREN, got EOF instead"]),
     ("if (x) c", ["ERROR: parse error: expected next token to be LBRACE, got IDENT instead"]),
     ("if (x) { 1 } else 2", ["ERROR: parse error: expected next token to be LBRACE, got INT instead"]),
     ("let 5", ["ERROR: parse error: expected next token to be IDENT, got INT instead"]),
     ("let x 3", ["ERROR: parse error: expected next token to be ASSIGN, got INT instead"]),
+    ("macro x", ["ERROR: parse error: expected next token to be LPAREN, got IDENT instead"]),
+    ("macro (x", ["ERROR: parse error: expected next token to be RPAREN, got EOF instead", "ERROR: parse error: expected next token to be LBRACE, got EOF instead"]),
+    ("macro (x)", ["ERROR: parse error: expected next token to be LBRACE, got EOF instead"]),
+    ("macro (x) {x", ["ERROR: parse error: braces must be closed"]),
   ]
     @test begin
       l = m.Lexer(input)

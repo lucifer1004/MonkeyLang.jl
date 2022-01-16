@@ -1,3 +1,9 @@
+function test_parse_program(input::String)
+  l = m.Lexer(input)
+  p = m.Parser(l)
+  return m.parse!(p)
+end
+
 function test_integer_object(obj::m.Object, expected::Int64)
   @assert isa(obj, m.IntegerObj) "obj is not an INTEGER. Got $(m.type_of(obj)) instead."
 
@@ -489,5 +495,72 @@ end
   @test begin
     evaluated = m.evaluate(input)
     test_integer_object(evaluated, 55)
+  end
+end
+
+@testset "Test Defining Macro" begin
+  input = """
+    let number = 1;
+    let function = fn(x, y) { x + y };
+    let mymacro = macro(x, y) { x + y };
+  """
+
+  @test begin
+    env = m.Environment()
+    program = m.define_macros!(env, test_parse_program(input))
+
+    @assert length(program.statements) == 2 "length(program.statements) is not 2. Got $(length(program.statements)) instead."
+    @assert isnothing(m.get(env, "number")) "number should not be defined"
+    @assert isnothing(m.get(env, "function")) "function should not be defined"
+
+    mc = m.get(env, "mymacro")
+    @assert !isnothing(mc) "mymacro should be defined"
+
+    @assert length(mc.parameters) == 2 "length(mc.parameters) is not 2. Got $(length(mc.parameters)) instead."
+
+    @assert string(mc.parameters[1]) == "x" "mc.parameters[1] is not x. Got $(string(mc.parameters[1])) instead."
+
+    @assert string(mc.parameters[2]) == "y" "mc.parameters[2] is not y. Got $(string(mc.parameters[2])) instead."
+
+    @assert string(mc.body) == "(x + y)" "mc.body is not (x + y). Got $(string(mc.body)) instead."
+
+    true
+  end
+end
+
+@testset "Test Expanding Macros" begin
+  for (input, expected) in [
+    (
+      "let infixExpression = macro() { quote(1 + 2) }; infixExpression();",
+      "(1 + 2)",
+    ),
+    (
+      "let reverse = macro(a, b) { quote(unquote(b) - unquote(a)); }; reverse(2 + 2, 10 - 5);",
+      "((10 - 5) - (2 + 2))",
+    ),
+    (
+      """
+      let unless = macro(condition, consequence, alternative) {
+          quote(if (!(unquote(condition))) {
+              unquote(consequence);
+          } else {
+              unquote(alternative);
+          });
+      };
+
+      unless(10 > 5, puts("not greater"), puts("greater"));
+      """,
+      "if ((!(10 > 5))) { puts(\"not greater\") } else { puts(\"greater\") }",
+    )
+  ]
+    @test begin
+      env = m.Environment()
+      program = m.define_macros!(env, test_parse_program(input))
+      expanded = m.expand_macros(program, env)
+
+      @assert string(expanded) == expected "Expected $expected. Got $expanded instead."
+
+      true
+    end
   end
 end

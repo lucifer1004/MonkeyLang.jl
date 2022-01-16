@@ -5,6 +5,7 @@
     (b"1 / 0\n\n", ["ERROR: divide error: division by zero"]),
     (b"1 ++ 2\n\n", ["ERROR: parser has 1 error\nERROR: parse error: no prefix parse function for PLUS found"]),
     (b"5 + 3; 23 -- ; f((\n\n", ["ERROR: parser has 3 errors\nERROR: parse error: no prefix parse function for SEMICOLON found\nERROR: parse error: no prefix parse function for EOF found\nERROR: parse error: expected next token to be RPAREN, got EOF instead"]),
+    (b"let a=fn(x) {a(x)}; a(3)", ["ERROR: stack overflow"]),
   ]
     @test begin
       input = IOBuffer(raw_input)
