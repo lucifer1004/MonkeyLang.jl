@@ -642,3 +642,29 @@ end
     end
   end
 end
+
+@testset "Test Parsing Errors" begin
+  for (input, expected) in [
+    ("100000000000000000000", ["ERROR: parse error: could not parse 100000000000000000000 as integer"]),
+    ("{1:2", ["ERROR: parse error: expected next token to be COMMA, got EOF instead"]),
+    ("{1}", ["ERROR: parse error: expected next token to be COLON, got RBRACE instead", "ERROR: parse error: no prefix parse function for RBRACE found"]),
+    ("[1", ["ERROR: parse error: expected next token to be RBRACKET, got EOF instead"]),
+    ("{1:2}[1", ["ERROR: parse error: expected next token to be RBRACKET, got EOF instead"]),
+    ("fn x", ["ERROR: parse error: expected next token to be LPAREN, got IDENT instead"]),
+    ("fn (x {x}", ["ERROR: parse error: expected next token to be RPAREN, got LBRACE instead"]),
+    ("fn (x) x", ["ERROR: parse error: expected next token to be LBRACE, got IDENT instead"]),
+    ("if x", ["ERROR: parse error: expected next token to be LPAREN, got IDENT instead"]),
+    ("if (x", ["ERROR: parse error: expected next token to be RPAREN, got EOF instead"]),
+    ("if (x) c", ["ERROR: parse error: expected next token to be LBRACE, got IDENT instead"]),
+    ("if (x) { 1 } else 2", ["ERROR: parse error: expected next token to be LBRACE, got INT instead"]),
+  ]
+    @test begin
+      l = m.Lexer(input)
+      p = m.Parser(l)
+      program = m.parse!(p)
+      @assert map(string, p.errors) == expected "expected = $expected, got = $(map(string, p.errors))"
+
+      true
+    end
+  end
+end
