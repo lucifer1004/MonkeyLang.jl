@@ -7,6 +7,7 @@
     (b"5 + 3; 23 -- ; f((\n\n", ["ERROR: parser has 3 errors\nERROR: parse error: no prefix parse function for SEMICOLON found\nERROR: parse error: no prefix parse function for EOF found\nERROR: parse error: expected next token to be RPAREN, got EOF instead"]),
     (b"let a=fn(x) {a(x)}; a(3)", ["ERROR: stack overflow"]),
     (b"let a = macro(x) {x + x}; a(2)", ["ERROR: macro error: we only support returning AST-nodes from macros"]),
+    (b"puts(\"Hello, world!\")", ["Hello, world!\nnull"]),
   ]
     @test begin
       input = IOBuffer(raw_input)

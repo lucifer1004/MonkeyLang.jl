@@ -1,5 +1,5 @@
 const BUILTINS = Dict{String,Builtin}(
-  "len" => Builtin(function (args::Vararg{Object})
+  "len" => Builtin(function (args::Vararg{Object}; env::Environment = Environment())
     if length(args) != 1
       return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
     end
@@ -13,7 +13,7 @@ const BUILTINS = Dict{String,Builtin}(
 
     return ErrorObj("argument error: argument to `len` is not supported, got $(type_of(arg))")
   end),
-  "first" => Builtin(function (args::Vararg{Object})
+  "first" => Builtin(function (args::Vararg{Object}; env::Environment = Environment())
     if length(args) != 1
       return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
     end
@@ -27,7 +27,7 @@ const BUILTINS = Dict{String,Builtin}(
 
     return ErrorObj("argument error: argument to `first` is not supported, got $(type_of(arg))")
   end),
-  "last" => Builtin(function (args::Vararg{Object})
+  "last" => Builtin(function (args::Vararg{Object}; env::Environment = Environment())
     if length(args) != 1
       return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
     end
@@ -41,7 +41,7 @@ const BUILTINS = Dict{String,Builtin}(
 
     return ErrorObj("argument error: argument to `last` is not supported, got $(type_of(arg))")
   end),
-  "rest" => Builtin(function (args::Vararg{Object})
+  "rest" => Builtin(function (args::Vararg{Object}; env::Environment = Environment())
     if length(args) != 1
       return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
     end
@@ -61,7 +61,7 @@ const BUILTINS = Dict{String,Builtin}(
 
     return ErrorObj("argument error: argument to `rest` is not supported, got $(type_of(arg))")
   end),
-  "push" => Builtin(function (args::Vararg{Object})
+  "push" => Builtin(function (args::Vararg{Object}; env::Environment = Environment())
     if length(args) != 2 && length(args) != 3
       return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 2 or 3")
     end
@@ -88,14 +88,18 @@ const BUILTINS = Dict{String,Builtin}(
       return HashObj(pairs)
     end
   end),
-  "puts" => Builtin(function (args::Vararg{Object})
+  "puts" => Builtin(function (args::Vararg{Object}; env::Environment = Environment())
     for arg in args
-      println(arg)
+      if isa(arg, StringObj)
+        println(env.output, arg.value)
+      else
+        println(env.output, arg)
+      end
     end
 
     return _NULL
   end),
-  "type" => Builtin(function (args::Vararg{Object})
+  "type" => Builtin(function (args::Vararg{Object}; env::Environment = Environment())
     if length(args) != 1
       return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
     end

@@ -11,8 +11,8 @@ const REPL_PRELUDE = """
 const REPL_FAREWELL = "Good bye!"
 
 function start_repl(; input::IO = stdin, output::IO = stdout)
-  env = Environment()
-  macro_env = Environment()
+  env = Environment(; input = input, output = output)
+  macro_env = Environment(; input = input, output = output)
 
   println(output, REPL_PRELUDE)
 

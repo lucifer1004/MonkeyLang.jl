@@ -1,4 +1,4 @@
-evaluate(input::String) = evaluate(parse!(Parser(Lexer(input))), Environment())
+evaluate(code::String; input = stdin, output = stdout) = evaluate(parse!(Parser(Lexer(code))), Environment(; input = input, output = output))
 evaluate(::Node, ::Environment) = _NULL
 
 evaluate(node::ExpressionStatement, env::Environment) = evaluate(node.expression, env)
@@ -98,7 +98,7 @@ evaluate(node::CallExpression, env::Environment) = begin
     return args[1]
   end
 
-  return apply_function(fn, args)
+  return isa(fn, Builtin) ? apply_builtin(fn, args, env) : apply_function(fn, args)
 end
 
 evaluate(node::IndexExpression, env::Environment) = begin
@@ -261,7 +261,7 @@ function apply_function(fn::FunctionObj, args::Vector{Object})
 end
 
 apply_function(fn::Object, ::Vector{Object}) = ErrorObj("not a function: " * type_of(fn))
-apply_function(fn::Builtin, args::Vector{Object}) = fn.fn(args...)
+apply_builtin(fn::Builtin, args::Vector{Object}, env::Environment) = fn.fn(args...; env = env)
 
 function extend_function_environment(fn::FunctionObj, args::Vector{Object})
   env = Environment(fn.env)

@@ -57,10 +57,12 @@ Base.string(e::ErrorObj) = "ERROR: " * e.message
 struct Environment
   store::Dict{String,Object}
   outer::Union{Environment,Nothing}
+  input::IO
+  output::IO
 end
 
-Environment() = Environment(Dict(), nothing)
-Environment(outer::Environment) = Environment(Dict(), outer)
+Environment(; input = stdin, output = stdout) = Environment(Dict(), nothing, input, output)
+Environment(outer::Environment) = Environment(Dict(), outer, outer.input, outer.output)
 get(env::Environment, name::String) = begin
   result = Base.get(env.store, name, nothing)
   if isnothing(result) && !isnothing(env.outer)
