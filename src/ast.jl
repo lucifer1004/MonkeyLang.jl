@@ -72,8 +72,8 @@ end
 
 token_literal(ie::IfExpression) = ie.token.literal
 Base.string(ie::IfExpression) = begin
-  left = "if" * string(ie.condition) * " " * string(ie.consequence)
-  return isnothing(ie.alternative) ? left : left * "else " * string(ie.alternative)
+  left = "if (" * string(ie.condition) * ") { " * string(ie.consequence) * " } "
+  return isnothing(ie.alternative) ? left : (left * "else { " * string(ie.alternative) * " }")
 end
 
 struct IndexExpression <: Expression
@@ -117,7 +117,7 @@ end
 
 expression_node(::FunctionLiteral) = nothing
 token_literal(fl::FunctionLiteral) = fl.token.literal
-Base.string(fl::FunctionLiteral) = fl.token.literal * "(" * join(map(string, fl.parameters), ", ") * ") " * string(fl.body)
+Base.string(fl::FunctionLiteral) = fl.token.literal * "(" * join(map(string, fl.parameters), ", ") * ") {" * string(fl.body) * "}"
 
 struct CallExpression <: Expression
   token::Token
