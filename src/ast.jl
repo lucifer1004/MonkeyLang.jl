@@ -115,7 +115,6 @@ struct FunctionLiteral <: Expression
   body::BlockStatement
 end
 
-expression_node(::FunctionLiteral) = nothing
 token_literal(fl::FunctionLiteral) = fl.token.literal
 Base.string(fl::FunctionLiteral) = fl.token.literal * "(" * join(map(string, fl.parameters), ", ") * ") {" * string(fl.body) * "}"
 
@@ -125,7 +124,6 @@ struct CallExpression <: Expression
   arguments::Vector{Expression}
 end
 
-expression_node(::CallExpression) = nothing
 token_literal(ce::CallExpression) = ce.token.literal
 Base.string(ce::CallExpression) = string(ce.fn) * "(" * join(map(string, ce.arguments), ", ") * ")"
 
@@ -135,7 +133,6 @@ struct LetStatement <: Statement
   value::Expression
 end
 
-statement_node(::LetStatement) = nothing
 token_literal(ls::LetStatement) = ls.token.literal
 Base.string(ls::LetStatement) = ls.token.literal * " " * string(ls.name) * " = " * string(ls.value) * ";"
 
@@ -144,7 +141,6 @@ struct ReturnStatement <: Statement
   return_value::Expression
 end
 
-statement_node(::ReturnStatement) = nothing
 token_literal(rs::ReturnStatement) = rs.token.literal
 Base.string(rs::ReturnStatement) = rs.token.literal * " " * string(rs.return_value) * ";"
 
@@ -153,6 +149,5 @@ struct ExpressionStatement <: Statement
   expression::Expression
 end
 
-statement_node(::ExpressionStatement) = nothing
 token_literal(es::ExpressionStatement) = es.token.literal
 Base.string(es::ExpressionStatement) = string(es.expression)
