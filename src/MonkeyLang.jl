@@ -1,6 +1,6 @@
 module MonkeyLang
 
-const MONKEY_VERSION = v"0.1.1"
+const MONKEY_VERSION = v"0.2.0"
 const MONKEY_AUTHOR = "Gabriel Wu"
 
 include("token.jl")
