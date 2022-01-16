@@ -63,12 +63,12 @@ const BUILTINS = Dict{String,Builtin}(
   end),
   "push" => Builtin(function (args::Vararg{Object})
     if length(args) != 2 && length(args) != 3
-      return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 2 or 3.")
+      return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 2 or 3")
     end
 
     if length(args) == 2
       if !isa(args[1], ArrayObj)
-        return ErrorObj("argument error: argument to `push` is not supported, got $(type_of(arg))")
+        return ErrorObj("argument error: argument to `push` is not supported, got $(type_of(args[1]))")
       end
 
       arr = args[1]
@@ -78,7 +78,7 @@ const BUILTINS = Dict{String,Builtin}(
       return ArrayObj(elements)
     else
       if !isa(args[1], HashObj)
-        return ErrorObj("argument error: argument to `push` is not supported, got $(type_of(arg))")
+        return ErrorObj("argument error: argument to `push` is not supported, got $(type_of(args[1]))")
       end
 
       hash = args[1]
@@ -97,7 +97,7 @@ const BUILTINS = Dict{String,Builtin}(
   end),
   "type" => Builtin(function (args::Vararg{Object})
     if length(args) != 1
-      return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 1.")
+      return ErrorObj("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
     end
 
     return StringObj(type_of(args[1]))

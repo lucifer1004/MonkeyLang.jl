@@ -23,7 +23,7 @@ end
 function test_error_object(obj::m.Object, expected::String)
   @assert isa(obj, m.ErrorObj) "no error object returned. Got $(m.type_of(obj)) instead."
 
-  @assert obj.message == expected "wrong error message. Got $(obj.message) instead."
+  @assert obj.message == expected "wrong error message. Expected \"$expected\". Got \"$(obj.message)\" instead."
 
   true
 end
@@ -306,21 +306,32 @@ end
 
     sum([1, 2, 3, 4, 5])
     """, 15),
+    ("first([1, 2], [2])", "argument error: wrong number of arguments. Got 2 instead of 1"),
     ("first([1, 2, 3])", 1),
     ("first([])", nothing),
     ("first(\"hello\")", "h"),
     ("first(\"\")", nothing),
+    ("first(1)", "argument error: argument to `first` is not supported, got INTEGER"),
     ("last([1, 2, 3])", 3),
     ("last([])", nothing),
     ("last(\"hello\")", "o"),
     ("last(\"\")", nothing),
+    ("last(1)", "argument error: argument to `last` is not supported, got INTEGER"),
+    ("last([1, 2], [2])", "argument error: wrong number of arguments. Got 2 instead of 1"),
     ("rest([1, 2, 3])[0]", 2),
     ("rest([])", nothing),
     ("rest(\"hello\")", "ello"),
     ("rest(\"\")", nothing),
+    ("rest(1)", "argument error: argument to `rest` is not supported, got INTEGER"),
+    ("rest([1, 2], [2])", "argument error: wrong number of arguments. Got 2 instead of 1"),
+    ("push()", "argument error: wrong number of arguments. Got 0 instead of 2 or 3"),
+    ("push({}, 2)", "argument error: argument to `push` is not supported, got HASH"),
+    ("push([], 2, 3)", "argument error: argument to `push` is not supported, got ARRAY"),
     ("push([], 2)[0]", 2),
     ("push({2: 3}, 4, 5)[4]", 5),
     ("puts()", nothing),
+    ("puts(1)", nothing),
+    ("type(1, 2)", "argument error: wrong number of arguments. Got 2 instead of 1"),
     ("type(false)", "BOOLEAN"),
     ("type(0)", "INTEGER"),
     ("type(fn (x) { x })", "FUNCTION"),
