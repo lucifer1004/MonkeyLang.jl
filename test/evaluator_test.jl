@@ -110,10 +110,11 @@ end
 @testset "Test If Else Expressions" begin
   for (input, expected) in [
     ("if (true) { 10 }", 10),
-    ("if (false) { 10 }", m._NULL),
+    ("if (false) { 10 }", nothing),
+    ("if (null) { 2 } else { 3 }", 3),
     ("if (1) { 10 }", 10),
     ("if (1 < 2) { 10 }", 10),
-    ("if (1 > 2) { 10 }", m._NULL),
+    ("if (1 > 2) { 10 }", nothing),
     ("if (1 > 2) { 10 } else { 20 }", 20),
     ("if (1 < 2) { 10 } else { 20 }", 10),
   ]
@@ -121,7 +122,7 @@ end
       evaluated = m.evaluate(input)
       if isa(expected, Integer)
         test_integer_object(evaluated, expected)
-      else
+      elseif isnothing(expected)
         test_null_object(evaluated)
       end
     end

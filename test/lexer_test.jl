@@ -115,6 +115,9 @@ end
       (m.COLON, ":"),
       (m.STRING, "bar"),
       (m.RBRACE, "}"),
+      (m.SEMICOLON, ";"),
+      (m.NULL, "null"),
+      (m.SEMICOLON, ";"),
       (m.EOF, ""),
     ])
 
@@ -141,7 +144,8 @@ end
       "foobar"
       "foo bar"
       [1, 2];
-      {"foo": "bar"}
+      {"foo": "bar"};
+      null;
     """)
 
     for token in expected

@@ -7,6 +7,40 @@
 
 > Monkey Programming Language written in Julia.
 
+## Table of Contents
+
+- [Start the REPL](#start-the-repl)
+- [Documentation](#documentation)
+  - [Summary](#summary)
+  - [Syntax overview](#syntax-overview)
+    - [If](#if)
+    - [Operators](#operators)
+    - [Return](#return)
+  - [Variable bindings](#variable-bindings)
+  - [Literals](#literals)
+    - [INTEGER](#integer)
+    - [BOOLEAN](#boolean)
+    - [NULL](#null)
+    - [STRING](#string)
+    - [ARRAY](#array)
+    - [HASH](#hash)
+    - [FUNCTION](#function)
+  - [Built-in Functions](#built-in-functions)
+    - [`type(<arg1>): STRING`](#typearg1-string)
+    - [`puts(<arg1>, <arg2>, ...): NULL`](#putsarg1-arg2--null)
+    - [`len(<arg>): INTEGER`](#lenarg-integer)
+    - [`first(<arg: STRING>): STRING | NULL`](#firstarg-string-string--null)
+    - [`first(<arg: Array>): any`](#firstarg-array-any)
+    - [`last(<arg: String>): STRING | NULL`](#lastarg-string-string--null)
+    - [`last(<arg: Array>): any`](#lastarg-array-any)
+    - [`rest(<arg: STRING>): STRING | NULL`](#restarg-string-string--null)
+    - [`rest(<arg: ARRAY>): ARRAY | NULL`](#restarg-array-array--null)
+    - [`push(<arg1: ARRAY>, <arg2>): ARRAY`](#pusharg1-array-arg2-array)
+    - [`push(<arg1: HASH>, <arg2>, <arg3>): HASH`](#pusharg1-hash-arg2-arg3-hash)
+  - [Advanced examples](#advanced-examples)
+    - [A custom `map` function](#a-custom-map-function)
+    - [A custom `reduce` function](#a-custom-reduce-function)
+
 ## Start the REPL
 
 ```julia
@@ -25,35 +59,6 @@ I created the document with reference to [Writing An Interpreter In Go][writing-
 
 :warning: **Please note that there may be some mistakes.**
 
-### Table of Contents
-
-- [Summary](#summary)
-- [Syntax overview](#syntax-overview)
-    - [If](#if)
-    - [Operators](#operators)
-    - [Return](#return)
-- [Variable bindings](#variable-bindings)
-- [Literals](#literals)
-    - [INTEGER](#integer)
-    - [BOOLEAN](#boolean)
-    - [STRING](#string)
-    - [ARRAY](#array)
-    - [HASH](#hash)
-    - [FUNCTION](#function)
-- [Built-in Functions](#built-in-functions)
-    - [`type(<arg1>): STRING`](#typearg1-string)
-    - [`puts(<arg1>, <arg2>, ...): NULL`](#putsarg1-arg2--null)
-    - [`len(<arg>): INTEGER`](#lenarg-integer)
-    - [`first(<arg: STRING>): STRING | NULL`](#firstarg-string-string--null)
-    - [`first(<arg: Array>): any`](#firstarg-array-any)
-    - [`last(<arg: String>): STRING | NULL`](#lastarg-string-string--null)
-    - [`last(<arg: Array>): any`](#lastarg-array-any)
-    - [`rest(<arg: STRING>): STRING | NULL`](#restarg-string-string--null)
-    - [`rest(<arg: ARRAY>): ARRAY | NULL`](#restarg-array-array--null)
-    - [`push(<arg1: ARRAY>, <arg2>): ARRAY`](#pusharg1-array-arg2-array)
-    - [`push(<arg1: HASH>, <arg2>, <arg3>): HASH`](#pusharg1-hash-arg2-arg3-hash)
-- [Advanced examples](#advanced-examples)
-
 ### Summary
 
 - C-like syntax
@@ -66,7 +71,7 @@ I created the document with reference to [Writing An Interpreter In Go][writing-
 
 An example of Fibonacci function.
 
-```
+```julia
 let fibonacci = fn(x) {
   if (x == 0) {
     0;
@@ -84,9 +89,9 @@ fibonacci(10);
 
 #### If
 
-It supports the general `if`. `else` exists, but` else if` does not exist.
+It supports the general `if`. `else` exists, but `else if` does not exist.
 
-```
+```julia
 if (true) {
   10;
 } else {
@@ -98,7 +103,7 @@ if (true) {
 
 It supports the general operations.
 
-```
+```julia
 1 + 2 + (3 * 4) - (10 / 5);
 !true;
 !false;
@@ -111,13 +116,13 @@ It supports the general operations.
 
 It returns the value immediately. No further processing will be executed.
 
-```
+```julia
 if (true) {
   return;
 }
 ```
 
-```
+```julia
 let identity = fn(x) {
   return x;
 };
@@ -131,13 +136,13 @@ Variable bindings, such as those supported by many programming languages, are im
 
 **Format:**
 
-```
+```julia
 let <identifier> = <expression>;
 ```
 
 **Example:**
 
-```
+```julia
 let x = 0;
 let y = 10;
 let foobar = add(5, 5);
@@ -155,24 +160,24 @@ Five types of literals are implemented.
 
 **Format:**
 
-```
+```julia
 [-+]?[1-9][0-9]*;
 ```
 
 **Example:**
 
-```
+```julia
 10;
 1234;
 ```
 
 #### BOOLEAN
 
-`BOOLEAN` represents a general boolean types.
+`BOOLEAN` represents a boolean value.
 
 **Format:**
 
-```
+```julia
 true | false;
 ```
 
@@ -186,6 +191,22 @@ let truthy = !false;
 let falsy = !true;
 ```
 
+#### NULL
+
+`NULL` represents null. When used as a condition, `NULL` is evaluated as falsy.
+
+**Format:**
+
+```julia
+null;
+```
+
+**Example:**
+
+```julia
+if (null) { 2 } else { 3 }; # 3
+```
+
 #### STRING
 
 `STRING` represents a string. Only double quotes can be used.
@@ -194,7 +215,7 @@ let falsy = !true;
 
 **Format:**
 
-```
+```julia
 "<value>";
 ```
 
@@ -211,17 +232,17 @@ let falsy = !true;
 
 **Format:**
 
-```
+```julia
 [<expression>, <expression>, ...];
 ```
 
 **Example:**
 
-```
+```julia
 [1, 2, 3 + 3, fn(x) { x }, add(2, 2), true];
 ```
 
-```
+```julia
 let arr = [1, true, fn(x) { x }];
 
 arr[0];
@@ -236,13 +257,13 @@ arr[1 + 1](10);
 
 **Format:**
 
-```
+```julia
 { <expression>: <expression>, <expression>: <expression>, ... };
 ```
 
 **Example:**
 
-```
+```julia
 let hash = {
   "name": "Jimmy",
   "age": 72,
@@ -263,13 +284,13 @@ hash[100 - 1];
 
 **Format:**
 
-```
+```julia
 fn (<parameter one>, <parameter two>, ...) { <block statement> };
 ```
 
 **Example:**
 
-```
+```julia
 let add = fn(x, y) {
   return x + y;
 };
@@ -277,7 +298,7 @@ let add = fn(x, y) {
 add(10, 20);
 ```
 
-```
+```julia
 let add = fn(x, y) {
   x + y;
 };
@@ -287,7 +308,7 @@ add(10, 20);
 
 If `return` does not exist, it returns the result of the last evaluated expression.
 
-```
+```julia
 let addThree = fn(x) { x + 3 };
 let callTwoTimes = fn(x, f) { f(f(x)) };
 

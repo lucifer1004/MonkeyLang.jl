@@ -33,6 +33,7 @@ function Parser(l::Lexer)
   register_prefix!(p, MINUS, parse_prefix_expression!)
   register_prefix!(p, TRUE, parse_boolean!)
   register_prefix!(p, FALSE, parse_boolean!)
+  register_prefix!(p, NULL, parse_null!)
   register_prefix!(p, LPAREN, parse_grouped_expression!)
   register_prefix!(p, IF, parse_if_expression!)
   register_prefix!(p, FUNCTION, parse_function_literal!)
@@ -162,6 +163,8 @@ function parse_expression!(p::Parser, order::ExpressionOrder)
 end
 
 parse_boolean!(p::Parser) = BooleanLiteral(p.cur_token, p.cur_token.type == TRUE)
+
+parse_null!(p::Parser) = NullLiteral(p.cur_token)
 
 parse_identifier!(p::Parser) = Identifier(p.cur_token, p.cur_token.literal)
 

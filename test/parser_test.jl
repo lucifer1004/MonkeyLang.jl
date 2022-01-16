@@ -31,6 +31,12 @@ function test_boolean_literal(bl::m.Expression, value::Bool)
   true
 end
 
+function test_null_literal(bl::m.Expression)
+  @assert isa(bl, m.NullLiteral) "il is not a NullLiteral. Got $(typeof(bl)) instead."
+
+  true
+end
+
 function test_literal_expression(expr::m.Expression, expected)
   if isa(expected, Int)
     test_integer_literal(expr, Int64(expected))
@@ -38,6 +44,8 @@ function test_literal_expression(expr::m.Expression, expected)
     test_identifier(expr, expected)
   elseif isa(expected, Bool)
     test_boolean_literal(expr, expected)
+  elseif isnothing(expected)
+    test_null_literal(expr)
   else
     error("unexpected type for expected")
   end
@@ -62,6 +70,7 @@ end
     ("let x = 5;", "x", 5),
     ("let y = true;", "y", true),
     ("let foobar = y;", "foobar", "y"),
+    ("let a = null;", "a", nothing),
   ]
     test_let_statement(ls::m.LetStatement, name::String) = ls.name.value == name && m.token_literal(ls.name) == name
 
