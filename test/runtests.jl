@@ -8,4 +8,5 @@ const m = MonkeyLang
     include("ast_test.jl")
     include("parser_test.jl")
     include("evaluator_test.jl")
+    include("repl_test.jl")
 end
