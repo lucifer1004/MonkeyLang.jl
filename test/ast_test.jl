@@ -27,10 +27,10 @@ end
     }
     let c = f(b);
     let d = [a, b, c];
-    let e = {a:b, b:c, c:a, d:d};
+    let e = {a:b};
   """
 
-  expected = "let a = 1;let b = (a + 2);let f = if (true) { fn(x) {(x + 1)} } else { fn(x) {return (x * 2);} };let c = f(b);let d = [a, b, c];let e = {b:c, d:d, a:b, c:a};"
+  expected = "let a = 1;let b = (a + 2);let f = if (true) { fn(x) {(x + 1)} } else { fn(x) {return (x * 2);} };let c = f(b);let d = [a, b, c];let e = {a:b};"
 
   @test begin
     l = m.Lexer(input)
