@@ -9,8 +9,12 @@ const REPL_PRELUDE = """
   ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝   ╚═╝      |  BY $MONKEY_AUTHOR
 """
 const REPL_FAREWELL = "Good bye!"
+const _READY_TO_READ = Threads.Condition() # For test-use only.
 
-function start_repl(; input::IO = stdin, output::IO = stdout)
+function start_repl(; input::IO = stdin, output::IO = stdout, is_test::Bool = false)
+  # Handle SIGINT more elegantly
+  Base.exit_on_sigint(false)
+
   env = Environment(; input = input, output = output)
   macro_env = Environment(; input = input, output = output)
 
@@ -18,12 +22,17 @@ function start_repl(; input::IO = stdin, output::IO = stdout)
 
   while true
     print(output, PROMPT)
-    line = readline(input)
-    if line == ""
-      println(output, REPL_FAREWELL)
-      break
-    else
-      l = Lexer(line)
+
+    try
+      line = readline(input; keep = true)
+
+      # Ctrl-D (EOF) causes the REPL to stop
+      if isempty(line)
+        println(output, REPL_FAREWELL)
+        break
+      end
+
+      l = Lexer(string(strip(line, '\n')))
       p = Parser(l)
       program = parse!(p)
 
@@ -42,7 +51,7 @@ function start_repl(; input::IO = stdin, output::IO = stdout)
           println(output, evaluated)
         end
       catch e
-        if isa(e, StackOverflowError)
+        if isa(e, StackOverflowError) # `StackOverflowError` does not have `:msg` field
           println(output, ErrorObj("stack overflow"))
         elseif :msg in fieldnames(typeof(e))
           println(output, ErrorObj(e.msg))
@@ -50,7 +59,14 @@ function start_repl(; input::IO = stdin, output::IO = stdout)
           println(output, ErrorObj("unknown error"))
         end
       end
-
+    catch e
+      # Handle SIGINT elegantly
+      # `e` should be an InterruptException, but there might be some edge cases
+      if !isa(e, InterruptException)
+        println(output, ErrorObj("unknown error"))
+      end
+      println(output, REPL_FAREWELL)
+      break
     end
   end
 end
