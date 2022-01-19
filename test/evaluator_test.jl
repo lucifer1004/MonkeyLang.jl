@@ -89,6 +89,10 @@ end
     ("(1 < 2) == false", false),
     ("(1 > 2) == true", false),
     ("(1 > 2) == false", true),
+    ("\"a\" == \"a\"", true),
+    ("\"a\" != \"a\"", false),
+    ("\"a\" == \"b\"", false),
+    ("\"a\" != \"b\"", true),
   ]
     @test begin
       evaluated = m.evaluate(code)

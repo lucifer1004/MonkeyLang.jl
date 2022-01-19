@@ -184,6 +184,10 @@ end
 function evaluate_infix_expression(operator::String, left::StringObj, right::StringObj)
   if operator == "+"
     return StringObj(left.value * right.value)
+  elseif operator == "=="
+    return left.value == right.value ? _TRUE : _FALSE
+  elseif operator == "!="
+    return left.value != right.value ? _TRUE : _FALSE
   else
     return ErrorObj("unknown operator: " * type_of(left) * " " * operator * " " * type_of(right))
   end
