@@ -15,6 +15,7 @@
 - Improved error handling
 - Monkey code can now be evaluated with IO redirected.
 - Empty line (`\n`) will not cause the REPL to exit, while `Ctrl-D` (`EOF`) still works as before.
+- Equality of `STRING`s can be corrected handled. (#d3ac)
 
 ### Removed
 
