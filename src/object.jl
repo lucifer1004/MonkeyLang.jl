@@ -15,6 +15,7 @@ const MACRO_OBJ = "MACRO"
 
 is_truthy(::Object) = true
 Base.show(io::IO, object::Object) = print(io, string(object))
+Base.isless(a::Object, b::Object) = isless(string(a), string(b))
 
 struct IntegerObj <: Object
   value::Int64

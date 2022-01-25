@@ -5,6 +5,7 @@ abstract type Expression <: Node end
 token_literal(node::Node) = node.token.literal
 Base.string(node::Node) = node.token.literal
 Base.show(io::IO, node::Node) = print(io, string(node))
+Base.isless(a::Node, b::Node) = isless(string(a), string(b))
 
 struct Program <: Node
   statements::Vector{Statement}

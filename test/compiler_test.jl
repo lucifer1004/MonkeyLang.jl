@@ -333,4 +333,49 @@ end
       @test run_compiler_tests(input, expected_constants, expected_instructions)
     end
   end
+
+  @testset "Hash Literals" begin
+    for (input, expected_constants, expected_instructions) in [
+      (
+        "{}",
+        [],
+        [
+          m.make(m.OpHash, 0),
+          m.make(m.OpPop),
+        ],
+      ),
+      (
+        "{1: 2, 3: 4, 5: 6}",
+        [1, 2, 3, 4, 5, 6],
+        [
+          m.make(m.OpConstant, 0),
+          m.make(m.OpConstant, 1),
+          m.make(m.OpConstant, 2),
+          m.make(m.OpConstant, 3),
+          m.make(m.OpConstant, 4),
+          m.make(m.OpConstant, 5),
+          m.make(m.OpHash, 6),
+          m.make(m.OpPop),
+        ]
+      ),
+      (
+        "{1: 2 + 3, 4: 5 * 6}",
+        [1, 2, 3, 4, 5, 6],
+        [
+          m.make(m.OpConstant, 0),
+          m.make(m.OpConstant, 1),
+          m.make(m.OpConstant, 2),
+          m.make(m.OpAdd),
+          m.make(m.OpConstant, 3),
+          m.make(m.OpConstant, 4),
+          m.make(m.OpConstant, 5),
+          m.make(m.OpMul),
+          m.make(m.OpHash, 4),
+          m.make(m.OpPop),
+        ],
+      ),
+    ]
+      @test run_compiler_tests(input, expected_constants, expected_instructions)
+    end
+  end
 end

@@ -102,6 +102,16 @@ compile!(c::Compiler, al::ArrayLiteral) = begin
   emit!(c, OpArray, length(al.elements))
 end
 
+compile!(c::Compiler, hl::HashLiteral) = begin
+  ks = collect(keys(hl.pairs))
+  sort!(ks)
+  for k in ks
+    compile!(c, k)
+    compile!(c, hl.pairs[k])
+  end
+  emit!(c, OpHash, length(ks) * 2)
+end
+
 compile!(c::Compiler, ident::Identifier) = begin
   sym = resolve(c.symbol_table, ident.value)
 

@@ -86,6 +86,11 @@ run!(vm::VM) = begin
       ip += 2
       arr = build_array!(vm, element_count)
       push!(vm, arr)
+    elseif op == OpHash
+      element_count = read_uint16(vm.instructions[ip+1:ip+2])
+      ip += 2
+      hash = build_hash!(vm, element_count)
+      push!(vm, hash)
     end
 
     ip += 1
@@ -172,6 +177,13 @@ build_array!(vm::VM, element_count::Integer) = begin
   vm.sp[] -= element_count
 
   return ArrayObj(elements)
+end
+
+build_hash!(vm::VM, element_count::Integer) = begin
+  elements = vm.stack[vm.sp[]-element_count:vm.sp[]-1]
+  vm.sp[] -= element_count
+  prs = Dict(elements[i] => elements[i+1] for i in 1:2:length(elements))
+  return HashObj(prs)
 end
 
 native_bool_to_boolean_obj(b::Bool) = b ? _TRUE : _FALSE

@@ -126,4 +126,27 @@ end
       end
     end
   end
+
+  @testset "Hash Literals" begin
+    for (input, expected) in [
+      (
+        "{1: 2, 2: 3}",
+        Dict(
+          m.IntegerObj(1) => 2,
+          m.IntegerObj(2) => 3,
+        ),
+      ),
+      (
+        "{1 + 1: 2 * 2, 3 + 3: 4 * 4}",
+        Dict(
+          m.IntegerObj(2) => 4,
+          m.IntegerObj(6) => 16,
+        ),
+      ),
+    ]
+      @test begin
+        test_vm(input, expected)
+      end
+    end
+  end
 end

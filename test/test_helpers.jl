@@ -38,6 +38,20 @@ function test_object(obj::m.ArrayObj, expected::Vector)
   true
 end
 
+function test_object(obj::m.HashObj, expected::Dict)
+  @assert length(obj.pairs) == length(expected) "Wrong number of pairs. Expected $(length(expected)), got $(length(obj.pairs)) instead."
+
+  for (k, ce) in collect(expected)
+    if isa(k, Int)
+      ca = get(obj.pairs, k, nothing)
+      test_object(ca, ce)
+    end
+  end
+
+  true
+end
+
+
 function test_error_object(obj::m.Object, expected::String)
   @assert isa(obj, m.ErrorObj) "obj is not an ERROR. Got $(m.type_of(obj)) instead."
 
