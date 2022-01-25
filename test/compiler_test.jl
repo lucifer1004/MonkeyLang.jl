@@ -14,9 +14,7 @@ function test_constants(actual, expected)
   @assert length(expected) == length(actual) "Wrong constants length. Expected $(length(expected)), got $(length(actual)) instead."
 
   for (ca, ce) in zip(actual, expected)
-    if isa(ce, Int)
-      test_integer_object(ca, ce)
-    end
+    test_object(ca, ce)
   end
 
   true
@@ -260,6 +258,31 @@ end
           m.make(m.OpGetGlobal, 0),
           m.make(m.OpSetGlobal, 1),
           m.make(m.OpGetGlobal, 1),
+          m.make(m.OpPop),
+        ],
+      ),
+    ]
+      @test run_compiler_tests(input, expected_constants, expected_instructions)
+    end
+  end
+
+  @testset "String Expressions" begin
+    for (input, expected_constants, expected_instructions) in [
+      (
+        "\"monkey\"",
+        ["monkey"],
+        [
+          m.make(m.OpConstant, 0),
+          m.make(m.OpPop),
+        ],
+      ),
+      (
+        "\"mon\" + \"key\"",
+        ["mon", "key"],
+        [
+          m.make(m.OpConstant, 0),
+          m.make(m.OpConstant, 1),
+          m.make(m.OpAdd),
           m.make(m.OpPop),
         ],
       ),

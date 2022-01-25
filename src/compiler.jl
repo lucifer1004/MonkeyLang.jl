@@ -76,12 +76,10 @@ emit!(c::Compiler, op::OpCode, operands::Vararg{Int})::Int64 = begin
   return pos
 end
 
-compile!(c::Compiler, node::Node) = nothing
+compile!(::Compiler, ::Node) = nothing
 
-compile!(c::Compiler, il::IntegerLiteral) = begin
-  integer = IntegerObj(il.value)
-  emit!(c, OpConstant, add!(c, integer) - 1)
-end
+compile!(c::Compiler, il::IntegerLiteral) =
+  emit!(c, OpConstant, add!(c, IntegerObj(il.value)) - 1)
 
 compile!(c::Compiler, il::BooleanLiteral) = begin
   if il.value
@@ -92,6 +90,9 @@ compile!(c::Compiler, il::BooleanLiteral) = begin
 end
 
 compile!(c::Compiler, ::NullLiteral) = emit!(c, OpNull)
+
+compile!(c::Compiler, sl::StringLiteral) =
+  emit!(c, OpConstant, add!(c, StringObj(sl.value)) - 1)
 
 compile!(c::Compiler, ident::Identifier) = begin
   sym = resolve(c.symbol_table, ident.value)

@@ -117,6 +117,23 @@ execute_binary_operation!(vm::VM, op::OpCode, left::Object, right::Object) = beg
   push!(vm, result)
 end
 
+execute_binary_operation!(vm::VM, op::OpCode, left::StringObj, right::StringObj) = begin
+  lval = left.value
+  rval = right.value
+
+  result = if op == OpAdd
+    StringObj(lval * rval)
+  elseif op == OpEqual
+    native_bool_to_boolean_obj(lval == rval)
+  elseif op == OpNotEqual
+    native_bool_to_boolean_obj(lval != rval)
+  else
+    error("unknown operator: STRING " * string(op) * " STRING")
+  end
+
+  push!(vm, result)
+end
+
 execute_binary_operation!(vm::VM, op::OpCode, left::IntegerObj, right::IntegerObj) = begin
   lval = left.value
   rval = right.value
@@ -137,6 +154,8 @@ execute_binary_operation!(vm::VM, op::OpCode, left::IntegerObj, right::IntegerOb
     native_bool_to_boolean_obj(lval < rval)
   elseif op == OpGreaterThan
     native_bool_to_boolean_obj(lval > rval)
+  else
+    error("unknown operator: INTEGER " * string(op) * " INTEGER")
   end
 
   push!(vm, result)

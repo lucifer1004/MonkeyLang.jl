@@ -61,6 +61,10 @@ end
       ("!!true", true),
       ("!!false", false),
       ("!!5", true),
+      ("\"monkey\"==\"monkey\"", true),
+      ("\"monkey\"==\"monke\"", false),
+      ("\"monkey\"!=\"monkey\"", false),
+      ("\"monkey\"!=\"monke\"", true),
     ]
       @test begin
         test_vm(input, expected)
@@ -92,6 +96,18 @@ end
       ("let one = 1; one", 1),
       ("let one = 1; let two = 2; one + two", 3),
       ("let one = 1; let two = one + one; one + two", 3),
+    ]
+      @test begin
+        test_vm(input, expected)
+      end
+    end
+  end
+
+  @testset "String Expressions" begin
+    for (input, expected) in [
+      ("\"monkey\"", "monkey"),
+      ("\"mon\" + \"key\"", "monkey"),
+      ("\"mon\" + \"key\" + \"banana\"", "monkeybanana"),
     ]
       @test begin
         test_vm(input, expected)
