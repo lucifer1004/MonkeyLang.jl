@@ -1,10 +1,10 @@
 function test_instructions(actual, expected)
   concatted = vcat(expected...)
 
-  @assert length(concatted) == length(actual) "Wrong instructions length. Expected $(length(concatted)), got $(length(actual)) instead."
+  @assert length(concatted) == length(actual) "Wrong instructions length. Expected $concatted), got $actual instead."
 
   for i = 1:length(concatted)
-    @assert concatted[i] == actual[i] "Wrong instruction at index $(i). Expected $(concatted[i]), got $(actual[i]) instead."
+    @assert concatted[i] == actual[i] "Wrong instruction at index $(i). Expected $(concatted[i]), got $(actual[i]) instead. Expected $concatted, got $actual instead."
   end
 
   true
@@ -186,6 +186,41 @@ end
         [
           m.make(m.OpTrue),
           m.make(m.OpBang),
+          m.make(m.OpPop),
+        ],
+      ),
+    ]
+      @test run_compiler_tests(input, expected_constants, expected_instructions)
+    end
+  end
+
+  @testset "Conditionals" begin
+    for (input, expected_constants, expected_instructions) in [
+      (
+        "if (true) { 10 }; 3333",
+        [10, 3333],
+        [
+          m.make(m.OpTrue),
+          m.make(m.OpJumpNotTruthy, 10),
+          m.make(m.OpConstant, 0),
+          m.make(m.OpJump, 11),
+          m.make(m.OpNull),
+          m.make(m.OpPop),
+          m.make(m.OpConstant, 1),
+          m.make(m.OpPop),
+        ],
+      ),
+      (
+        "if (true) { 10 } else { 20 }; 3333",
+        [10, 20, 3333],
+        [
+          m.make(m.OpTrue),
+          m.make(m.OpJumpNotTruthy, 10),
+          m.make(m.OpConstant, 0),
+          m.make(m.OpJump, 13),
+          m.make(m.OpConstant, 1),
+          m.make(m.OpPop),
+          m.make(m.OpConstant, 2),
           m.make(m.OpPop),
         ],
       ),

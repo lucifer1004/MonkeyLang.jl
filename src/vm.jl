@@ -52,6 +52,20 @@ run!(vm::VM) = begin
       push!(vm, _TRUE)
     elseif op == OpFalse
       push!(vm, _FALSE)
+    elseif op == OpNull
+      push!(vm, _NULL)
+    elseif OpJump <= op <= OpJumpNotTruthy
+      pos = read_uint16(vm.instructions[ip+1:ip+2])
+
+      if op == OpJump
+        ip = pos
+      else
+        ip += 2
+        condition = pop!(vm)
+        if !is_truthy(condition)
+          ip = pos
+        end
+      end
     end
 
     ip += 1

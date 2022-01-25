@@ -3,12 +3,22 @@ struct ByteCode
   constants::Vector{Object}
 end
 
+struct EmittedInstruction
+  op::OpCode
+  position::Int
+end
+
 struct Compiler
   instructions::Instructions
   constants::Vector{Object}
+  previous_instructions::Vector{EmittedInstruction}
 
-  Compiler() = new(Instructions([]), [])
+  Compiler() = new(Instructions([]), [], [])
 end
+
+last_instruction(c::Compiler) = isempty(c.previous_instructions) ? nothing : c.previous_instructions[end]
+
+prev_instruction(c::Compiler) = length(c.previous_instructions) < 2 ? nothing : c.previous_instructions[1]
 
 add!(c::Compiler, obj::Object)::Int64 = begin
   push!(c.constants, obj)
@@ -21,9 +31,47 @@ add!(c::Compiler, ins::Instructions)::Int64 = begin
   return pos
 end
 
+set_last!(c::Compiler, op::OpCode, pos::Int) = begin
+  last = EmittedInstruction(op, pos)
+  if length(c.previous_instructions) == 2
+    c.previous_instructions[1] = c.previous_instructions[2]
+    c.previous_instructions[2] = last
+  else
+    push!(c.previous_instructions, last)
+  end
+end
+
+remove_last!(c::Compiler) = begin
+  splice!(c.instructions, last_instruction(c).position:length(c.instructions))
+  pop!(c.previous_instructions)
+end
+
+remove_last_pop!(c::Compiler) =
+  if last_instruction(c).op == OpPop
+    remove_last!(c)
+  end
+
+replace!(c::Compiler, pos::Int, new_ins::Instructions) = begin
+  for i in 1:length(new_ins)
+    if pos + i - 1 <= length(c.instructions)
+      c.instructions[pos+i-1] = new_ins[i]
+    else
+      push!(c.instructions, new_ins[i])
+    end
+  end
+end
+
+change_operand!(c::Compiler, pos::Int, operand::Int) = begin
+  op = OpCode(c.instructions[pos])
+  new_ins = make(op, operand)
+  replace!(c, pos, new_ins)
+end
+
 emit!(c::Compiler, op::OpCode, operands::Vararg{Int})::Int64 = begin
   ins = make(op, operands...)
-  return add!(c, ins)
+  pos = add!(c, ins)
+  set_last!(c, op, pos)
+  return pos
 end
 
 compile!(c::Compiler, node::Node) = nothing
@@ -40,6 +88,8 @@ compile!(c::Compiler, il::BooleanLiteral) = begin
     emit!(c, OpFalse)
   end
 end
+
+compile!(c::Compiler, ::NullLiteral) = emit!(c, OpNull)
 
 compile!(c::Compiler, es::ExpressionStatement) = begin
   compile!(c, es.expression)
@@ -80,6 +130,33 @@ compile!(c::Compiler, ie::InfixExpression) = begin
     emit!(c, OpGreaterThan)
   else
     error("unknown operator: $(ie.operator)")
+  end
+end
+
+compile!(c::Compiler, ie::IfExpression) = begin
+  compile!(c, ie.condition)
+  jump_not_truthy_pos = emit!(c, OpJumpNotTruthy, 9999)
+  compile!(c, ie.consequence)
+  remove_last_pop!(c)
+
+  jump_pos = emit!(c, OpJump, 9999)
+  after_consequence_pos = length(c.instructions)
+  change_operand!(c, jump_not_truthy_pos, after_consequence_pos)
+
+  if !isnothing(ie.alternative)
+    compile!(c, ie.alternative)
+    remove_last_pop!(c)
+  else
+    emit!(c, OpNull)
+  end
+
+  after_alternative_pos = length(c.instructions)
+  change_operand!(c, jump_pos, after_alternative_pos)
+end
+
+compile!(c::Compiler, bs::BlockStatement) = begin
+  for statement in bs.statements
+    compile!(c, statement)
   end
 end
 

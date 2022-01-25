@@ -7,7 +7,7 @@ function test_integer_object(obj::m.Object, expected::Int64)
 end
 
 function test_boolean_object(obj::m.Object, expected::Bool)
-  @assert isa(obj, m.BooleanObj) "obj is not a BooleanObj. Got $(m.type_of(obj)) instead."
+  @assert isa(obj, m.BooleanObj) "obj is not a BOOLEAN. Got $(m.type_of(obj)) instead."
 
   @assert obj.value == expected "obj.value is not $expected. Got $(obj.value) instead."
 
@@ -15,13 +15,13 @@ function test_boolean_object(obj::m.Object, expected::Bool)
 end
 
 function test_null_object(obj::m.Object)
-  @assert obj === m._NULL "object is not NULL. Got $(obj) instead."
+  @assert obj === m._NULL "obj is not NULL. Got $(m.type_of(obj)) instead."
 
   true
 end
 
 function test_error_object(obj::m.Object, expected::String)
-  @assert isa(obj, m.ErrorObj) "no error object returned. Got $(m.type_of(obj)) instead."
+  @assert isa(obj, m.ErrorObj) "obj is not an ERROR. Got $(m.type_of(obj)) instead."
 
   @assert obj.message == expected "wrong error message. Expected \"$expected\". Got \"$(obj.message)\" instead."
 
@@ -29,7 +29,7 @@ function test_error_object(obj::m.Object, expected::String)
 end
 
 function test_string_object(obj::m.Object, expected::String)
-  @assert isa(obj, m.StringObj) "no string object returned. Got $(m.type_of(obj)) instead."
+  @assert isa(obj, m.StringObj) "object is not a STRING. Got $(m.type_of(obj)) instead."
 
   @assert obj.value == expected "Expected $expected. Got $(obj.value) instead."
 
@@ -43,5 +43,7 @@ function test_object(obj::m.Object, expected)
     test_boolean_object(obj, expected)
   elseif isa(expected, String)
     test_string_object(obj, expected)
+  elseif isnothing(expected)
+    test_null_object(obj)
   end
 end

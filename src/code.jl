@@ -1,4 +1,4 @@
-@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLessThan OpGreaterThan OpMinus OpBang OpPop OpTrue OpFalse
+@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLessThan OpGreaterThan OpMinus OpBang OpTrue OpFalse OpNull OpPop OpJump OpJumpNotTruthy
 
 struct Instructions
   codes::Vector{UInt8}
@@ -7,11 +7,15 @@ end
 Base.length(ins::Instructions) = length(ins.codes)
 Base.getindex(ins::Instructions, i::Int) = ins.codes[i]
 Base.getindex(ins::Instructions, r::UnitRange{Int}) = Instructions(@view ins.codes[r])
+Base.setindex!(ins::Instructions, val::UInt8, i::Int) = ins.codes[i] = val
 Base.lastindex(ins::Instructions) = lastindex(ins.codes)
 Base.iterate(ins::Instructions) = iterate(ins.codes)
 Base.iterate(ins::Instructions, i::Int) = iterate(ins.codes, i)
 Base.vcat(is::Vararg{Instructions}) = Instructions(vcat(map(x -> x.codes, is)...))
+Base.push!(ins::Instructions, code::UInt8) = push!(ins.codes, code)
 Base.append!(ins::Instructions, other::Instructions) = append!(ins.codes, other.codes)
+Base.splice!(ins::Instructions, r::UnitRange{Int}) = splice!(ins.codes, r)
+Base.show(io::IO, ins::Instructions) = show(io, string(ins))
 Base.string(ins::Instructions) = begin
   out = IOBuffer()
   i = 1
@@ -47,9 +51,12 @@ const DEFINITIONS = Dict{OpCode,Definition}(
   OpGreaterThan => Definition("OpGreaterThan", []),
   OpMinus => Definition("OpMinus", []),
   OpBang => Definition("OpBang", []),
-  OpPop => Definition("OpPop", []),
   OpTrue => Definition("OpTrue", []),
   OpFalse => Definition("OpFalse", []),
+  OpNull => Definition("OpNull", []),
+  OpPop => Definition("OpPop", []),
+  OpJump => Definition("OpJump", [2]),
+  OpJumpNotTruthy => Definition("OpJumpNotTruthy", [2]),
 )
 
 lookup(op::UInt8) = Base.get(DEFINITIONS, OpCode(op), nothing)
