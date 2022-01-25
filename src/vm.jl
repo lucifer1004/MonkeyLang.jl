@@ -26,7 +26,7 @@ Base.pop!(vm::VM) = begin
   return ret
 end
 
-last_popped(vm::VM) = vm.stack[vm.sp[]]
+last_popped(vm::VM) = vm.sp[] > length(vm.stack) ? nothing : vm.stack[vm.sp[]]
 
 run!(vm::VM) = begin
   ip = 1
