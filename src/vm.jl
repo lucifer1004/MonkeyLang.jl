@@ -2,14 +2,31 @@ struct VM
   instructions::Instructions
   constants::Vector{Object}
   stack::Vector{Object}
-  last_popped::Vector{Object}
+  sp::Ref{Int64}
 
-  VM(bc::ByteCode) = new(bc.instructions, bc.constants, [], [_NULL])
+  VM(bc::ByteCode) = new(bc.instructions, bc.constants, [], Ref(1))
 end
 
-Base.push!(vm::VM, obj::Object) = push!(vm.stack, obj)
-Base.pop!(vm::VM) = pop!(vm.stack)
-last_popped(vm::VM) = vm.last_popped[1]
+Base.push!(vm::VM, obj::Object) = begin
+  if vm.sp[] > length(vm.stack)
+    push!(vm.stack, obj)
+  else
+    vm.stack[vm.sp[]] = obj
+  end
+
+  vm.sp[] += 1
+end
+
+Base.pop!(vm::VM) = begin
+  if vm.sp[] == 1
+    return nothing
+  end
+  ret = vm.stack[vm.sp[]-1]
+  vm.sp[] -= 1
+  return ret
+end
+
+last_popped(vm::VM) = vm.stack[vm.sp[]]
 
 run!(vm::VM) = begin
   ip = 1
@@ -30,7 +47,7 @@ run!(vm::VM) = begin
       right = pop!(vm)
       execute_unary_operation!(vm, op, right)
     elseif op == OpPop
-      vm.last_popped[1] = pop!(vm)
+      pop!(vm)
     elseif op == OpTrue
       push!(vm, _TRUE)
     elseif op == OpFalse
