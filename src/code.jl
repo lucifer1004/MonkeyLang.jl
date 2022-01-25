@@ -1,4 +1,4 @@
-@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLT OpGT
+@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLessThan OpGreaterThan OpMinus OpBang OpPop OpTrue OpFalse
 
 struct Instructions
   codes::Vector{UInt8}
@@ -43,8 +43,13 @@ const DEFINITIONS = Dict{OpCode,Definition}(
   OpDiv => Definition("OpDiv", []),
   OpEqual => Definition("OpEqual", []),
   OpNotEqual => Definition("OpNotEqual", []),
-  OpLT => Definition("OpLT", []),
-  OpGT => Definition("OpGT", []),
+  OpLessThan => Definition("OpLessThan", []),
+  OpGreaterThan => Definition("OpGreaterThan", []),
+  OpMinus => Definition("OpMinus", []),
+  OpBang => Definition("OpBang", []),
+  OpPop => Definition("OpPop", []),
+  OpTrue => Definition("OpTrue", []),
+  OpFalse => Definition("OpFalse", []),
 )
 
 lookup(op::UInt8) = Base.get(DEFINITIONS, OpCode(op), nothing)

@@ -104,7 +104,7 @@ function start_jit_repl(; input::IO = stdin, output::IO = stdout)
     try
       vm = VM(bytecode(c))
       run!(vm)
-      println(output, stack_top(vm))
+      println(output, last_popped(vm))
     catch e
       println(output, "Woops! Bytecode execution failed:\n $e")
       continue
