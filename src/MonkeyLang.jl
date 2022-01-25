@@ -1,5 +1,7 @@
 module MonkeyLang
 
+using Printf
+
 const MONKEY_VERSION = v"0.2.0"
 const MONKEY_AUTHOR = "Gabriel Wu"
 
@@ -11,6 +13,9 @@ include("parser.jl")
 include("builtins.jl")
 include("evaluator.jl")
 include("ast_modify.jl")
+include("code.jl")
+include("compiler.jl")
+include("vm.jl")
 include("repl.jl")
 
 end

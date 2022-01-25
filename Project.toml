@@ -4,6 +4,7 @@ authors = ["Gabriel Wu <wuzihua@pku.edu.cn> and contributors"]
 version = "0.2.0"
 
 [deps]
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
 julia = "1.7"

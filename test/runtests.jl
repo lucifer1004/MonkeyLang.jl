@@ -4,6 +4,7 @@ using Test
 const m = MonkeyLang
 
 @testset "MonkeyLang.jl" begin
+    include("test_helpers.jl")
     include("lexer_test.jl")
     include("ast_test.jl")
     include("parser_test.jl")
@@ -12,4 +13,7 @@ const m = MonkeyLang
     include("quote_test.jl")
     include("ast_modify_test.jl")
     include("repl_test.jl")
+    include("code_test.jl")
+    include("compiler_test.jl")
+    include("vm_test.jl")
 end

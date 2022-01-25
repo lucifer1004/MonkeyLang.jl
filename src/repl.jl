@@ -11,7 +11,7 @@ const REPL_PRELUDE = """
 const REPL_FAREWELL = "Good bye!"
 const _READY_TO_READ = Threads.Condition() # For test-use only.
 
-function start_repl(; input::IO = stdin, output::IO = stdout, is_test::Bool = false)
+function start_repl(; input::IO = stdin, output::IO = stdout)
   # Handle SIGINT more elegantly
   Base.exit_on_sigint(false)
 
@@ -67,6 +67,47 @@ function start_repl(; input::IO = stdin, output::IO = stdout, is_test::Bool = fa
       end
       println(output, REPL_FAREWELL)
       break
+    end
+  end
+end
+
+function start_jit_repl(; input::IO = stdin, output::IO = stdout)
+  while true
+    print(output, PROMPT)
+    line = readline(input; keep = true)
+
+    # Ctrl-D (EOF) causes the REPL to stop
+    if isempty(line)
+      println(output, REPL_FAREWELL)
+      break
+    end
+
+    l = Lexer(string(strip(line, '\n')))
+    p = Parser(l)
+    program = parse!(p)
+
+    if !isempty(p.errors)
+      println(output, ErrorObj("parser has $(length(p.errors)) error$(length(p.errors) == 1 ? "" : "s")"))
+      println(output, join(map(string, p.errors), "\n"))
+      continue
+    end
+
+    c = Compiler()
+
+    try
+      compile!(c, program)
+    catch e
+      println(output, "Woops! Compilation failed:\n $e")
+      continue
+    end
+
+    try
+      vm = VM(bytecode(c))
+      run!(vm)
+      println(output, stack_top(vm))
+    catch e
+      println(output, "Woops! Bytecode execution failed:\n $e")
+      continue
     end
   end
 end

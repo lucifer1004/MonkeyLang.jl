@@ -1,48 +1,3 @@
-function test_parse_program(code::String)
-  l = m.Lexer(code)
-  p = m.Parser(l)
-  return m.parse!(p)
-end
-
-function test_integer_object(obj::m.Object, expected::Int64)
-  @assert isa(obj, m.IntegerObj) "obj is not an INTEGER. Got $(m.type_of(obj)) instead."
-
-  @assert obj.value == expected "obj.value is not $expected. Got $(obj.value) instead."
-
-  true
-end
-
-function test_boolean_object(obj::m.Object, expected::Bool)
-  @assert isa(obj, m.BooleanObj) "obj is not a BooleanObj. Got $(m.type_of(obj)) instead."
-
-  @assert obj.value == expected "obj.value is not $expected. Got $(obj.value) instead."
-
-  true
-end
-
-function test_null_object(obj::m.Object)
-  @assert obj === m._NULL "object is not NULL. Got $(obj) instead."
-
-  true
-end
-
-function test_error_object(obj::m.Object, expected::String)
-  @assert isa(obj, m.ErrorObj) "no error object returned. Got $(m.type_of(obj)) instead."
-
-  @assert obj.message == expected "wrong error message. Expected \"$expected\". Got \"$(obj.message)\" instead."
-
-  true
-end
-
-function test_string_object(obj::m.Object, expected::String)
-  @assert isa(obj, m.StringObj) "no string object returned. Got $(m.type_of(obj)) instead."
-
-  @assert obj.value == expected "Expected $expected. Got $(obj.value) instead."
-
-  true
-end
-
-
 @testset "Test Evaluating Integer Expressions" begin
   for (code, expected) in [
     ("5", 5),
@@ -525,7 +480,7 @@ end
 
   @test begin
     env = m.Environment()
-    program = m.define_macros!(env, test_parse_program(code))
+    program = m.define_macros!(env, m.parse(code))
 
     @assert length(program.statements) == 2 "length(program.statements) is not 2. Got $(length(program.statements)) instead."
     @assert isnothing(m.get(env, "number")) "number should not be defined"
@@ -573,7 +528,7 @@ end
   ]
     @test begin
       env = m.Environment()
-      program = m.define_macros!(env, test_parse_program(code))
+      program = m.define_macros!(env, m.parse(code))
       expanded = m.expand_macros(program, env)
 
       @assert string(expanded) == expected "Expected $expected. Got $expanded instead."

@@ -177,7 +177,7 @@ parse_identifier!(p::Parser) = Identifier(p.cur_token, p.cur_token.literal)
 function parse_integer_literal!(p::Parser)
   token = p.cur_token
   try
-    value = parse(Int64, p.cur_token.literal)
+    value = Base.parse(Int64, p.cur_token.literal)
     return IntegerLiteral(token, value)
   catch
     push!(p.errors, ErrorObj("parse error: could not parse $(p.cur_token.literal) as integer"))
@@ -427,6 +427,14 @@ function parse!(p::Parser)
       next_token!(p)
     end
   end
+
+  return program
+end
+
+function parse(input::String)
+  lexer = Lexer(input)
+  parser = Parser(lexer)
+  program = parse!(parser)
 
   return program
 end
