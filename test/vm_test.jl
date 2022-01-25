@@ -28,9 +28,7 @@ end
       ("-50 + 100 + -50", 0),
       ("(5 + 10 * 2 + 15 / 3) * 2 + -10", 50),
     ]
-      @test begin
-        test_vm(input, expected)
-      end
+      @test test_vm(input, expected)
     end
   end
 
@@ -66,9 +64,7 @@ end
       ("\"monkey\"!=\"monkey\"", false),
       ("\"monkey\"!=\"monke\"", true),
     ]
-      @test begin
-        test_vm(input, expected)
-      end
+      @test test_vm(input, expected)
     end
   end
 
@@ -85,9 +81,7 @@ end
       ("if (false) { 10 }", nothing),
       ("if ((if (false) { 10 })) { 10 } else { 20 }", 20),
     ]
-      @test begin
-        test_vm(input, expected)
-      end
+      @test test_vm(input, expected)
     end
   end
 
@@ -97,9 +91,7 @@ end
       ("let one = 1; let two = 2; one + two", 3),
       ("let one = 1; let two = one + one; one + two", 3),
     ]
-      @test begin
-        test_vm(input, expected)
-      end
+      @test test_vm(input, expected)
     end
   end
 
@@ -109,9 +101,7 @@ end
       ("\"mon\" + \"key\"", "monkey"),
       ("\"mon\" + \"key\" + \"banana\"", "monkeybanana"),
     ]
-      @test begin
-        test_vm(input, expected)
-      end
+      @test test_vm(input, expected)
     end
   end
 
@@ -121,9 +111,7 @@ end
       ("[1, 2, 3]", [1, 2, 3]),
       ("[1 + 2, 3 * 4, 5 + 6]", [3, 12, 11]),
     ]
-      @test begin
-        test_vm(input, expected)
-      end
+      @test test_vm(input, expected)
     end
   end
 
@@ -144,9 +132,23 @@ end
         ),
       ),
     ]
-      @test begin
-        test_vm(input, expected)
-      end
+      @test test_vm(input, expected)
+    end
+  end
+
+  @testset "Index Expressions" begin
+    for (input, expected) in [
+      ("[1, 2, 3][1]", 2),
+      ("[1, 2, 3][0 + 2]", 3),
+      ("[[1, 1, 1]][0][0]", 1),
+      ("[][0]", nothing),
+      ("[1, 2, 3][99]", nothing),
+      ("[1][-1]", nothing),
+      ("{1: 1, 2: 2}[1]", 1),
+      ("{1: 1, 2: 2}[2]", 2),
+      ("{1: 1}[0]", nothing),
+    ]
+      @test test_vm(input, expected)
     end
   end
 end

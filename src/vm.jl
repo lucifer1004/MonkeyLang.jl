@@ -91,6 +91,29 @@ run!(vm::VM) = begin
       ip += 2
       hash = build_hash!(vm, element_count)
       push!(vm, hash)
+    elseif op == OpIndex
+      index = pop!(vm)
+      left = pop!(vm)
+      if isa(left, ArrayObj)
+        if !isa(index, IntegerObj)
+          error("invalid index $index for ARRAY")
+        end
+
+        i = index.value
+        if 0 <= i < length(left.elements)
+          push!(vm, left.elements[i+1])
+        else
+          push!(vm, _NULL)
+        end
+      elseif isa(left, HashObj)
+        if index ∈ keys(left.pairs)
+          push!(vm, left.pairs[index])
+        else
+          push!(vm, _NULL)
+        end
+      else
+        error("index operator not supported on $(type_of(left))")
+      end
     end
 
     ip += 1

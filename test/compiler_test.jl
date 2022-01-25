@@ -378,4 +378,40 @@ end
       @test run_compiler_tests(input, expected_constants, expected_instructions)
     end
   end
+
+  @testset "Index Expressions" begin
+    for (input, expected_constants, expected_instructions) in [
+      (
+        "[1, 2, 3][1 + 1]",
+        [1, 2, 3, 1, 1],
+        [
+          m.make(m.OpConstant, 0),
+          m.make(m.OpConstant, 1),
+          m.make(m.OpConstant, 2),
+          m.make(m.OpArray, 3),
+          m.make(m.OpConstant, 3),
+          m.make(m.OpConstant, 4),
+          m.make(m.OpAdd),
+          m.make(m.OpIndex),
+          m.make(m.OpPop),
+        ],
+      ),
+      (
+        "{1: 2}[2 - 1]",
+        [1, 2, 2, 1],
+        [
+          m.make(m.OpConstant, 0),
+          m.make(m.OpConstant, 1),
+          m.make(m.OpHash, 2),
+          m.make(m.OpConstant, 2),
+          m.make(m.OpConstant, 3),
+          m.make(m.OpSub),
+          m.make(m.OpIndex),
+          m.make(m.OpPop),
+        ],
+      ),
+    ]
+      @test run_compiler_tests(input, expected_constants, expected_instructions)
+    end
+  end
 end

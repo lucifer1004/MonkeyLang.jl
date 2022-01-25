@@ -191,6 +191,12 @@ compile!(c::Compiler, ie::IfExpression) = begin
   change_operand!(c, jump_pos, after_alternative_pos)
 end
 
+compile!(c::Compiler, ie::IndexExpression) = begin
+  compile!(c, ie.left)
+  compile!(c, ie.index)
+  emit!(c, OpIndex)
+end
+
 compile!(c::Compiler, bs::BlockStatement) = begin
   for statement in bs.statements
     compile!(c, statement)
