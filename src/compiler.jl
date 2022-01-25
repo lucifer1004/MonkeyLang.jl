@@ -10,10 +10,12 @@ end
 
 struct Compiler
   instructions::Instructions
+  symbol_table::SymbolTable
   constants::Vector{Object}
   previous_instructions::Vector{EmittedInstruction}
 
-  Compiler() = new(Instructions([]), [], [])
+  Compiler() = new(Instructions([]), SymbolTable(), [], [])
+  Compiler(s::SymbolTable, constants::Vector{Object}) = new(Instructions([]), s, constants, [])
 end
 
 last_instruction(c::Compiler) = isempty(c.previous_instructions) ? nothing : c.previous_instructions[end]
@@ -91,9 +93,25 @@ end
 
 compile!(c::Compiler, ::NullLiteral) = emit!(c, OpNull)
 
+compile!(c::Compiler, ident::Identifier) = begin
+  sym = resolve(c.symbol_table, ident.value)
+
+  if isnothing(sym)
+    throw(UndefVarError(ident.value))
+  end
+
+  emit!(c, OpGetGlobal, sym.index)
+end
+
 compile!(c::Compiler, es::ExpressionStatement) = begin
   compile!(c, es.expression)
   emit!(c, OpPop)
+end
+
+compile!(c::Compiler, ls::LetStatement) = begin
+  compile!(c, ls.value)
+  sym = define!(c.symbol_table, ls.name.value)
+  emit!(c, OpSetGlobal, sym.index)
 end
 
 compile!(c::Compiler, pe::PrefixExpression) = begin

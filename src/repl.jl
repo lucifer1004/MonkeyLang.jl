@@ -72,6 +72,10 @@ function start_repl(; input::IO = stdin, output::IO = stdout)
 end
 
 function start_jit_repl(; input::IO = stdin, output::IO = stdout)
+  constants = Object[]
+  globals = Object[]
+  symbol_table = SymbolTable()
+
   while true
     print(output, PROMPT)
     line = readline(input; keep = true)
@@ -92,7 +96,7 @@ function start_jit_repl(; input::IO = stdin, output::IO = stdout)
       continue
     end
 
-    c = Compiler()
+    c = Compiler(symbol_table, constants)
 
     try
       compile!(c, program)
@@ -102,7 +106,7 @@ function start_jit_repl(; input::IO = stdin, output::IO = stdout)
     end
 
     try
-      vm = VM(bytecode(c))
+      vm = VM(bytecode(c), globals)
       run!(vm)
       println(output, last_popped(vm))
     catch e

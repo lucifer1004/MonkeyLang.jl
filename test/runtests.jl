@@ -15,5 +15,6 @@ const m = MonkeyLang
     include("repl_test.jl")
     include("code_test.jl")
     include("compiler_test.jl")
+    include("symbol_table_test.jl")
     include("vm_test.jl")
 end

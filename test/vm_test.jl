@@ -86,4 +86,16 @@ end
       end
     end
   end
+
+  @testset "Global Let Statements" begin
+    for (input, expected) in [
+      ("let one = 1; one", 1),
+      ("let one = 1; let two = 2; one + two", 3),
+      ("let one = 1; let two = one + one; one + two", 3),
+    ]
+      @test begin
+        test_vm(input, expected)
+      end
+    end
+  end
 end

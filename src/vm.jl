@@ -2,9 +2,11 @@ struct VM
   instructions::Instructions
   constants::Vector{Object}
   stack::Vector{Object}
+  globals::Vector{Object}
   sp::Ref{Int64}
 
-  VM(bc::ByteCode) = new(bc.instructions, bc.constants, [], Ref(1))
+  VM(bc::ByteCode) = new(bc.instructions, bc.constants, [], [], Ref(1))
+  VM(bc::ByteCode, globals::Vector{Object}) = new(bc.instructions, bc.constants, [], globals, Ref(1))
 end
 
 Base.push!(vm::VM, obj::Object) = begin
@@ -65,6 +67,19 @@ run!(vm::VM) = begin
         if !is_truthy(condition)
           ip = pos
         end
+      end
+    elseif OpGetGlobal <= op <= OpSetGlobal
+      global_index = read_uint16(vm.instructions[ip+1:ip+2])
+      ip += 2
+
+      if op == OpSetGlobal
+        if global_index + 1 > length(vm.globals)
+          push!(vm.globals, pop!(vm))
+        else
+          vm.globals[global_index+1] = pop!(vm)
+        end
+      else
+        push!(vm, vm.globals[global_index+1])
       end
     end
 

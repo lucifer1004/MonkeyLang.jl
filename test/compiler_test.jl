@@ -228,4 +228,43 @@ end
       @test run_compiler_tests(input, expected_constants, expected_instructions)
     end
   end
+
+  @testset "Global Let Statements" begin
+    for (input, expected_constants, expected_instructions) in [
+      (
+        "let one = 1;\nlet two = 2;\n",
+        [1, 2],
+        [
+          m.make(m.OpConstant, 0),
+          m.make(m.OpSetGlobal, 0),
+          m.make(m.OpConstant, 1),
+          m.make(m.OpSetGlobal, 1),
+        ],
+      ),
+      (
+        "let one = 1;\none;\n",
+        [1],
+        [
+          m.make(m.OpConstant, 0),
+          m.make(m.OpSetGlobal, 0),
+          m.make(m.OpGetGlobal, 0),
+          m.make(m.OpPop),
+        ],
+      ),
+      (
+        "let one = 1;\nlet two = one;\ntwo;\n",
+        [1],
+        [
+          m.make(m.OpConstant, 0),
+          m.make(m.OpSetGlobal, 0),
+          m.make(m.OpGetGlobal, 0),
+          m.make(m.OpSetGlobal, 1),
+          m.make(m.OpGetGlobal, 1),
+          m.make(m.OpPop),
+        ],
+      ),
+    ]
+      @test run_compiler_tests(input, expected_constants, expected_instructions)
+    end
+  end
 end
