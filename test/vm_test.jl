@@ -114,4 +114,16 @@ end
       end
     end
   end
+
+  @testset "Array Literals" begin
+    for (input, expected) in [
+      ("[]", []),
+      ("[1, 2, 3]", [1, 2, 3]),
+      ("[1 + 2, 3 * 4, 5 + 6]", [3, 12, 11]),
+    ]
+      @test begin
+        test_vm(input, expected)
+      end
+    end
+  end
 end

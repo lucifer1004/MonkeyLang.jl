@@ -18,7 +18,7 @@
   ]
     @test begin
       evaluated = m.evaluate(code)
-      test_integer_object(evaluated, expected)
+      test_object(evaluated, expected)
     end
   end
 end
@@ -51,7 +51,7 @@ end
   ]
     @test begin
       evaluated = m.evaluate(code)
-      test_boolean_object(evaluated, expected)
+      test_object(evaluated, expected)
     end
   end
 end
@@ -67,7 +67,7 @@ end
   ]
     @test begin
       evaluated = m.evaluate(code)
-      test_boolean_object(evaluated, expected)
+      test_object(evaluated, expected)
     end
   end
 end
@@ -85,11 +85,7 @@ end
   ]
     @test begin
       evaluated = m.evaluate(code)
-      if isa(expected, Integer)
-        test_integer_object(evaluated, expected)
-      elseif isnothing(expected)
-        test_null_object(evaluated)
-      end
+      test_object(evaluated, expected)
     end
   end
 end
@@ -112,7 +108,7 @@ end
   ]
     @test begin
       evaluated = m.evaluate(code)
-      test_integer_object(evaluated, expected)
+      test_object(evaluated, expected)
     end
   end
 end
@@ -168,7 +164,7 @@ end
     ("let a = 5; let b = a; let c = a + b + 5; c;", 15),
   ]
     @test begin
-      test_integer_object(m.evaluate(code), expected)
+      test_object(m.evaluate(code), expected)
     end
   end
 end
@@ -197,7 +193,7 @@ end
     ("fn(x) { x; }(5)", 5),
   ]
     @test begin
-      test_integer_object(m.evaluate(code), expected)
+      test_object(m.evaluate(code), expected)
     end
   end
 end
@@ -213,7 +209,7 @@ end
   """
 
   @test begin
-    test_integer_object(m.evaluate(code), 4)
+    test_object(m.evaluate(code), 4)
   end
 end
 
@@ -319,17 +315,7 @@ end
   ]
     @test begin
       evaluated = m.evaluate(code)
-      if isa(expected, String)
-        if occursin("error", expected)
-          test_error_object(evaluated, expected)
-        else
-          test_string_object(evaluated, expected)
-        end
-      elseif isa(expected, Integer)
-        test_integer_object(evaluated, expected)
-      elseif isnothing(expected)
-        test_null_object(evaluated)
-      end
+      test_object(evaluated, expected)
     end
   end
 
@@ -343,7 +329,7 @@ end
       @test begin
         output = IOBuffer(UInt8[], read = true, write = true)
         evaluated = m.evaluate(code; output = output)
-        test_null_object(evaluated)
+        test_object(evaluated, nothing)
         String(output.data) == expected
       end
     end
@@ -360,9 +346,9 @@ end
 
     @assert length(evaluated.elements) == 3 "length(evaluated.elements) is not 3. Got $(length(evaluated.elements)) instead."
 
-    test_integer_object(evaluated.elements[1], 1)
-    test_integer_object(evaluated.elements[2], 4)
-    test_integer_object(evaluated.elements[3], 6)
+    test_object(evaluated.elements[1], 1)
+    test_object(evaluated.elements[2], 4)
+    test_object(evaluated.elements[3], 6)
   end
 end
 
@@ -381,11 +367,7 @@ end
   ]
     @test begin
       evaluated = m.evaluate(code)
-      if isa(expected, Int)
-        test_integer_object(evaluated, expected)
-      else
-        test_null_object(evaluated)
-      end
+      test_object(evaluated, expected)
     end
   end
 end
@@ -419,8 +401,7 @@ end
 
     for (key, value) in expected
       @assert key ∈ keys(hash.pairs) "$key not found."
-
-      test_integer_object(hash.pairs[key], value)
+      test_object(hash.pairs[key], value)
     end
 
     true
@@ -439,11 +420,7 @@ end
   ]
     @test begin
       evaluated = m.evaluate(code)
-      if isa(expected, Integer)
-        test_integer_object(evaluated, expected)
-      else
-        test_null_object(evaluated)
-      end
+      test_object(evaluated, expected)
     end
   end
 end
@@ -467,7 +444,7 @@ end
 
   @test begin
     evaluated = m.evaluate(code)
-    test_integer_object(evaluated, 55)
+    test_object(evaluated, 55)
   end
 end
 

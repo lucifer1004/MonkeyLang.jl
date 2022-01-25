@@ -1,4 +1,4 @@
-function test_integer_object(obj::m.Object, expected::Int64)
+function test_object(obj::m.Object, expected::Int64)
   @assert isa(obj, m.IntegerObj) "obj is not an INTEGER. Got $(m.type_of(obj)) instead."
 
   @assert obj.value == expected "obj.value is not $expected. Got $(obj.value) instead."
@@ -6,7 +6,7 @@ function test_integer_object(obj::m.Object, expected::Int64)
   true
 end
 
-function test_boolean_object(obj::m.Object, expected::Bool)
+function test_object(obj::m.Object, expected::Bool)
   @assert isa(obj, m.BooleanObj) "obj is not a BOOLEAN. Got $(m.type_of(obj)) instead."
 
   @assert obj.value == expected "obj.value is not $expected. Got $(obj.value) instead."
@@ -14,8 +14,26 @@ function test_boolean_object(obj::m.Object, expected::Bool)
   true
 end
 
-function test_null_object(obj::m.Object)
+function test_object(obj::m.Object, ::Nothing)
   @assert obj === m._NULL "obj is not NULL. Got $(m.type_of(obj)) instead."
+
+  true
+end
+
+function test_object(obj::m.Object, expected::String)
+  if occursin("error", expected)
+    test_error_object(obj, expected)
+  else
+    test_string_object(obj, expected)
+  end
+end
+
+function test_object(obj::m.ArrayObj, expected::Vector)
+  @assert length(obj.elements) == length(expected) "Wrong number of elements. Expected $(length(expected)), got $(length(obj.elements)) instead."
+
+  for (ca, ce) in zip(obj.elements, expected)
+    test_object(ca, ce)
+  end
 
   true
 end
@@ -34,16 +52,4 @@ function test_string_object(obj::m.Object, expected::String)
   @assert obj.value == expected "Expected $expected. Got $(obj.value) instead."
 
   true
-end
-
-function test_object(obj::m.Object, expected)
-  if isa(expected, Int)
-    test_integer_object(obj, expected)
-  elseif isa(expected, Bool)
-    test_boolean_object(obj, expected)
-  elseif isa(expected, String)
-    test_string_object(obj, expected)
-  elseif isnothing(expected)
-    test_null_object(obj)
-  end
 end

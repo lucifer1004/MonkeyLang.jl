@@ -94,6 +94,14 @@ compile!(c::Compiler, ::NullLiteral) = emit!(c, OpNull)
 compile!(c::Compiler, sl::StringLiteral) =
   emit!(c, OpConstant, add!(c, StringObj(sl.value)) - 1)
 
+compile!(c::Compiler, al::ArrayLiteral) = begin
+  for element in al.elements
+    compile!(c, element)
+  end
+
+  emit!(c, OpArray, length(al.elements))
+end
+
 compile!(c::Compiler, ident::Identifier) = begin
   sym = resolve(c.symbol_table, ident.value)
 

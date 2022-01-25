@@ -81,6 +81,11 @@ run!(vm::VM) = begin
       else
         push!(vm, vm.globals[global_index+1])
       end
+    elseif op == OpArray
+      element_count = read_uint16(vm.instructions[ip+1:ip+2])
+      ip += 2
+      arr = build_array!(vm, element_count)
+      push!(vm, arr)
     end
 
     ip += 1
@@ -159,6 +164,14 @@ execute_binary_operation!(vm::VM, op::OpCode, left::IntegerObj, right::IntegerOb
   end
 
   push!(vm, result)
+end
+
+build_array!(vm::VM, element_count::Integer) = begin
+  elements = vm.stack[vm.sp[]-element_count:vm.sp[]-1]
+
+  vm.sp[] -= element_count
+
+  return ArrayObj(elements)
 end
 
 native_bool_to_boolean_obj(b::Bool) = b ? _TRUE : _FALSE
