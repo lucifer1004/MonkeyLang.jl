@@ -19,14 +19,14 @@ Base.show(io::IO, object::Object) = print(io, string(object))
 Base.isless(a::Object, b::Object) = isless(string(a), string(b))
 
 struct IntegerObj <: Object
-  value::Int64
+    value::Int64
 end
 
 type_of(::IntegerObj) = INTEGER_OBJ
 Base.string(i::IntegerObj) = string(i.value)
 
 struct BooleanObj <: Object
-  value::Bool
+    value::Bool
 end
 
 const _TRUE = BooleanObj(true)
@@ -43,93 +43,96 @@ type_of(::NullObj) = NULL_OBJ
 Base.string(::NullObj) = "null"
 
 struct ReturnValue <: Object
-  value::Object
+    value::Object
 end
 
 type_of(::ReturnValue) = RETURN_VALUE
 Base.string(i::ReturnValue) = string(i.value)
 
 struct ErrorObj <: Object
-  message::String
+    message::String
 end
 
 type_of(::ErrorObj) = ERROR_OBJ
 Base.string(e::ErrorObj) = "ERROR: " * e.message
 
 struct Environment
-  store::Dict{String,Object}
-  outer::Union{Environment,Nothing}
-  input::IO
-  output::IO
+    store::Dict{String,Object}
+    outer::Union{Environment,Nothing}
+    input::IO
+    output::IO
 end
 
 Environment(; input = stdin, output = stdout) = Environment(Dict(), nothing, input, output)
 Environment(outer::Environment) = Environment(Dict(), outer, outer.input, outer.output)
 get(env::Environment, name::String) = begin
-  result = Base.get(env.store, name, nothing)
-  if isnothing(result) && !isnothing(env.outer)
-    return get(env.outer, name)
-  end
-  return result
+    result = Base.get(env.store, name, nothing)
+    if isnothing(result) && !isnothing(env.outer)
+        return get(env.outer, name)
+    end
+    return result
 end
 set!(env::Environment, name::String, value::Object) = push!(env.store, name => value)
 
 struct FunctionObj <: Object
-  parameters::Vector{Identifier}
-  body::BlockStatement
-  env::Environment
+    parameters::Vector{Identifier}
+    body::BlockStatement
+    env::Environment
 end
 
 type_of(::FunctionObj) = FUNCTION_OBJ
-Base.string(f::FunctionObj) = "fn(" * join(map(string, f.parameters), ", ") * ") {\n" * string(f.body) * "\n}"
+Base.string(f::FunctionObj) =
+    "fn(" * join(map(string, f.parameters), ", ") * ") {\n" * string(f.body) * "\n}"
 
 struct StringObj <: Object
-  value::String
+    value::String
 end
 
 type_of(::StringObj) = STRING_OBJ
 Base.string(s::StringObj) = "\"" * string(s.value) * "\""
 
 struct ArrayObj <: Object
-  elements::Vector{Object}
+    elements::Vector{Object}
 end
 
 type_of(::ArrayObj) = ARRAY_OBJ
 Base.string(a::ArrayObj) = "[" * join(map(string, a.elements), ", ") * "]"
 
 struct Builtin <: Object
-  fn::Function
+    fn::Function
 end
 
 type_of(::Builtin) = BUILTIN_OBJ
 Base.string(b::Builtin) = "builtin function"
 
 struct HashObj <: Object
-  pairs::Dict{Object,Object}
+    pairs::Dict{Object,Object}
 end
 
 type_of(::HashObj) = HASH_OBJ
-Base.string(h::HashObj) = "{" * join(map(x -> string(x[1]) * ":" * string(x[2]), collect(h.pairs)), ", ") * "}"
+Base.string(h::HashObj) =
+    "{" * join(map(x -> string(x[1]) * ":" * string(x[2]), collect(h.pairs)), ", ") * "}"
 
 struct QuoteObj <: Object
-  node::Node
+    node::Node
 end
 
 type_of(::QuoteObj) = QUOTE_OBJ
 Base.string(q::QuoteObj) = "QUOTE(" * string(q.node) * ")"
 
 struct MacroObj <: Object
-  parameters::Vector{Identifier}
-  body::BlockStatement
-  env::Environment
+    parameters::Vector{Identifier}
+    body::BlockStatement
+    env::Environment
 end
 
 type_of(::MacroObj) = MACRO_OBJ
-Base.string(m::MacroObj) = "macro(" * join(map(string, m.parameters), ", ") * ") {\n" * string(m.body) * "\n}"
+Base.string(m::MacroObj) =
+    "macro(" * join(map(string, m.parameters), ", ") * ") {\n" * string(m.body) * "\n}"
 
 struct CompiledFunctionObj <: Object
-  instructions::Instructions
-  local_count::Int
+    instructions::Instructions
+    local_count::Int
 end
 
 type_of(::CompiledFunctionObj) = COMPILED_FUNCTION_OBJ
