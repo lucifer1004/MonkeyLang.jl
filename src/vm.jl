@@ -159,8 +159,7 @@ run!(vm::VM) = begin
       end
       frame = Frame(fn, vm.sp[])
       push!(vm, frame)
-      # TODO: This is different from the book, but I have not found out why.
-      vm.sp[] += fn.local_count + 1
+      vm.sp[] += fn.local_count
     elseif op == OpReturnValue
       return_value = pop!(vm)
       frame = pop_frame!(vm)

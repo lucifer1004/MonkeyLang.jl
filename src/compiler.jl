@@ -167,8 +167,9 @@ compile!(c::Compiler, fl::FunctionLiteral) = begin
   if !last_instruction_is(c, OpReturnValue)
     emit!(c, OpReturn)
   end
+  local_count = c.symbol_table[].definition_count[]
   instructions = leave_scope!(c).instructions
-  fn = CompiledFunctionObj(instructions, c.symbol_table[].definition_count[])
+  fn = CompiledFunctionObj(instructions, local_count)
   emit!(c, OpConstant, add!(c, fn) - 1)
 end
 
