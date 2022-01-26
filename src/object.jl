@@ -12,6 +12,7 @@ const ARRAY_OBJ = "ARRAY"
 const HASH_OBJ = "HASH"
 const QUOTE_OBJ = "QUOTE"
 const MACRO_OBJ = "MACRO"
+const COMPILED_FUNCTION_OBJ = "COMPILED_FUNCTION"
 
 is_truthy(::Object) = true
 Base.show(io::IO, object::Object) = print(io, string(object))
@@ -125,3 +126,11 @@ end
 
 type_of(::MacroObj) = MACRO_OBJ
 Base.string(m::MacroObj) = "macro(" * join(map(string, m.parameters), ", ") * ") {\n" * string(m.body) * "\n}"
+
+struct CompiledFunctionObj <: Object
+  instructions::Instructions
+  local_count::Int
+end
+
+type_of(::CompiledFunctionObj) = COMPILED_FUNCTION_OBJ
+Base.string(c::CompiledFunctionObj) = "compiled function"

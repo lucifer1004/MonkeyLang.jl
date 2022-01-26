@@ -51,6 +51,9 @@ function test_object(obj::m.HashObj, expected::Dict)
   true
 end
 
+function test_object(obj::m.CompiledFunctionObj, expected::m.Instructions)
+  test_instructions(obj.instructions, [expected])
+end
 
 function test_error_object(obj::m.Object, expected::String)
   @assert isa(obj, m.ErrorObj) "obj is not an ERROR. Got $(m.type_of(obj)) instead."
@@ -66,4 +69,49 @@ function test_string_object(obj::m.Object, expected::String)
   @assert obj.value == expected "Expected $expected. Got $(obj.value) instead."
 
   true
+end
+
+function test_instructions(actual, expected)
+  concatted = vcat(expected...)
+
+  @assert length(concatted) == length(actual) "Wrong instructions length. Expected $concatted, got $actual instead."
+
+  for i = 1:length(concatted)
+    @assert concatted[i] == actual[i] "Wrong instruction at index $(i). Expected $(concatted[i]), got $(actual[i]) instead."
+  end
+
+  true
+end
+
+function test_constants(actual, expected)
+  @assert length(expected) == length(actual) "Wrong constants length. Expected $(length(expected)), got $(length(actual)) instead."
+
+  for (ca, ce) in zip(actual, expected)
+    test_object(ca, ce)
+  end
+
+  true
+end
+
+function run_compiler_tests(input::String, expected_constants::Vector, expected_instructions::Vector{m.Instructions})
+  program = m.parse(input)
+  c = m.Compiler()
+  m.compile!(c, program)
+
+  bc = m.bytecode(c)
+
+  test_instructions(bc.instructions, expected_instructions)
+  test_constants(bc.constants, expected_constants)
+
+  true
+end
+
+function test_vm(input::String, expected)
+  program = m.parse(input)
+  c = m.Compiler()
+  m.compile!(c, program)
+  vm = m.VM(m.bytecode(c))
+  m.run!(vm)
+
+  test_object(m.last_popped(vm), expected)
 end

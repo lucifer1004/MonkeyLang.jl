@@ -1,13 +1,3 @@
-function test_vm(input::String, expected)
-  program = m.parse(input)
-  c = m.Compiler()
-  m.compile!(c, program)
-  vm = m.VM(m.bytecode(c))
-  m.run!(vm)
-
-  test_object(m.last_popped(vm), expected)
-end
-
 @testset "Test VM" begin
   @testset "Integer Arithmetic" begin
     for (input, expected) in [
@@ -147,6 +137,152 @@ end
       ("{1: 1, 2: 2}[1]", 1),
       ("{1: 1, 2: 2}[2]", 2),
       ("{1: 1}[0]", nothing),
+    ]
+      @test test_vm(input, expected)
+    end
+  end
+
+  @testset "Calling Functions" begin
+    for (input, expected) in [
+      ("let fivePlusTen = fn() { 5 + 10; }; fivePlusTen()", 15),
+      (
+        """
+        let one = fn() { 1; };
+        let two = fn() { 2; };
+        one() + two()
+        """,
+        3,
+      ),
+      (
+        """
+        let a = fn() { 1; };
+        let b = fn() { a() + 1; };
+        let c = fn() { b() + 1; };
+        c();
+        """,
+        3,
+      ),
+    ]
+      @test test_vm(input, expected)
+    end
+  end
+
+  @testset "Calling Functions With Return Statement" begin
+    for (input, expected) in [
+      (
+        """
+        let earlyExit = fn() { return 99; 100; };
+        earlyExit();
+        """,
+        99,
+      ),
+      (
+        """
+        let earlyExit = fn() { return 99; return 100; };
+        earlyExit();
+        """,
+        99,
+      ),
+    ]
+      @test test_vm(input, expected)
+    end
+  end
+
+  @testset "Calling Functions Without Return Value" begin
+    for (input, expected) in [
+      (
+        """
+        let noReturn = fn() { };
+        noReturn();
+        """,
+        nothing,
+      ),
+      (
+        """
+        let noReturn = fn() { };
+        let noReturnTwo = fn() { noReturn(); };
+        noReturn();
+        noReturnTwo();
+        """,
+        nothing,
+      ),
+    ]
+      @test test_vm(input, expected)
+    end
+  end
+
+  @testset "First Class Functions" begin
+    for (input, expected) in [
+      (
+        """
+        let returnsOne = fn() { 1 };
+        let returnsOneReturner = fn() { returnsOne; };
+        returnsOneReturner()();
+        """,
+        1,
+      ),
+      (
+        """
+        let returnsOneReturner = fn() { 
+          let returnsOne = fn() { 1; }; 
+          returnsOne;
+        };
+        returnsOneReturner()();
+        """,
+        1,
+      ),
+    ]
+      @test test_vm(input, expected)
+    end
+  end
+
+  @testset "Calling Functions With Bindings" begin
+    for (input, expected) in [
+      (
+        """
+        let one = fn() { let one = 1; one };
+        one();
+        """,
+        1,
+      ),
+      (
+        """
+        let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };
+        oneAndTwo();
+        """,
+        3,
+      ),
+      (
+        """
+        let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };
+        let threeAndFour = fn() { let three = 3; let four = 4; three + four; };
+        oneAndTwo() + threeAndFour();
+        """,
+        10,
+      ),
+      (
+        """
+        let firstFoobar = fn() { let foobar = 50; foobar; };
+        let secondFooBar = fn() { let fooBar = 100; fooBar; };
+        firstFoobar() + secondFooBar();
+        """,
+        150
+      ),
+      (
+        """
+        let globalSeed = 50;
+        let minusOne = fn() { 
+          let num = 1;
+          globalSeed - num; 
+        }
+        let minusTwo = fn() {
+          let num = 2;
+          globalSeed - num;
+        }
+        minusOne() + minusTwo();
+        """,
+        97
+      ),
     ]
       @test test_vm(input, expected)
     end

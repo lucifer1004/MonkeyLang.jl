@@ -10,6 +10,7 @@
       (m.OpNotEqual, [], [UInt8(m.OpNotEqual)]),
       (m.OpLessThan, [], [UInt8(m.OpLessThan)]),
       (m.OpGreaterThan, [], [UInt8(m.OpGreaterThan)]),
+      (m.OpGetLocal, [255], [UInt8(m.OpGetLocal), 255]),
     ]
       @test begin
         instruction = m.make(op, operands...)
@@ -63,6 +64,10 @@
         [m.make(m.OpGreaterThan), m.make(m.OpConstant, 2), m.make(m.OpConstant, 65535)],
         "0000 OpGreaterThan\n0001 OpConstant 2\n0004 OpConstant 65535\n",
       ),
+      (
+        [m.make(m.OpAdd), m.make(m.OpGetLocal, 1), m.make(m.OpConstant, 2), m.make(m.OpConstant, 65535)],
+        "0000 OpAdd\n0001 OpGetLocal 1\n0003 OpConstant 2\n0006 OpConstant 65535\n",
+      ),
     ]
       @test begin
         concatted = vcat(instructions...)
@@ -77,6 +82,7 @@
   @testset "Test Reading Operands" begin
     for (op, operands, bytes_read) in [
       (m.OpConstant, [65535], 2),
+      (m.OpGetLocal, [255], 1),
     ]
       @test begin
         instruction = m.make(op, operands...)

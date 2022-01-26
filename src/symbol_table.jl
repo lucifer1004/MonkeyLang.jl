@@ -1,4 +1,5 @@
 const GLOBAL_SCOPE = "GLOBAL"
+const LOCAL_SCOPE = "LOCAL"
 
 struct MonkeySymbol
   name::String
@@ -9,15 +10,24 @@ end
 struct SymbolTable
   store::Dict{String,MonkeySymbol}
   definition_count::Ref{Int}
+  outer::Union{SymbolTable,Nothing}
 
-  SymbolTable() = new(Dict(), Ref(0))
+  SymbolTable(outer = nothing) = new(Dict(), Ref(0), outer)
 end
 
 define!(s::SymbolTable, name::String) = begin
-  sym = MonkeySymbol(name, GLOBAL_SCOPE, s.definition_count[])
+  scope = isnothing(s.outer) ? GLOBAL_SCOPE : LOCAL_SCOPE
+  sym = MonkeySymbol(name, scope, s.definition_count[])
   s.store[name] = sym
   s.definition_count[] += 1
   return sym
 end
 
-resolve(s::SymbolTable, name::String) = Base.get(s.store, name, nothing)
+resolve(s::SymbolTable, name::String) = begin
+  obj = Base.get(s.store, name, nothing)
+  if isnothing(obj) && !isnothing(s.outer)
+    return resolve(s.outer, name)
+  else
+    return obj
+  end
+end

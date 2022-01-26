@@ -1,16 +1,31 @@
+struct Frame
+  fn::CompiledFunctionObj
+  ip::Ref{Int}
+  base_ptr::Int
+
+  Frame(fn::CompiledFunctionObj, base_ptr::Int) = new(fn, Ref(0), base_ptr)
+end
+
+instructions(f::Frame) = f.fn.instructions
+
 struct VM
-  instructions::Instructions
   constants::Vector{Object}
   stack::Vector{Object}
-  globals::Vector{Object}
   sp::Ref{Int64}
+  globals::Vector{Object}
+  frames::Vector{Frame}
 
-  VM(bc::ByteCode) = new(bc.instructions, bc.constants, [], [], Ref(1))
-  VM(bc::ByteCode, globals::Vector{Object}) = new(bc.instructions, bc.constants, [], globals, Ref(1))
+  VM(bc::ByteCode, globals::Vector{Object} = Object[]) = begin
+    main_fn = CompiledFunctionObj(bc.instructions, 0)
+    main_frame = Frame(main_fn, 0)
+    frames = [main_frame]
+    new(bc.constants, [], Ref(1), globals, frames)
+  end
 end
 
 Base.push!(vm::VM, obj::Object) = begin
   if vm.sp[] > length(vm.stack)
+    append!(vm.stack, fill(_NULL, vm.sp[] - 1 - length(vm.stack)))
     push!(vm.stack, obj)
   else
     vm.stack[vm.sp[]] = obj
@@ -19,24 +34,34 @@ Base.push!(vm::VM, obj::Object) = begin
   vm.sp[] += 1
 end
 
+Base.push!(vm::VM, frame::Frame) = push!(vm.frames, frame)
+
 Base.pop!(vm::VM) = begin
   if vm.sp[] == 1
     return nothing
   end
-  ret = vm.stack[vm.sp[]-1]
   vm.sp[] -= 1
-  return ret
+  return vm.stack[vm.sp[]]
 end
+
+pop_frame!(vm::VM) = pop!(vm.frames)
 
 last_popped(vm::VM) = vm.sp[] > length(vm.stack) ? nothing : vm.stack[vm.sp[]]
 
+current_frame(vm::VM) = vm.frames[end]
+
+instructions(vm::VM) = instructions(current_frame(vm))
+
 run!(vm::VM) = begin
-  ip = 1
-  while ip <= length(vm.instructions)
-    op = OpCode(vm.instructions[ip])
+  while current_frame(vm).ip[] < length(instructions(vm))
+    cip = current_frame(vm).ip
+    cip[] += 1
+    ip = cip[]
+    ins = instructions(vm)
+    op = OpCode(ins[ip])
     if op == OpConstant
-      const_id = read_uint16(vm.instructions[ip+1:ip+2]) + 1
-      ip += 2
+      const_id = read_uint16(ins[ip+1:ip+2]) + 1
+      cip[] += 2
       if const_id > length(vm.constants)
         error("bounds error: attempt to access $(length(vm.constants))-element vector at index [$const_id]")
       end
@@ -57,20 +82,20 @@ run!(vm::VM) = begin
     elseif op == OpNull
       push!(vm, _NULL)
     elseif OpJump <= op <= OpJumpNotTruthy
-      pos = read_uint16(vm.instructions[ip+1:ip+2])
+      pos = read_uint16(ins[ip+1:ip+2])
 
       if op == OpJump
-        ip = pos
+        cip[] = pos
       else
-        ip += 2
+        cip[] += 2
         condition = pop!(vm)
         if !is_truthy(condition)
-          ip = pos
+          cip[] = pos
         end
       end
     elseif OpGetGlobal <= op <= OpSetGlobal
-      global_index = read_uint16(vm.instructions[ip+1:ip+2])
-      ip += 2
+      global_index = read_uint16(ins[ip+1:ip+2])
+      cip[] += 2
 
       if op == OpSetGlobal
         if global_index + 1 > length(vm.globals)
@@ -81,14 +106,24 @@ run!(vm::VM) = begin
       else
         push!(vm, vm.globals[global_index+1])
       end
+    elseif OpGetLocal <= op <= OpSetLocal
+      local_index = ins[ip+1]
+      frame = current_frame(vm)
+      frame.ip[] += 1
+
+      if op == OpSetLocal
+        vm.stack[frame.base_ptr-1+local_index] = pop!(vm)
+      else
+        push!(vm, vm.stack[frame.base_ptr-1+local_index])
+      end
     elseif op == OpArray
-      element_count = read_uint16(vm.instructions[ip+1:ip+2])
-      ip += 2
+      element_count = read_uint16(ins[ip+1:ip+2])
+      cip[] += 2
       arr = build_array!(vm, element_count)
       push!(vm, arr)
     elseif op == OpHash
-      element_count = read_uint16(vm.instructions[ip+1:ip+2])
-      ip += 2
+      element_count = read_uint16(ins[ip+1:ip+2])
+      cip[] += 2
       hash = build_hash!(vm, element_count)
       push!(vm, hash)
     elseif op == OpIndex
@@ -114,9 +149,28 @@ run!(vm::VM) = begin
       else
         error("index operator not supported on $(type_of(left))")
       end
+    elseif op == OpCall
+      if vm.sp[] - 1 <= 0 || vm.sp[] - 1 > length(vm.stack)
+        error("invalid stack pointer")
+      end
+      fn = vm.stack[vm.sp[]-1]
+      if !isa(fn, CompiledFunctionObj)
+        error("can only call functions")
+      end
+      frame = Frame(fn, vm.sp[])
+      push!(vm, frame)
+      # TODO: This is different from the book, but I have not found out why.
+      vm.sp[] += fn.local_count + 1
+    elseif op == OpReturnValue
+      return_value = pop!(vm)
+      frame = pop_frame!(vm)
+      vm.sp[] = frame.base_ptr - 1
+      push!(vm, return_value)
+    elseif op == OpReturn
+      frame = pop_frame!(vm)
+      vm.sp[] = frame.base_ptr - 1
+      push!(vm, _NULL)
     end
-
-    ip += 1
   end
 
   return

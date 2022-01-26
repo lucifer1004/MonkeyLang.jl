@@ -1,38 +1,3 @@
-function test_instructions(actual, expected)
-  concatted = vcat(expected...)
-
-  @assert length(concatted) == length(actual) "Wrong instructions length. Expected $concatted), got $actual instead."
-
-  for i = 1:length(concatted)
-    @assert concatted[i] == actual[i] "Wrong instruction at index $(i). Expected $(concatted[i]), got $(actual[i]) instead. Expected $concatted, got $actual instead."
-  end
-
-  true
-end
-
-function test_constants(actual, expected)
-  @assert length(expected) == length(actual) "Wrong constants length. Expected $(length(expected)), got $(length(actual)) instead."
-
-  for (ca, ce) in zip(actual, expected)
-    test_object(ca, ce)
-  end
-
-  true
-end
-
-function run_compiler_tests(input::String, expected_constants::Vector, expected_instructions::Vector{m.Instructions})
-  program = m.parse(input)
-  c = m.Compiler()
-  m.compile!(c, program)
-
-  bc = m.bytecode(c)
-
-  test_instructions(bc.instructions, expected_instructions)
-  test_constants(bc.constants, expected_constants)
-
-  true
-end
-
 @testset "Test Compiler" begin
   @testset "Integer Arithmetic" begin
     for (input, expected_constants, expected_instructions) in [
@@ -266,6 +231,71 @@ end
     end
   end
 
+  @testset "Global Let Statements" begin
+    for (input, expected_constants, expected_instructions) in [
+      (
+        "let num = 55;\nfn() { num }",
+        [
+          55, 
+          vcat(
+            m.make(m.OpGetGlobal, 0), 
+            m.make(m.OpReturnValue),
+          )
+        ],
+        [
+          m.make(m.OpConstant, 0),
+          m.make(m.OpSetGlobal, 0),
+          m.make(m.OpConstant, 1),
+          m.make(m.OpPop),
+        ],
+      ),
+      (
+        "fn() {\nlet num = 55;\nnum\n}",
+        [
+          55, 
+          vcat(
+            m.make(m.OpConstant, 0),
+            m.make(m.OpSetLocal, 0),
+            m.make(m.OpGetLocal, 0), 
+            m.make(m.OpReturnValue),
+          )
+        ],
+        [
+          m.make(m.OpConstant, 1),
+          m.make(m.OpPop),
+        ],
+      ),
+      (
+        """
+        fn() {
+          let a = 55;
+          let b = 77;
+          a + b
+        }
+        """,
+        [
+          55, 77,
+          vcat(
+            m.make(m.OpConstant, 0),
+            m.make(m.OpSetLocal, 0),
+            m.make(m.OpConstant, 1),
+            m.make(m.OpSetLocal, 1),
+            m.make(m.OpGetLocal, 0),
+            m.make(m.OpGetLocal, 1),
+            m.make(m.OpAdd),
+            m.make(m.OpReturnValue),
+          )
+        ],
+        [
+          m.make(m.OpConstant, 2),
+          m.make(m.OpPop),
+        ],
+      ),
+    ]
+      @test run_compiler_tests(input, expected_constants, expected_instructions)
+    end
+  end
+
   @testset "String Expressions" begin
     for (input, expected_constants, expected_instructions) in [
       (
@@ -407,6 +437,141 @@ end
           m.make(m.OpConstant, 3),
           m.make(m.OpSub),
           m.make(m.OpIndex),
+          m.make(m.OpPop),
+        ],
+      ),
+    ]
+      @test run_compiler_tests(input, expected_constants, expected_instructions)
+    end
+  end
+
+  @testset "Functions" begin
+    for (input, expected_constants, expected_instructions) in [
+      (
+        "fn() { return 5 + 10 }",
+        [
+          5, 10,
+          vcat(
+            m.make(m.OpConstant, 0),
+            m.make(m.OpConstant, 1),
+            m.make(m.OpAdd),
+            m.make(m.OpReturnValue),
+          ),
+        ],
+        [
+          m.make(m.OpConstant, 2),
+          m.make(m.OpPop),
+        ],
+      ),
+      (
+        "fn() { 5 + 10 }",
+        [
+          5, 10,
+          vcat(
+            m.make(m.OpConstant, 0),
+            m.make(m.OpConstant, 1),
+            m.make(m.OpAdd),
+            m.make(m.OpReturnValue),
+          ),
+        ],
+        [
+          m.make(m.OpConstant, 2),
+          m.make(m.OpPop),
+        ],
+      ),
+      (
+        "fn() { 1; 2 }",
+        [
+          1, 2,
+          vcat(
+            m.make(m.OpConstant, 0),
+            m.make(m.OpPop),
+            m.make(m.OpConstant, 1),
+            m.make(m.OpReturnValue),
+          ),
+        ],
+        [
+          m.make(m.OpConstant, 2),
+          m.make(m.OpPop),
+        ],
+      ),
+      (
+        "fn() { }",
+        [
+          m.make(m.OpReturn),
+        ],
+        [
+          m.make(m.OpConstant, 0),
+          m.make(m.OpPop),
+        ],
+      ),
+    ]
+      @test run_compiler_tests(input, expected_constants, expected_instructions)
+    end
+  end
+
+  @testset "Compiler Scopes" begin
+    c = m.Compiler()
+    g = c.symbol_table[]
+    @test length(c.scopes) == 1
+
+    m.emit!(c, m.OpMul)
+    m.enter_scope!(c)
+    @test length(c.scopes) == 2
+
+    m.emit!(c, m.OpSub)
+    @test length(c) == 1
+
+    last = m.last_instruction(c)
+    @test last.op == m.OpSub
+    @test c.symbol_table[].outer == g
+
+    m.leave_scope!(c)
+    @test length(c.scopes) == 1
+    @test c.symbol_table[] == g
+    @test isnothing(c.symbol_table[].outer)
+
+    m.emit!(c, m.OpAdd)
+    @test length(c) == 2
+
+    last = m.last_instruction(c)
+    @test last.op == m.OpAdd
+
+    previous = m.prev_instruction(c)
+    @test previous.op == m.OpMul
+  end
+
+  @testset "Function Calls" begin
+    for (input, expected_constants, expected_instructions) in [
+      (
+        "fn() { 24 }()",
+        [
+          24,
+          vcat(
+            m.make(m.OpConstant, 0),
+            m.make(m.OpReturnValue),
+          ),
+        ],
+        [
+          m.make(m.OpConstant, 1),
+          m.make(m.OpCall),
+          m.make(m.OpPop),
+        ],
+      ),
+      (
+        "let noArg = fn() { 24 }; noArg()",
+        [
+          24,
+          vcat(
+            m.make(m.OpConstant, 0),
+            m.make(m.OpReturnValue),
+          ),
+        ],
+        [
+          m.make(m.OpConstant, 1),
+          m.make(m.OpSetGlobal, 0),
+          m.make(m.OpGetGlobal, 0),
+          m.make(m.OpCall),
           m.make(m.OpPop),
         ],
       ),

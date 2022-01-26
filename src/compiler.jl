@@ -8,19 +8,38 @@ struct EmittedInstruction
   position::Int
 end
 
-struct Compiler
+struct CompilationScope
   instructions::Instructions
-  symbol_table::SymbolTable
-  constants::Vector{Object}
   previous_instructions::Vector{EmittedInstruction}
-
-  Compiler() = new(Instructions([]), SymbolTable(), [], [])
-  Compiler(s::SymbolTable, constants::Vector{Object}) = new(Instructions([]), s, constants, [])
 end
 
-last_instruction(c::Compiler) = isempty(c.previous_instructions) ? nothing : c.previous_instructions[end]
+last_instruction(c::CompilationScope) = isempty(c.previous_instructions) ? nothing : c.previous_instructions[end]
 
-prev_instruction(c::Compiler) = length(c.previous_instructions) < 2 ? nothing : c.previous_instructions[1]
+prev_instruction(c::CompilationScope) = length(c.previous_instructions) < 2 ? nothing : c.previous_instructions[1]
+
+struct Compiler
+  symbol_table::Ref{SymbolTable}
+  constants::Vector{Object}
+  scopes::Vector{CompilationScope}
+
+  Compiler() =
+    new(Ref(SymbolTable()), [], [CompilationScope(Instructions([]), [])])
+  Compiler(s::SymbolTable, constants::Vector{Object}) =
+    new(Ref(s), constants, [CompilationScope(Instructions([]), [])])
+end
+
+Base.length(c::Compiler) = length(current_scope(c).instructions)
+
+current_scope(c::Compiler) = c.scopes[end]
+
+last_instruction(c::Compiler) = last_instruction(current_scope(c))
+
+last_instruction_is(c::Compiler, op::OpCode) = begin
+  last = last_instruction(c)
+  return !isnothing(last) && last.op == op
+end
+
+prev_instruction(c::Compiler) = prev_instruction(current_scope(c))
 
 add!(c::Compiler, obj::Object)::Int64 = begin
   push!(c.constants, obj)
@@ -28,43 +47,62 @@ add!(c::Compiler, obj::Object)::Int64 = begin
 end
 
 add!(c::Compiler, ins::Instructions)::Int64 = begin
-  pos = length(c.instructions) + 1
-  append!(c.instructions, ins)
+  cs = current_scope(c)
+  pos = length(cs.instructions) + 1
+  append!(cs.instructions, ins)
   return pos
 end
 
+replace_last!(c::Compiler, ins::Instructions) = begin
+  cs = current_scope(c)
+  last_pos = last_instruction(c).position
+  replace!(c, last_pos, ins)
+  cs.previous_instructions[end] = EmittedInstruction(OpReturnValue, last_pos)
+end
+
 set_last!(c::Compiler, op::OpCode, pos::Int) = begin
+  cs = current_scope(c)
   last = EmittedInstruction(op, pos)
-  if length(c.previous_instructions) == 2
-    c.previous_instructions[1] = c.previous_instructions[2]
-    c.previous_instructions[2] = last
+  if length(cs.previous_instructions) == 2
+    cs.previous_instructions[1] = cs.previous_instructions[2]
+    cs.previous_instructions[2] = last
   else
-    push!(c.previous_instructions, last)
+    push!(cs.previous_instructions, last)
   end
 end
 
 remove_last!(c::Compiler) = begin
-  splice!(c.instructions, last_instruction(c).position:length(c.instructions))
-  pop!(c.previous_instructions)
+  cs = current_scope(c)
+  splice!(cs.instructions, last_instruction(cs).position:length(cs.instructions))
+  pop!(cs.previous_instructions)
 end
 
 remove_last_pop!(c::Compiler) =
-  if last_instruction(c).op == OpPop
+  if last_instruction_is(c, OpPop)
     remove_last!(c)
   end
 
+replace_last_pop_with_return!(c::Compiler) = begin
+  last = last_instruction(c)
+  if last_instruction_is(c, OpPop)
+    replace_last!(c, make(OpReturnValue))
+  end
+end
+
 replace!(c::Compiler, pos::Int, new_ins::Instructions) = begin
+  cs = current_scope(c)
   for i in 1:length(new_ins)
-    if pos + i - 1 <= length(c.instructions)
-      c.instructions[pos+i-1] = new_ins[i]
+    if pos + i - 1 <= length(cs.instructions)
+      cs.instructions[pos+i-1] = new_ins[i]
     else
-      push!(c.instructions, new_ins[i])
+      push!(cs.instructions, new_ins[i])
     end
   end
 end
 
 change_operand!(c::Compiler, pos::Int, operand::Int) = begin
-  op = OpCode(c.instructions[pos])
+  cs = current_scope(c)
+  op = OpCode(cs.instructions[pos])
   new_ins = make(op, operand)
   replace!(c, pos, new_ins)
 end
@@ -74,6 +112,16 @@ emit!(c::Compiler, op::OpCode, operands::Vararg{Int})::Int64 = begin
   pos = add!(c, ins)
   set_last!(c, op, pos)
   return pos
+end
+
+enter_scope!(c::Compiler) = begin
+  c.symbol_table[] = SymbolTable(c.symbol_table[])
+  push!(c.scopes, CompilationScope(Instructions([]), []))
+end
+
+leave_scope!(c::Compiler)::CompilationScope = begin
+  c.symbol_table[] = c.symbol_table[].outer
+  pop!(c.scopes)
 end
 
 compile!(::Compiler, ::Node) = nothing
@@ -112,14 +160,30 @@ compile!(c::Compiler, hl::HashLiteral) = begin
   emit!(c, OpHash, length(ks) * 2)
 end
 
+compile!(c::Compiler, fl::FunctionLiteral) = begin
+  enter_scope!(c)
+  compile!(c, fl.body)
+  replace_last_pop_with_return!(c)
+  if !last_instruction_is(c, OpReturnValue)
+    emit!(c, OpReturn)
+  end
+  instructions = leave_scope!(c).instructions
+  fn = CompiledFunctionObj(instructions, c.symbol_table[].definition_count[])
+  emit!(c, OpConstant, add!(c, fn) - 1)
+end
+
 compile!(c::Compiler, ident::Identifier) = begin
-  sym = resolve(c.symbol_table, ident.value)
+  sym = resolve(c.symbol_table[], ident.value)
 
   if isnothing(sym)
     throw(UndefVarError(ident.value))
   end
 
-  emit!(c, OpGetGlobal, sym.index)
+  if sym.scope == GLOBAL_SCOPE
+    emit!(c, OpGetGlobal, sym.index)
+  else
+    emit!(c, OpGetLocal, sym.index)
+  end
 end
 
 compile!(c::Compiler, es::ExpressionStatement) = begin
@@ -129,8 +193,12 @@ end
 
 compile!(c::Compiler, ls::LetStatement) = begin
   compile!(c, ls.value)
-  sym = define!(c.symbol_table, ls.name.value)
-  emit!(c, OpSetGlobal, sym.index)
+  sym = define!(c.symbol_table[], ls.name.value)
+  if sym.scope == GLOBAL_SCOPE
+    emit!(c, OpSetGlobal, sym.index)
+  else
+    emit!(c, OpSetLocal, sym.index)
+  end
 end
 
 compile!(c::Compiler, pe::PrefixExpression) = begin
@@ -177,7 +245,7 @@ compile!(c::Compiler, ie::IfExpression) = begin
   remove_last_pop!(c)
 
   jump_pos = emit!(c, OpJump, 9999)
-  after_consequence_pos = length(c.instructions)
+  after_consequence_pos = length(c)
   change_operand!(c, jump_not_truthy_pos, after_consequence_pos)
 
   if !isnothing(ie.alternative)
@@ -187,7 +255,7 @@ compile!(c::Compiler, ie::IfExpression) = begin
     emit!(c, OpNull)
   end
 
-  after_alternative_pos = length(c.instructions)
+  after_alternative_pos = length(c)
   change_operand!(c, jump_pos, after_alternative_pos)
 end
 
@@ -195,6 +263,16 @@ compile!(c::Compiler, ie::IndexExpression) = begin
   compile!(c, ie.left)
   compile!(c, ie.index)
   emit!(c, OpIndex)
+end
+
+compile!(c::Compiler, ce::CallExpression) = begin
+  compile!(c, ce.fn)
+  emit!(c, OpCall)
+end
+
+compile!(c::Compiler, rs::ReturnStatement) = begin
+  compile!(c, rs.return_value)
+  emit!(c, OpReturnValue)
 end
 
 compile!(c::Compiler, bs::BlockStatement) = begin
@@ -209,4 +287,4 @@ compile!(c::Compiler, program::Program) = begin
   end
 end
 
-bytecode(c::Compiler) = ByteCode(c.instructions, c.constants)
+bytecode(c::Compiler) = ByteCode(current_scope(c).instructions, c.constants)
