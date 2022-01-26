@@ -13,7 +13,7 @@
         m.BlockStatement(m.Token(m.LBRACE, "{"), []),
         m.Environment(),
     )
-    len = m.BUILTINS["len"]
+    len = m.get_builtin_by_name("len")
     ret = m.ReturnValue(m._TRUE)
     qt = m.QuoteObj(m.NullLiteral(m.Token(m.NULL, "null")))
 

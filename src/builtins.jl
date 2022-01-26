@@ -1,5 +1,5 @@
-const BUILTINS = Dict{String,Builtin}(
-    "len" => Builtin(
+const BUILTINS = Pair{String,Builtin}[
+    "len"=>Builtin(
         function (args::Vararg{Object}; env::Environment = Environment())
             if length(args) != 1
                 return ErrorObj(
@@ -19,7 +19,7 @@ const BUILTINS = Dict{String,Builtin}(
             )
         end,
     ),
-    "first" => Builtin(
+    "first"=>Builtin(
         function (args::Vararg{Object}; env::Environment = Environment())
             if length(args) != 1
                 return ErrorObj(
@@ -39,7 +39,7 @@ const BUILTINS = Dict{String,Builtin}(
             )
         end,
     ),
-    "last" => Builtin(
+    "last"=>Builtin(
         function (args::Vararg{Object}; env::Environment = Environment())
             if length(args) != 1
                 return ErrorObj(
@@ -59,7 +59,7 @@ const BUILTINS = Dict{String,Builtin}(
             )
         end,
     ),
-    "rest" => Builtin(
+    "rest"=>Builtin(
         function (args::Vararg{Object}; env::Environment = Environment())
             if length(args) != 1
                 return ErrorObj(
@@ -85,7 +85,7 @@ const BUILTINS = Dict{String,Builtin}(
             )
         end,
     ),
-    "push" => Builtin(
+    "push"=>Builtin(
         function (args::Vararg{Object}; env::Environment = Environment())
             if length(args) != 2 && length(args) != 3
                 return ErrorObj(
@@ -120,7 +120,7 @@ const BUILTINS = Dict{String,Builtin}(
             end
         end,
     ),
-    "puts" => Builtin(function (args::Vararg{Object}; env::Environment = Environment())
+    "puts"=>Builtin(function (args::Vararg{Object}; env::Environment = Environment())
         for arg in args
             if isa(arg, StringObj)
                 println(env.output, arg.value)
@@ -131,7 +131,7 @@ const BUILTINS = Dict{String,Builtin}(
 
         return _NULL
     end),
-    "type" => Builtin(
+    "type"=>Builtin(
         function (args::Vararg{Object}; env::Environment = Environment())
             if length(args) != 1
                 return ErrorObj(
@@ -142,4 +142,14 @@ const BUILTINS = Dict{String,Builtin}(
             return StringObj(type_of(args[1]))
         end,
     ),
-)
+]
+
+get_builtin_by_name(name::String) = begin
+    for (_name, builtin) in BUILTINS
+        if name == _name
+            return builtin
+        end
+    end
+
+    return nothing
+end

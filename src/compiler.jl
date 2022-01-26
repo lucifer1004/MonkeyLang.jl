@@ -24,7 +24,13 @@ struct Compiler
     constants::Vector{Object}
     scopes::Vector{CompilationScope}
 
-    Compiler() = new(Ref(SymbolTable()), [], [CompilationScope(Instructions([]), [])])
+    Compiler() = begin
+        s = SymbolTable()
+        for (i, (name, _)) in enumerate(BUILTINS)
+            define_builtin!(s, name, i - 1)
+        end
+        new(Ref(s), [], [CompilationScope(Instructions([]), [])])
+    end
     Compiler(s::SymbolTable, constants::Vector{Object}) =
         new(Ref(s), constants, [CompilationScope(Instructions([]), [])])
 end
@@ -125,6 +131,16 @@ leave_scope!(c::Compiler)::CompilationScope = begin
     pop!(c.scopes)
 end
 
+load_symbol!(c::Compiler, s::MonkeySymbol) = begin
+    if s.scope == GLOBAL_SCOPE
+        emit!(c, OpGetGlobal, s.index)
+    elseif s.scope == LOCAL_SCOPE
+        emit!(c, OpGetLocal, s.index)
+    else
+        emit!(c, OpGetBuiltin, s.index)
+    end
+end
+
 compile!(::Compiler, ::Node) = nothing
 
 compile!(c::Compiler, il::IntegerLiteral) =
@@ -184,11 +200,7 @@ compile!(c::Compiler, ident::Identifier) = begin
         throw(UndefVarError(ident.value))
     end
 
-    if sym.scope == GLOBAL_SCOPE
-        emit!(c, OpGetGlobal, sym.index)
-    else
-        emit!(c, OpGetLocal, sym.index)
-    end
+    load_symbol!(c, sym)
 end
 
 compile!(c::Compiler, es::ExpressionStatement) = begin

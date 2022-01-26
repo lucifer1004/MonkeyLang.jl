@@ -1,5 +1,6 @@
 const GLOBAL_SCOPE = "GLOBAL"
 const LOCAL_SCOPE = "LOCAL"
+const BUILTIN_SCOPE = "BUILTIN"
 
 struct MonkeySymbol
     name::String
@@ -20,6 +21,12 @@ define!(s::SymbolTable, name::String) = begin
     sym = MonkeySymbol(name, scope, s.definition_count[])
     s.store[name] = sym
     s.definition_count[] += 1
+    return sym
+end
+
+define_builtin!(s::SymbolTable, name::String, index::Int) = begin
+    sym = MonkeySymbol(name, BUILTIN_SCOPE, index)
+    s.store[name] = sym
     return sym
 end
 

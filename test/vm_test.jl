@@ -348,20 +348,137 @@
 
     @testset "Calling Functions With Wrong Arguments" begin
         for (input, expected) in [
-            (
-                "fn() { 1; }(1);",
-                "wrong number of arguments: expected 0, got 1",
-            ),
-            (
-                "fn(a) { a; }();",
-                "wrong number of arguments: expected 1, got 0",
-            ),
-            (
-                "fn(a, b) { a + b; }(1);",
-                "wrong number of arguments: expected 2, got 1",
-            ),
+            ("fn() { 1; }(1);", "wrong number of arguments: expected 0, got 1"),
+            ("fn(a) { a; }();", "wrong number of arguments: expected 1, got 0"),
+            ("fn(a, b) { a + b; }(1);", "wrong number of arguments: expected 2, got 1"),
         ]
-            @test_throws ErrorException(expected) test_vm(input, expected)
+            @test test_vm(input, expected)
         end
     end
+
+    @testset "Calling Builtin Functions Correctly" begin
+        for (input, expected) in [
+            ("len(\"\")", 0),
+            ("len(\"four\")", 4),
+            ("len(\"hello world\")", 11),
+            ("first([1, 2, 3])", 1),
+            ("first([])", nothing),
+            ("first(\"hello\")", "h"),
+            ("first(\"\")", nothing),
+            ("last([1, 2, 3])", 3),
+            ("last([])", nothing),
+            ("last(\"hello\")", "o"),
+            ("last(\"\")", nothing),
+            ("rest([1, 2, 3])[0]", 2),
+            ("rest([])", nothing),
+            ("rest(\"hello\")", "ello"),
+            ("rest(\"\")", nothing),
+            ("push([], 2)[0]", 2),
+            ("push({2: 3}, 4, 5)[4]", 5),
+            ("type(false)", "BOOLEAN"),
+            ("type(0)", "INTEGER"),
+            ("type(fn (x) { x })", "COMPILED_FUNCTION"),
+            ("type(\"hello\")", "STRING"),
+            ("type([1, 2])", "ARRAY"),
+            ("type({1:2})", "HASH"),
+            ("type(null)", "NULL"),
+            ("type(len(1))", "ERROR"),
+        ]
+            @test test_vm(input, expected)
+        end
+    end
+
+    @testset "Calling Builtin Functions Wrongly" begin
+        for (input, expected) in [
+            ("len(1),", "argument error: argument to `len` is not supported, got INTEGER"),
+            (
+                "len(\"one\", \"two\")",
+                "argument error: wrong number of arguments. Got 2 instead of 1",
+            ),
+            (
+                "first([1, 2], [2])",
+                "argument error: wrong number of arguments. Got 2 instead of 1",
+            ),
+            (
+                "first(1)",
+                "argument error: argument to `first` is not supported, got INTEGER",
+            ),
+            ("last(1)", "argument error: argument to `last` is not supported, got INTEGER"),
+            (
+                "last([1, 2], [2])",
+                "argument error: wrong number of arguments. Got 2 instead of 1",
+            ),
+            ("rest(1)", "argument error: argument to `rest` is not supported, got INTEGER"),
+            (
+                "rest([1, 2], [2])",
+                "argument error: wrong number of arguments. Got 2 instead of 1",
+            ),
+            (
+                "push()",
+                "argument error: wrong number of arguments. Got 0 instead of 2 or 3",
+            ),
+            (
+                "push({}, 2)",
+                "argument error: argument to `push` is not supported, got HASH",
+            ),
+            (
+                "push([], 2, 3)",
+                "argument error: argument to `push` is not supported, got ARRAY",
+            ),
+            ("type(1, 2)", "argument error: wrong number of arguments. Got 2 instead of 1"),
+        ]
+            @test test_vm(input, expected)
+        end
+    end
+
+    # TODO Not yet
+    # @testset "Calling Advanced Functions" begin
+    #     for (input, expected) in [
+    #         (
+    #             """
+    #              let map = fn(arr, f) {
+    #                let iter = fn(arr, accumulated) { 
+    #                  if (len(arr) == 0) {  
+    #                    accumulated 
+    #                  } else { 
+    #                    iter(rest(arr), push(accumulated, f(first(arr)))); 
+    #                  } 
+    #                };
+
+    #                iter(arr, []);
+    #              };
+
+    #              let a = [1, 2, 3, 4];
+    #              let double = fn(x) { x * 2};
+    #              map(a, double)[3]
+    #            """,
+    #             8,
+    #         ),
+    #         (
+    #             """
+    #            let reduce = fn(arr, initial, f) {
+    #              let iter = fn(arr, result) {
+    #                if (len(arr) == 0) {
+    #                  result
+    #                } else { 
+    #                  iter(rest(arr), f(result, first(arr)))
+    #                }
+    #              }
+
+    #              iter(arr, initial)
+    #            }
+
+    #            let sum = fn(arr) { 
+    #              reduce(arr, 0, fn(initial, el) { initial + el })
+    #            }
+
+    #            sum([1, 2, 3, 4, 5])
+    #            """,
+    #             15,
+    #         ),
+    #     ]
+
+    #         @test test_vm(input, expected)
+    #     end
+    # end
 end

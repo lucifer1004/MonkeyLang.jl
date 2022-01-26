@@ -62,12 +62,14 @@ run!(vm::VM) = begin
         if op == OpConstant
             cip[] += 2
             const_id = read_uint16(ins[ip+1:ip+2]) + 1
-            if const_id > length(vm.constants)
-                error(
+            if 1 <= const_id <= length(vm.constants)
+                push!(vm, vm.constants[const_id])
+            else
+                runtime_error!(
+                    vm,
                     "bounds error: attempt to access $(length(vm.constants))-element vector at index [$const_id]",
                 )
             end
-            push!(vm, vm.constants[const_id])
         elseif OpAdd <= op <= OpGreaterThan
             right = pop!(vm)
             left = pop!(vm)
@@ -118,6 +120,11 @@ run!(vm::VM) = begin
             else
                 push!(vm, vm.stack[frame.base_ptr+local_index])
             end
+        elseif op == OpGetBuiltin
+            cip[] += 1
+            builtin_index = ins[ip+1]
+            builtin = BUILTINS[builtin_index+1].second
+            push!(vm, builtin)
         elseif op == OpArray
             cip[] += 2
             element_count = read_uint16(ins[ip+1:ip+2])
@@ -133,7 +140,8 @@ run!(vm::VM) = begin
             left = pop!(vm)
             if isa(left, ArrayObj)
                 if !isa(index, IntegerObj)
-                    error("invalid index $index for ARRAY")
+                    runtime_error!(vm, "invalid index $index for ARRAY")
+                    continue
                 end
 
                 i = index.value
@@ -149,21 +157,13 @@ run!(vm::VM) = begin
                     push!(vm, _NULL)
                 end
             else
-                error("index operator not supported on $(type_of(left))")
+                runtime_error!(vm, "index operator not supported on $(type_of(left))")
             end
         elseif op == OpCall
             cip[] += 1
             arg_count = ins[ip+1]
-            fn = vm.stack[vm.sp[]-1-arg_count]
-            if !isa(fn, CompiledFunctionObj)
-                error("can only call functions")
-            end
-            if arg_count != fn.param_count
-                error("wrong number of arguments: expected $(fn.param_count), got $(arg_count)")
-            end
-            frame = Frame(fn, vm.sp[] - arg_count)
-            push!(vm, frame)
-            vm.sp[] = frame.base_ptr + fn.local_count
+            callee = vm.stack[vm.sp[]-1-arg_count]
+            call!(vm, callee, arg_count)
         elseif op == OpReturnValue
             return_value = pop!(vm)
             frame = pop_frame!(vm)
@@ -186,14 +186,17 @@ execute_unary_operation!(vm::VM, op::OpCode, right::Object) = begin
         if isa(right, IntegerObj)
             push!(vm, IntegerObj(-right.value))
         else
-            error("unsupported type for negation: $(type_of(right))")
+            runtime_error!(vm, "unsupported type for negation: $(type_of(right))")
         end
     end
 end
 
 execute_binary_operation!(vm::VM, op::OpCode, left::Object, right::Object) = begin
     if type_of(left) != type_of(right)
-        error("type mismatch: left: " * type_of(left) * ", right: " * type_of(right))
+        return runtime_error!(
+            vm,
+            "type mismatch: left: " * type_of(left) * ", right: " * type_of(right),
+        )
     end
 
     result = if op == OpEqual
@@ -201,7 +204,10 @@ execute_binary_operation!(vm::VM, op::OpCode, left::Object, right::Object) = beg
     elseif op == OpNotEqual
         native_bool_to_boolean_obj(left != right)
     else
-        error("unknown operator: " * type_of(left) * " " * string(op) * " " * type_of(right))
+        return runtime_error!(
+            vm,
+            "unknown operator: " * type_of(left) * " " * string(op) * " " * type_of(right),
+        )
     end
 
     push!(vm, result)
@@ -218,7 +224,7 @@ execute_binary_operation!(vm::VM, op::OpCode, left::StringObj, right::StringObj)
     elseif op == OpNotEqual
         native_bool_to_boolean_obj(lval != rval)
     else
-        error("unknown operator: STRING " * string(op) * " STRING")
+        return runtime_error!(vm, "unknown operator: STRING " * string(op) * " STRING")
     end
 
     push!(vm, result)
@@ -245,7 +251,7 @@ execute_binary_operation!(vm::VM, op::OpCode, left::IntegerObj, right::IntegerOb
     elseif op == OpGreaterThan
         native_bool_to_boolean_obj(lval > rval)
     else
-        error("unknown operator: INTEGER " * string(op) * " INTEGER")
+        return runtime_error!(vm, "unknown operator: INTEGER " * string(op) * " INTEGER")
     end
 
     push!(vm, result)
@@ -265,5 +271,31 @@ build_hash!(vm::VM, element_count::Integer) = begin
     prs = Dict(elements[i] => elements[i+1] for i = 1:2:length(elements))
     return HashObj(prs)
 end
+
+call!(vm::VM, ::Object, ::Integer) =
+    runtime_error!(vm, "can only call functions or builtins")
+
+call!(vm::VM, fn::CompiledFunctionObj, arg_count::Integer) = begin
+    if arg_count != fn.param_count
+        vm.sp[] += fn.local_count - arg_count
+        runtime_error!(
+            vm,
+            "wrong number of arguments: expected $(fn.param_count), got $(arg_count)",
+        )
+    else
+        frame = Frame(fn, vm.sp[] - arg_count)
+        push!(vm, frame)
+        vm.sp[] += fn.local_count - arg_count
+    end
+end
+
+call!(vm::VM, builtin::Builtin, arg_count::Integer) = begin
+    args = vm.stack[vm.sp[]-arg_count:vm.sp[]-1]
+    result = builtin.fn(args...)
+    vm.sp[] -= arg_count + 1
+    push!(vm, result)
+end
+
+runtime_error!(vm::VM, msg::String) = push!(vm, ErrorObj(msg))
 
 native_bool_to_boolean_obj(b::Bool) = b ? _TRUE : _FALSE

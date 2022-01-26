@@ -80,6 +80,9 @@ function start_jit_repl(; input::IO = stdin, output::IO = stdout)
     constants = Object[]
     globals = Object[]
     symbol_table = SymbolTable()
+    for (i, (name, _)) in enumerate(BUILTINS)
+        define_builtin!(symbol_table, name, i - 1)
+    end
 
     while true
         print(output, PROMPT)

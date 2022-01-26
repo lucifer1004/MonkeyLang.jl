@@ -525,7 +525,10 @@
                         m.make(m.OpPop),
                         m.make(m.OpGetLocal, 2),
                         m.make(m.OpReturnValue),
-                    ), 24, 25, 26
+                    ),
+                    24,
+                    25,
+                    26,
                 ],
                 [
                     m.make(m.OpConstant, 0),
@@ -537,6 +540,40 @@
                     m.make(m.OpCall, 3),
                     m.make(m.OpPop),
                 ],
+            ),
+        ]
+            @test run_compiler_tests(input, expected_constants, expected_instructions)
+        end
+    end
+
+    @testset "Builtin Functions" begin
+        for (input, expected_constants, expected_instructions) in [
+            (
+                "len([]); push([], 1)",
+                [1],
+                [
+                    m.make(m.OpGetBuiltin, 0),
+                    m.make(m.OpArray, 0),
+                    m.make(m.OpCall, 1),
+                    m.make(m.OpPop),
+                    m.make(m.OpGetBuiltin, 4),
+                    m.make(m.OpArray, 0),
+                    m.make(m.OpConstant, 0),
+                    m.make(m.OpCall, 2),
+                    m.make(m.OpPop),
+                ],
+            ),
+            (
+                "fn() { len([]) }",
+                [
+                    vcat(
+                        m.make(m.OpGetBuiltin, 0),
+                        m.make(m.OpArray, 0),
+                        m.make(m.OpCall, 1),
+                        m.make(m.OpReturnValue),
+                    ),
+                ],
+                [m.make(m.OpConstant, 0), m.make(m.OpPop)],
             ),
         ]
             @test run_compiler_tests(input, expected_constants, expected_instructions)

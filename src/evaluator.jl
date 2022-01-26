@@ -44,7 +44,7 @@ evaluate(node::Identifier, env::Environment) = begin
         return val
     end
 
-    builtin = Base.get(BUILTINS, node.value, nothing)
+    builtin = get_builtin_by_name(node.value)
 
     if !isnothing(builtin)
         return builtin

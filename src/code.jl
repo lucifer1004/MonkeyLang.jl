@@ -1,4 +1,4 @@
-@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLessThan OpGreaterThan OpMinus OpBang OpTrue OpFalse OpNull OpPop OpJump OpJumpNotTruthy OpGetGlobal OpSetGlobal OpGetLocal OpSetLocal OpArray OpHash OpIndex OpCall OpReturnValue OpReturn
+@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLessThan OpGreaterThan OpMinus OpBang OpTrue OpFalse OpNull OpPop OpJump OpJumpNotTruthy OpGetGlobal OpSetGlobal OpGetLocal OpSetLocal OpArray OpHash OpIndex OpCall OpReturnValue OpReturn OpGetBuiltin
 
 struct Instructions
     codes::Vector{UInt8}
@@ -65,6 +65,7 @@ const DEFINITIONS = Dict{OpCode,Definition}(
     OpCall => Definition("OpCall", [1]),
     OpReturnValue => Definition("OpReturnValue", []),
     OpReturn => Definition("OpReturn", []),
+    OpGetBuiltin => Definition("OpGetBuiltin", [1]),
 )
 
 lookup(op::UInt8) = Base.get(DEFINITIONS, OpCode(op), nothing)
