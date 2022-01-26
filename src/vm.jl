@@ -16,7 +16,7 @@ struct VM
     frames::Vector{Frame}
 
     VM(bc::ByteCode, globals::Vector{Object} = Object[]) = begin
-        main_fn = CompiledFunctionObj(bc.instructions, 0)
+        main_fn = CompiledFunctionObj(bc.instructions, 0, 0)
         main_frame = Frame(main_fn, 0)
         frames = [main_frame]
         new(bc.constants, [], Ref(1), globals, frames)
@@ -60,8 +60,8 @@ run!(vm::VM) = begin
         ins = instructions(vm)
         op = OpCode(ins[ip])
         if op == OpConstant
-            const_id = read_uint16(ins[ip+1:ip+2]) + 1
             cip[] += 2
+            const_id = read_uint16(ins[ip+1:ip+2]) + 1
             if const_id > length(vm.constants)
                 error(
                     "bounds error: attempt to access $(length(vm.constants))-element vector at index [$const_id]",
@@ -96,8 +96,8 @@ run!(vm::VM) = begin
                 end
             end
         elseif OpGetGlobal <= op <= OpSetGlobal
-            global_index = read_uint16(ins[ip+1:ip+2])
             cip[] += 2
+            global_index = read_uint16(ins[ip+1:ip+2])
 
             if op == OpSetGlobal
                 if global_index + 1 > length(vm.globals)
@@ -109,23 +109,23 @@ run!(vm::VM) = begin
                 push!(vm, vm.globals[global_index+1])
             end
         elseif OpGetLocal <= op <= OpSetLocal
+            cip[] += 1
             local_index = ins[ip+1]
             frame = current_frame(vm)
-            frame.ip[] += 1
 
             if op == OpSetLocal
-                vm.stack[frame.base_ptr-1+local_index] = pop!(vm)
+                vm.stack[frame.base_ptr+local_index] = pop!(vm)
             else
-                push!(vm, vm.stack[frame.base_ptr-1+local_index])
+                push!(vm, vm.stack[frame.base_ptr+local_index])
             end
         elseif op == OpArray
-            element_count = read_uint16(ins[ip+1:ip+2])
             cip[] += 2
+            element_count = read_uint16(ins[ip+1:ip+2])
             arr = build_array!(vm, element_count)
             push!(vm, arr)
         elseif op == OpHash
-            element_count = read_uint16(ins[ip+1:ip+2])
             cip[] += 2
+            element_count = read_uint16(ins[ip+1:ip+2])
             hash = build_hash!(vm, element_count)
             push!(vm, hash)
         elseif op == OpIndex
@@ -152,16 +152,18 @@ run!(vm::VM) = begin
                 error("index operator not supported on $(type_of(left))")
             end
         elseif op == OpCall
-            if vm.sp[] - 1 <= 0 || vm.sp[] - 1 > length(vm.stack)
-                error("invalid stack pointer")
-            end
-            fn = vm.stack[vm.sp[]-1]
+            cip[] += 1
+            arg_count = ins[ip+1]
+            fn = vm.stack[vm.sp[]-1-arg_count]
             if !isa(fn, CompiledFunctionObj)
                 error("can only call functions")
             end
-            frame = Frame(fn, vm.sp[])
+            if arg_count != fn.param_count
+                error("wrong number of arguments: expected $(fn.param_count), got $(arg_count)")
+            end
+            frame = Frame(fn, vm.sp[] - arg_count)
             push!(vm, frame)
-            vm.sp[] += fn.local_count
+            vm.sp[] = frame.base_ptr + fn.local_count
         elseif op == OpReturnValue
             return_value = pop!(vm)
             frame = pop_frame!(vm)

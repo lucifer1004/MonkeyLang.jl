@@ -163,6 +163,9 @@ end
 
 compile!(c::Compiler, fl::FunctionLiteral) = begin
     enter_scope!(c)
+    for param in fl.parameters
+        define!(c.symbol_table[], param.value)
+    end
     compile!(c, fl.body)
     replace_last_pop_with_return!(c)
     if !last_instruction_is(c, OpReturnValue)
@@ -170,7 +173,7 @@ compile!(c::Compiler, fl::FunctionLiteral) = begin
     end
     local_count = c.symbol_table[].definition_count[]
     instructions = leave_scope!(c).instructions
-    fn = CompiledFunctionObj(instructions, local_count)
+    fn = CompiledFunctionObj(instructions, local_count, length(fl.parameters))
     emit!(c, OpConstant, add!(c, fn) - 1)
 end
 
@@ -269,7 +272,10 @@ end
 
 compile!(c::Compiler, ce::CallExpression) = begin
     compile!(c, ce.fn)
-    emit!(c, OpCall)
+    for arg in ce.arguments
+        compile!(c, arg)
+    end
+    emit!(c, OpCall, length(ce.arguments))
 end
 
 compile!(c::Compiler, rs::ReturnStatement) = begin

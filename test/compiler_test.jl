@@ -464,7 +464,7 @@
             (
                 "fn() { 24 }()",
                 [24, vcat(m.make(m.OpConstant, 0), m.make(m.OpReturnValue))],
-                [m.make(m.OpConstant, 1), m.make(m.OpCall), m.make(m.OpPop)],
+                [m.make(m.OpConstant, 1), m.make(m.OpCall, 0), m.make(m.OpPop)],
             ),
             (
                 "let noArg = fn() { 24 }; noArg()",
@@ -473,7 +473,68 @@
                     m.make(m.OpConstant, 1),
                     m.make(m.OpSetGlobal, 0),
                     m.make(m.OpGetGlobal, 0),
-                    m.make(m.OpCall),
+                    m.make(m.OpCall, 0),
+                    m.make(m.OpPop),
+                ],
+            ),
+            (
+                "let oneArg = fn(a) { }; oneArg(24)",
+                [m.make(m.OpReturn), 24],
+                [
+                    m.make(m.OpConstant, 0),
+                    m.make(m.OpSetGlobal, 0),
+                    m.make(m.OpGetGlobal, 0),
+                    m.make(m.OpConstant, 1),
+                    m.make(m.OpCall, 1),
+                    m.make(m.OpPop),
+                ],
+            ),
+            (
+                "let manyArg = fn(a, b, c) { }; manyArg(24, 25, 26)",
+                [m.make(m.OpReturn), 24, 25, 26],
+                [
+                    m.make(m.OpConstant, 0),
+                    m.make(m.OpSetGlobal, 0),
+                    m.make(m.OpGetGlobal, 0),
+                    m.make(m.OpConstant, 1),
+                    m.make(m.OpConstant, 2),
+                    m.make(m.OpConstant, 3),
+                    m.make(m.OpCall, 3),
+                    m.make(m.OpPop),
+                ],
+            ),
+            (
+                "let oneArg = fn(a) { a }; oneArg(24)",
+                [vcat(m.make(m.OpGetLocal, 0), m.make(m.OpReturnValue)), 24],
+                [
+                    m.make(m.OpConstant, 0),
+                    m.make(m.OpSetGlobal, 0),
+                    m.make(m.OpGetGlobal, 0),
+                    m.make(m.OpConstant, 1),
+                    m.make(m.OpCall, 1),
+                    m.make(m.OpPop),
+                ],
+            ),
+            (
+                "let manyArg = fn(a, b, c) { a; b; c; }; manyArg(24, 25, 26)",
+                [
+                    vcat(
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpPop),
+                        m.make(m.OpGetLocal, 1),
+                        m.make(m.OpPop),
+                        m.make(m.OpGetLocal, 2),
+                        m.make(m.OpReturnValue),
+                    ), 24, 25, 26
+                ],
+                [
+                    m.make(m.OpConstant, 0),
+                    m.make(m.OpSetGlobal, 0),
+                    m.make(m.OpGetGlobal, 0),
+                    m.make(m.OpConstant, 1),
+                    m.make(m.OpConstant, 2),
+                    m.make(m.OpConstant, 3),
+                    m.make(m.OpCall, 3),
                     m.make(m.OpPop),
                 ],
             ),

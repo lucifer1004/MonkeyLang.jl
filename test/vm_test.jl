@@ -275,4 +275,93 @@
             @test test_vm(input, expected)
         end
     end
+
+    @testset "Calling Functions With Arguments And Bindings" begin
+        for (input, expected) in [
+            (
+                """
+                let identity = fn(a) { a; };
+                identity(4);
+                """,
+                4,
+            ),
+            (
+                """
+                let sum = fn(a, b) { a + b; };
+                sum(1, 2);
+                """,
+                3,
+            ),
+            (
+                """
+                let sum = fn(a, b) { 
+                    let c = a + b;
+                    c; 
+                };
+                sum(1, 2);
+                """,
+                3,
+            ),
+            (
+                """
+                let sum = fn(a, b) { 
+                    let c = a + b;
+                    c; 
+                };
+                sum(1, 2) + sum(3, 4);
+                """,
+                10,
+            ),
+            (
+                """
+                let sum = fn(a, b) { 
+                    let c = a + b;
+                    c; 
+                };
+                let outer = fn() {
+                    sum(1, 2) + sum(3, 4);
+                };
+                outer();
+                """,
+                10,
+            ),
+            (
+                """
+                let globalNum = 10;
+
+                let sum = fn(a, b) { 
+                    let c = a + b;
+                    c + globalNum;
+                };
+
+                let outer = fn() {
+                    sum(1, 2) + sum(3, 4) + globalNum;
+                };
+                outer() + globalNum;
+                """,
+                50,
+            ),
+        ]
+            @test test_vm(input, expected)
+        end
+    end
+
+    @testset "Calling Functions With Wrong Arguments" begin
+        for (input, expected) in [
+            (
+                "fn() { 1; }(1);",
+                "wrong number of arguments: expected 0, got 1",
+            ),
+            (
+                "fn(a) { a; }();",
+                "wrong number of arguments: expected 1, got 0",
+            ),
+            (
+                "fn(a, b) { a + b; }(1);",
+                "wrong number of arguments: expected 2, got 1",
+            ),
+        ]
+            @test_throws ErrorException(expected) test_vm(input, expected)
+        end
+    end
 end

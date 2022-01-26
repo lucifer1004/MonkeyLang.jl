@@ -62,7 +62,7 @@ const DEFINITIONS = Dict{OpCode,Definition}(
     OpArray => Definition("OpArray", [2]),
     OpHash => Definition("OpHash", [2]),
     OpIndex => Definition("OpIndex", []),
-    OpCall => Definition("OpCall", []),
+    OpCall => Definition("OpCall", [1]),
     OpReturnValue => Definition("OpReturnValue", []),
     OpReturn => Definition("OpReturn", []),
 )

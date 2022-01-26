@@ -133,6 +133,7 @@ Base.string(m::MacroObj) =
 struct CompiledFunctionObj <: Object
     instructions::Instructions
     local_count::Int
+    param_count::Int
 end
 
 type_of(::CompiledFunctionObj) = COMPILED_FUNCTION_OBJ
