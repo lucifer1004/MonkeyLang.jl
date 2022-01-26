@@ -114,7 +114,8 @@ function start_jit_repl(; input::IO = stdin, output::IO = stdout)
         try
             compile!(c, program)
         catch e
-            println(output, "Woops! Compilation failed:\n $e")
+            msg = hasproperty(e, :msg) ? e.msg : "unknown error"
+            println(output, ErrorObj("compilation error: $msg"))
             continue
         end
 
@@ -123,7 +124,8 @@ function start_jit_repl(; input::IO = stdin, output::IO = stdout)
             run!(vm)
             println(output, last_popped(vm))
         catch e
-            println(output, "Woops! Bytecode execution failed:\n $e")
+            msg = hasproperty(e, :msg) ? e.msg : "unknown error"
+            println(output, ErrorObj("runtime error: $msg"))
             continue
         end
     end

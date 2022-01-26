@@ -197,7 +197,7 @@ compile!(c::Compiler, ident::Identifier) = begin
     sym = resolve(c.symbol_table[], ident.value)
 
     if isnothing(sym)
-        throw(UndefVarError(ident.value))
+        error("identifier not found: $(ident.value)")
     end
 
     load_symbol!(c, sym)
