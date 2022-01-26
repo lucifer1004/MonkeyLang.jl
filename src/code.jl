@@ -1,4 +1,4 @@
-@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLessThan OpGreaterThan OpMinus OpBang OpTrue OpFalse OpNull OpPop OpJump OpJumpNotTruthy OpGetGlobal OpSetGlobal OpGetLocal OpSetLocal OpArray OpHash OpIndex OpCall OpReturnValue OpReturn OpGetBuiltin
+@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLessThan OpGreaterThan OpMinus OpBang OpTrue OpFalse OpNull OpPop OpJump OpJumpNotTruthy OpGetGlobal OpSetGlobal OpGetLocal OpSetLocal OpArray OpHash OpIndex OpCall OpReturnValue OpReturn OpGetBuiltin OpClosure
 
 struct Instructions
     codes::Vector{UInt8}
@@ -66,6 +66,7 @@ const DEFINITIONS = Dict{OpCode,Definition}(
     OpReturnValue => Definition("OpReturnValue", []),
     OpReturn => Definition("OpReturn", []),
     OpGetBuiltin => Definition("OpGetBuiltin", [1]),
+    OpClosure => Definition("OpClosure", [2, 1]),
 )
 
 lookup(op::UInt8) = Base.get(DEFINITIONS, OpCode(op), nothing)
@@ -77,13 +78,7 @@ function format_instruction(def::Definition, operands::Vector{Int})
         return "ERROR: operand length mismatch. Expected $(length(def.operand_widths)), got $operand_count instead.\n"
     end
 
-    if operand_count == 0
-        return def.name
-    elseif operand_count == 1
-        return "$(def.name) $(operands[1])"
-    end
-
-    return "ERROR: unhandled operand_count $operand_count for $(def.name).\n"
+    return def.name * join(map(x -> " " * string(x), operands))
 end
 
 function make(op::OpCode, operands::Vararg{Int})::Instructions

@@ -11,6 +11,7 @@
             (m.OpLessThan, [], [UInt8(m.OpLessThan)]),
             (m.OpGreaterThan, [], [UInt8(m.OpGreaterThan)]),
             (m.OpGetLocal, [255], [UInt8(m.OpGetLocal), 255]),
+            (m.OpClosure, [65534, 255], [UInt8(m.OpClosure), 255, 254, 255]),
         ]
             @test begin
                 instruction = m.make(op, operands...)
@@ -89,6 +90,16 @@
                 ],
                 "0000 OpAdd\n0001 OpGetLocal 1\n0003 OpConstant 2\n0006 OpConstant 65535\n",
             ),
+            (
+                [
+                    m.make(m.OpAdd),
+                    m.make(m.OpGetLocal, 1),
+                    m.make(m.OpConstant, 2),
+                    m.make(m.OpConstant, 65535),
+                    m.make(m.OpClosure, 65535, 255),
+                ],
+                "0000 OpAdd\n0001 OpGetLocal 1\n0003 OpConstant 2\n0006 OpConstant 65535\n0009 OpClosure 65535 255\n",
+            ),
         ]
             @test begin
                 concatted = vcat(instructions...)
@@ -101,8 +112,11 @@
     end
 
     @testset "Test Reading Operands" begin
-        for (op, operands, bytes_read) in
-            [(m.OpConstant, [65535], 2), (m.OpGetLocal, [255], 1)]
+        for (op, operands, bytes_read) in [
+            (m.OpConstant, [65535], 2),
+            (m.OpGetLocal, [255], 1),
+            (m.OpClosure, [65535, 255], 3),
+        ]
             @test begin
                 instruction = m.make(op, operands...)
                 def = m.lookup(Integer(op))

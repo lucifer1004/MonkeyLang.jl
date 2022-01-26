@@ -1,12 +1,12 @@
 struct Frame
-    fn::CompiledFunctionObj
+    cl::ClosureObj
     ip::Ref{Int}
     base_ptr::Int
 
-    Frame(fn::CompiledFunctionObj, base_ptr::Int) = new(fn, Ref(0), base_ptr)
+    Frame(cl::ClosureObj, base_ptr::Int) = new(cl, Ref(0), base_ptr)
 end
 
-instructions(f::Frame) = f.fn.instructions
+instructions(f::Frame) = f.cl.fn.instructions
 
 struct VM
     constants::Vector{Object}
@@ -17,7 +17,8 @@ struct VM
 
     VM(bc::ByteCode, globals::Vector{Object} = Object[]) = begin
         main_fn = CompiledFunctionObj(bc.instructions, 0, 0)
-        main_frame = Frame(main_fn, 0)
+        main_closure = ClosureObj(main_fn, [])
+        main_frame = Frame(main_closure, 0)
         frames = [main_frame]
         new(bc.constants, [], Ref(1), globals, frames)
     end
@@ -34,7 +35,13 @@ Base.push!(vm::VM, obj::Object) = begin
     vm.sp[] += 1
 end
 
-Base.push!(vm::VM, frame::Frame) = push!(vm.frames, frame)
+push_frame!(vm::VM, frame::Frame) = push!(vm.frames, frame)
+
+push_closure!(vm::VM, id::Int) = begin
+    fn = vm.constants[id]
+    closure = ClosureObj(fn, [])
+    push!(vm, closure)
+end
 
 Base.pop!(vm::VM) = begin
     if vm.sp[] == 1
@@ -135,6 +142,11 @@ run!(vm::VM) = begin
             element_count = read_uint16(ins[ip+1:ip+2])
             hash = build_hash!(vm, element_count)
             push!(vm, hash)
+        elseif op == OpClosure
+            cip[] += 3
+            const_id = read_uint16(ins[ip+1:ip+2]) + 1
+            free_count = ins[ip+3]
+            push_closure!(vm, const_id)
         elseif op == OpIndex
             index = pop!(vm)
             left = pop!(vm)
@@ -275,17 +287,17 @@ end
 call!(vm::VM, ::Object, ::Integer) =
     runtime_error!(vm, "can only call functions or builtins")
 
-call!(vm::VM, fn::CompiledFunctionObj, arg_count::Integer) = begin
-    if arg_count != fn.param_count
-        vm.sp[] += fn.local_count - arg_count
+call!(vm::VM, cl::ClosureObj, arg_count::Integer) = begin
+    if arg_count != cl.fn.param_count
+        vm.sp[] += cl.fn.local_count - arg_count
         runtime_error!(
             vm,
-            "wrong number of arguments: expected $(fn.param_count), got $(arg_count)",
+            "wrong number of arguments: expected $(cl.fn.param_count), got $(arg_count)",
         )
     else
-        frame = Frame(fn, vm.sp[] - arg_count)
-        push!(vm, frame)
-        vm.sp[] += fn.local_count - arg_count
+        frame = Frame(cl, vm.sp[] - arg_count)
+        push_frame!(vm, frame)
+        vm.sp[] += cl.fn.local_count - arg_count
     end
 end
 

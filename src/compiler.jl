@@ -190,7 +190,7 @@ compile!(c::Compiler, fl::FunctionLiteral) = begin
     local_count = c.symbol_table[].definition_count[]
     instructions = leave_scope!(c).instructions
     fn = CompiledFunctionObj(instructions, local_count, length(fl.parameters))
-    emit!(c, OpConstant, add!(c, fn) - 1)
+    emit!(c, OpClosure, add!(c, fn) - 1, 0)
 end
 
 compile!(c::Compiler, ident::Identifier) = begin

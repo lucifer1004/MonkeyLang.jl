@@ -13,6 +13,7 @@ const HASH_OBJ = "HASH"
 const QUOTE_OBJ = "QUOTE"
 const MACRO_OBJ = "MACRO"
 const COMPILED_FUNCTION_OBJ = "COMPILED_FUNCTION"
+const CLOSURE_OBJ = "CLOSURE"
 
 is_truthy(::Object) = true
 Base.show(io::IO, object::Object) = print(io, string(object))
@@ -138,3 +139,11 @@ end
 
 type_of(::CompiledFunctionObj) = COMPILED_FUNCTION_OBJ
 Base.string(c::CompiledFunctionObj) = "compiled function"
+
+struct ClosureObj <: Object
+    fn::CompiledFunctionObj
+    free::Vector{Object}
+end
+
+type_of(::ClosureObj) = CLOSURE_OBJ
+Base.string(c::ClosureObj) = "closure"

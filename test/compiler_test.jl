@@ -204,7 +204,7 @@
                 [
                     m.make(m.OpConstant, 0),
                     m.make(m.OpSetGlobal, 0),
-                    m.make(m.OpConstant, 1),
+                    m.make(m.OpClosure, 1, 0),
                     m.make(m.OpPop),
                 ],
             ),
@@ -219,7 +219,7 @@
                         m.make(m.OpReturnValue),
                     ),
                 ],
-                [m.make(m.OpConstant, 1), m.make(m.OpPop)],
+                [m.make(m.OpClosure, 1, 0), m.make(m.OpPop)],
             ),
             (
                 """
@@ -243,7 +243,7 @@
                         m.make(m.OpReturnValue),
                     ),
                 ],
-                [m.make(m.OpConstant, 2), m.make(m.OpPop)],
+                [m.make(m.OpClosure, 2, 0), m.make(m.OpPop)],
             ),
         ]
             @test run_compiler_tests(input, expected_constants, expected_instructions)
@@ -392,7 +392,7 @@
                         m.make(m.OpReturnValue),
                     ),
                 ],
-                [m.make(m.OpConstant, 2), m.make(m.OpPop)],
+                [m.make(m.OpClosure, 2, 0), m.make(m.OpPop)],
             ),
             (
                 "fn() { 5 + 10 }",
@@ -406,7 +406,7 @@
                         m.make(m.OpReturnValue),
                     ),
                 ],
-                [m.make(m.OpConstant, 2), m.make(m.OpPop)],
+                [m.make(m.OpClosure, 2, 0), m.make(m.OpPop)],
             ),
             (
                 "fn() { 1; 2 }",
@@ -420,9 +420,9 @@
                         m.make(m.OpReturnValue),
                     ),
                 ],
-                [m.make(m.OpConstant, 2), m.make(m.OpPop)],
+                [m.make(m.OpClosure, 2, 0), m.make(m.OpPop)],
             ),
-            ("fn() { }", [m.make(m.OpReturn)], [m.make(m.OpConstant, 0), m.make(m.OpPop)]),
+            ("fn() { }", [m.make(m.OpReturn)], [m.make(m.OpClosure, 0, 0), m.make(m.OpPop)]),
         ]
             @test run_compiler_tests(input, expected_constants, expected_instructions)
         end
@@ -464,13 +464,13 @@
             (
                 "fn() { 24 }()",
                 [24, vcat(m.make(m.OpConstant, 0), m.make(m.OpReturnValue))],
-                [m.make(m.OpConstant, 1), m.make(m.OpCall, 0), m.make(m.OpPop)],
+                [m.make(m.OpClosure, 1, 0), m.make(m.OpCall, 0), m.make(m.OpPop)],
             ),
             (
                 "let noArg = fn() { 24 }; noArg()",
                 [24, vcat(m.make(m.OpConstant, 0), m.make(m.OpReturnValue))],
                 [
-                    m.make(m.OpConstant, 1),
+                    m.make(m.OpClosure, 1, 0),
                     m.make(m.OpSetGlobal, 0),
                     m.make(m.OpGetGlobal, 0),
                     m.make(m.OpCall, 0),
@@ -481,7 +481,7 @@
                 "let oneArg = fn(a) { }; oneArg(24)",
                 [m.make(m.OpReturn), 24],
                 [
-                    m.make(m.OpConstant, 0),
+                    m.make(m.OpClosure, 0, 0),
                     m.make(m.OpSetGlobal, 0),
                     m.make(m.OpGetGlobal, 0),
                     m.make(m.OpConstant, 1),
@@ -493,7 +493,7 @@
                 "let manyArg = fn(a, b, c) { }; manyArg(24, 25, 26)",
                 [m.make(m.OpReturn), 24, 25, 26],
                 [
-                    m.make(m.OpConstant, 0),
+                    m.make(m.OpClosure, 0, 0),
                     m.make(m.OpSetGlobal, 0),
                     m.make(m.OpGetGlobal, 0),
                     m.make(m.OpConstant, 1),
@@ -507,7 +507,7 @@
                 "let oneArg = fn(a) { a }; oneArg(24)",
                 [vcat(m.make(m.OpGetLocal, 0), m.make(m.OpReturnValue)), 24],
                 [
-                    m.make(m.OpConstant, 0),
+                    m.make(m.OpClosure, 0, 0),
                     m.make(m.OpSetGlobal, 0),
                     m.make(m.OpGetGlobal, 0),
                     m.make(m.OpConstant, 1),
@@ -531,7 +531,7 @@
                     26,
                 ],
                 [
-                    m.make(m.OpConstant, 0),
+                    m.make(m.OpClosure, 0, 0),
                     m.make(m.OpSetGlobal, 0),
                     m.make(m.OpGetGlobal, 0),
                     m.make(m.OpConstant, 1),
@@ -573,7 +573,7 @@
                         m.make(m.OpReturnValue),
                     ),
                 ],
-                [m.make(m.OpConstant, 0), m.make(m.OpPop)],
+                [m.make(m.OpClosure, 0, 0), m.make(m.OpPop)],
             ),
         ]
             @test run_compiler_tests(input, expected_constants, expected_instructions)

@@ -377,7 +377,7 @@
             ("push({2: 3}, 4, 5)[4]", 5),
             ("type(false)", "BOOLEAN"),
             ("type(0)", "INTEGER"),
-            ("type(fn (x) { x })", "COMPILED_FUNCTION"),
+            ("type(fn (x) { x })", "CLOSURE"),
             ("type(\"hello\")", "STRING"),
             ("type([1, 2])", "ARRAY"),
             ("type({1:2})", "HASH"),
