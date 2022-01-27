@@ -260,6 +260,22 @@
         end
     end
 
+    @testset "Test Parsing Functional Literal With Name" begin
+        for (input) in [("let myFunction = fn() { };")]
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
+
+            check_parser_errors(p)
+
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.LetStatement)
+
+            fl = program.statements[1].value
+            @test fl.name == "myFunction"
+        end
+    end
+
     @testset "Test Parsing Function Parameters" begin
         for (input, expected) in
             [("fn() {};", []), ("fn(x) {};", ["x"]), ("fn(x, y, z) {};", ["x", "y", "z"])]

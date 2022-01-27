@@ -1,4 +1,4 @@
-@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLessThan OpGreaterThan OpMinus OpBang OpTrue OpFalse OpNull OpPop OpJump OpJumpNotTruthy OpGetGlobal OpSetGlobal OpGetLocal OpSetLocal OpArray OpHash OpIndex OpCall OpReturnValue OpReturn OpGetBuiltin OpClosure
+@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLessThan OpGreaterThan OpMinus OpBang OpTrue OpFalse OpNull OpPop OpJump OpJumpNotTruthy OpGetGlobal OpSetGlobal OpGetLocal OpSetLocal OpGetBuiltin OpGetFree OpCurrentClosure OpArray OpHash OpClosure OpIndex OpCall OpReturnValue OpReturn
 
 struct Instructions
     codes::Vector{UInt8}
@@ -59,14 +59,16 @@ const DEFINITIONS = Dict{OpCode,Definition}(
     OpSetGlobal => Definition("OpSetGlobal", [2]),
     OpGetLocal => Definition("OpGetLocal", [1]),
     OpSetLocal => Definition("OpSetLocal", [1]),
+    OpGetBuiltin => Definition("OpGetBuiltin", [1]),
+    OpGetFree => Definition("OpGetFree", [1]),
+    OpCurrentClosure => Definition("OpCurrentClosure", []),
     OpArray => Definition("OpArray", [2]),
     OpHash => Definition("OpHash", [2]),
+    OpClosure => Definition("OpClosure", [2, 1]),
     OpIndex => Definition("OpIndex", []),
     OpCall => Definition("OpCall", [1]),
     OpReturnValue => Definition("OpReturnValue", []),
     OpReturn => Definition("OpReturn", []),
-    OpGetBuiltin => Definition("OpGetBuiltin", [1]),
-    OpClosure => Definition("OpClosure", [2, 1]),
 )
 
 lookup(op::UInt8) = Base.get(DEFINITIONS, OpCode(op), nothing)

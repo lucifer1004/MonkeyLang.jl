@@ -431,54 +431,132 @@
         end
     end
 
-    # TODO Not yet
-    # @testset "Calling Advanced Functions" begin
-    #     for (input, expected) in [
-    #         (
-    #             """
-    #              let map = fn(arr, f) {
-    #                let iter = fn(arr, accumulated) { 
-    #                  if (len(arr) == 0) {  
-    #                    accumulated 
-    #                  } else { 
-    #                    iter(rest(arr), push(accumulated, f(first(arr)))); 
-    #                  } 
-    #                };
+    @testset "Closures" begin
+        for (input, expected) in [
+            (
+                """
+                let newClosure = fn(a) {
+                    fn() { a; };
+                };
+                let closure = newClosure(99);
+                closure();
+                """,
+                99,
+            ),
+            (
+                """
+                let newAdder = fn(a, b) {
+                    fn(c) { a + b + c; };
+                };
+                let adder = newAdder(1, 2);
+                adder(8);
+                """,
+                11,
+            ),
+            (
+                """
+                let newAdder = fn(a, b) {
+                    let c = a + b;
+                    fn(d) { c + d };
+                };
+                let adder = newAdder(1, 2);
+                adder(8);
+                """,
+                11,
+            ),
+            (
+                """
+                let newAdderOuter = fn(a, b) {
+                    let c = a + b;
+                    fn(d) {
+                        let e = d + c;
+                        fn(f) { e + f; };
+                    };
+                }
+                let newAdderInner = newAdderOuter(1, 2);
+                let adder = newAdderInner(3);
+                adder(8);
+                """,
+                14,
+            ),
+            (
+                """
+                let a = 1;
+                let newAdderOuter = fn(b) {
+                    fn(c) {
+                        fn(d) { a + b + c + d; };
+                    }
+                }
+                let newAdderInner = newAdderOuter(2);
+                let adder = newAdderInner(3);
+                adder(8);
+                """,
+                14,
+            ),
+            (
+                """
+                let newClosure = fn(a, b) {
+                    let one = fn() { a; };
+                    let two = fn() { b; };
+                    fn() { one() + two(); };
+                }
+                let closure = newClosure(9, 90);
+                closure();
+                """,
+                99,
+            ),
+        ]
+            @test test_vm(input, expected)
+        end
+    end
 
-    #                iter(arr, []);
-    #              };
+    @testset "Calling Advanced Functions" begin
+        for (input, expected) in [
+            (
+                """
+                let map = fn(arr, f) {
+                    let iter = fn(arr, accumulated) { 
+                        if (len(arr) == 0) {  
+                            accumulated 
+                        } else { 
+                            iter(rest(arr), push(accumulated, f(first(arr)))); 
+                        } 
+                    };
 
-    #              let a = [1, 2, 3, 4];
-    #              let double = fn(x) { x * 2};
-    #              map(a, double)[3]
-    #            """,
-    #             8,
-    #         ),
-    #         (
-    #             """
-    #            let reduce = fn(arr, initial, f) {
-    #              let iter = fn(arr, result) {
-    #                if (len(arr) == 0) {
-    #                  result
-    #                } else { 
-    #                  iter(rest(arr), f(result, first(arr)))
-    #                }
-    #              }
+                    iter(arr, []);
+                };
 
-    #              iter(arr, initial)
-    #            }
+                let a = [1, 2, 3, 4];
+                let double = fn(x) { x * 2 };
+                map(a, double)[3]
+                """,
+                8,
+            ),
+            (
+                """
+                let reduce = fn(arr, initial, f) {
+                    let iter = fn(arr, result) {
+                        if (len(arr) == 0) {
+                            result
+                        } else { 
+                            iter(rest(arr), f(result, first(arr)))
+                        }
+                    }
 
-    #            let sum = fn(arr) { 
-    #              reduce(arr, 0, fn(initial, el) { initial + el })
-    #            }
+                    iter(arr, initial)
+                }
 
-    #            sum([1, 2, 3, 4, 5])
-    #            """,
-    #             15,
-    #         ),
-    #     ]
+                let sum = fn(arr) { 
+                    reduce(arr, 0, fn(initial, el) { initial + el })
+                }
 
-    #         @test test_vm(input, expected)
-    #     end
-    # end
+                sum([1, 2, 3, 4, 5])
+                """,
+                15,
+            ),
+        ]
+
+            @test test_vm(input, expected)
+        end
+    end
 end

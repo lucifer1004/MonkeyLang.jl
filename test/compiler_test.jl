@@ -579,4 +579,193 @@
             @test run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
+
+    @testset "Closures" begin
+        for (input, expected_constants, expected_instructions) in [
+            (
+                """
+                fn(a) {
+                    fn(b) {
+                        a + b
+                    }
+                }
+                """,
+                [
+                    vcat(
+                        m.make(m.OpGetFree, 0),
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpAdd),
+                        m.make(m.OpReturnValue),
+                    ),
+                    vcat(
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpClosure, 0, 1),
+                        m.make(m.OpReturnValue),
+                    )
+                ],
+                [
+                    m.make(m.OpClosure, 1, 0),
+                    m.make(m.OpPop)
+                ]
+            ),
+            (
+                """
+                fn(a) {
+                    fn(b) {
+                        fn(c) {
+                            a + b + c
+                        }
+                    }
+                }
+                """,
+                [
+                    vcat(
+                        m.make(m.OpGetFree, 0),
+                        m.make(m.OpGetFree, 1),
+                        m.make(m.OpAdd),
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpAdd),
+                        m.make(m.OpReturnValue),
+                    ),
+                    vcat(
+                        m.make(m.OpGetFree, 0),
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpClosure, 0, 2),
+                        m.make(m.OpReturnValue),
+                    ),
+                    vcat(
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpClosure, 1, 1),
+                        m.make(m.OpReturnValue),
+                    ),
+                ],
+                [
+                    m.make(m.OpClosure, 2, 0),
+                    m.make(m.OpPop),
+                ],
+            ),
+            (
+                """
+                let global = 55;
+                fn() {
+                    let a = 66;
+                    fn() {
+                        let b = 77;
+                        fn() {
+                            let c = 88;
+                            global + a + b + c
+                        }
+                    }
+                }
+                """,
+                [
+                    55, 66, 77, 88,
+                    vcat(
+                        m.make(m.OpConstant, 3),
+                        m.make(m.OpSetLocal, 0),
+                        m.make(m.OpGetGlobal, 0),
+                        m.make(m.OpGetFree, 0),
+                        m.make(m.OpAdd),
+                        m.make(m.OpGetFree, 1),
+                        m.make(m.OpAdd),
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpAdd),
+                        m.make(m.OpReturnValue),
+                    ),
+                    vcat(
+                        m.make(m.OpConstant, 2),
+                        m.make(m.OpSetLocal, 0),
+                        m.make(m.OpGetFree, 0),
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpClosure, 4, 2),
+                        m.make(m.OpReturnValue),
+                    ),
+                    vcat(
+                        m.make(m.OpConstant, 1),
+                        m.make(m.OpSetLocal, 0),
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpClosure, 5, 1),
+                        m.make(m.OpReturnValue),
+                    ),
+                ],
+                [
+                    m.make(m.OpConstant, 0),
+                    m.make(m.OpSetGlobal, 0),
+                    m.make(m.OpClosure, 6, 0),
+                    m.make(m.OpPop),
+                ],
+            ),
+        ]
+            @test run_compiler_tests(input, expected_constants, expected_instructions)
+        end
+    end
+
+    @testset "Recursive Functions" begin
+        for (input, expected_constants, expected_instructions) in [
+            (
+                """
+                let countDown = fn(x) { countDown(x - 1); };
+                countDown(1);
+                """,
+                [
+                    1,
+                    vcat(
+                        m.make(m.OpCurrentClosure),
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpConstant, 0),
+                        m.make(m.OpSub),
+                        m.make(m.OpCall, 1),
+                        m.make(m.OpReturnValue),
+                    ),
+                    1,
+                ],
+                [
+                    m.make(m.OpClosure, 1, 0),
+                    m.make(m.OpSetGlobal, 0),
+                    m.make(m.OpGetGlobal, 0),
+                    m.make(m.OpConstant, 2),
+                    m.make(m.OpCall, 1),
+                    m.make(m.OpPop),
+                ],
+            ),
+            (
+                """
+                let wrapper = fn() {
+                    let countDown = fn(x) { countDown(x - 1); };
+                    countDown(1);
+                }
+                wrapper();
+                """,
+                [
+                    1,
+                    vcat(
+                        m.make(m.OpCurrentClosure),
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpConstant, 0),
+                        m.make(m.OpSub),
+                        m.make(m.OpCall, 1),
+                        m.make(m.OpReturnValue),
+                    ),
+                    1,
+                    vcat(
+                        m.make(m.OpClosure, 1, 0),
+                        m.make(m.OpSetLocal, 0),
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpConstant, 2),
+                        m.make(m.OpCall, 1),
+                        m.make(m.OpReturnValue),
+                    ),
+                ],
+                [
+                    m.make(m.OpClosure, 3, 0),
+                    m.make(m.OpSetGlobal, 0),
+                    m.make(m.OpGetGlobal, 0),
+                    m.make(m.OpCall, 0),
+                    m.make(m.OpPop),
+                ],
+            ),
+        ]
+            @test run_compiler_tests(input, expected_constants, expected_instructions)
+        end
+    end
 end

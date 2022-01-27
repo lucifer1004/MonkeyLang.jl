@@ -136,8 +136,12 @@ load_symbol!(c::Compiler, s::MonkeySymbol) = begin
         emit!(c, OpGetGlobal, s.index)
     elseif s.scope == LOCAL_SCOPE
         emit!(c, OpGetLocal, s.index)
-    else
+    elseif s.scope == BUILTIN_SCOPE
         emit!(c, OpGetBuiltin, s.index)
+    elseif s.scope == FREE_SCOPE
+        emit!(c, OpGetFree, s.index)
+    else
+        emit!(c, OpCurrentClosure)
     end
 end
 
@@ -179,18 +183,31 @@ end
 
 compile!(c::Compiler, fl::FunctionLiteral) = begin
     enter_scope!(c)
+
+    if !isempty(fl.name)
+        define_function!(c.symbol_table[], fl.name)
+    end
+
     for param in fl.parameters
         define!(c.symbol_table[], param.value)
     end
+
     compile!(c, fl.body)
     replace_last_pop_with_return!(c)
     if !last_instruction_is(c, OpReturnValue)
         emit!(c, OpReturn)
     end
+
+    free_symbols = c.symbol_table[].free_symbols
     local_count = c.symbol_table[].definition_count[]
     instructions = leave_scope!(c).instructions
+
+    for sym in free_symbols
+        load_symbol!(c, sym)
+    end
+
     fn = CompiledFunctionObj(instructions, local_count, length(fl.parameters))
-    emit!(c, OpClosure, add!(c, fn) - 1, 0)
+    emit!(c, OpClosure, add!(c, fn) - 1, length(free_symbols))
 end
 
 compile!(c::Compiler, ident::Identifier) = begin
@@ -209,8 +226,8 @@ compile!(c::Compiler, es::ExpressionStatement) = begin
 end
 
 compile!(c::Compiler, ls::LetStatement) = begin
-    compile!(c, ls.value)
     sym = define!(c.symbol_table[], ls.name.value)
+    compile!(c, ls.value)
     if sym.scope == GLOBAL_SCOPE
         emit!(c, OpSetGlobal, sym.index)
     else

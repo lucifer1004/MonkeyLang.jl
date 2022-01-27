@@ -78,9 +78,8 @@ function test_infix_expression(expr::m.Expression, left, operator::String, right
 end
 
 function test_quote_object(evaluated::m.Object, expected::String)
-    @assert isa(evaluated, m.QuoteObj) "evaluated is not a QuoteObj. Got $(typeof(evaluated)) instead."
-
-    string(evaluated.node) == expected
+    @test isa(evaluated, m.QuoteObj)
+    @test string(evaluated.node) == expected
 end
 
 function test_object(obj::m.Object, expected::Int64)
@@ -158,7 +157,7 @@ function test_instructions(actual, expected)
     @assert length(concatted) == length(actual) "Wrong instructions length. Expected $concatted, got $actual instead."
 
     for i = 1:length(concatted)
-        @assert concatted[i] == actual[i] "Wrong instruction at index $(i). Expected $(concatted[i]), got $(actual[i]) instead."
+        @assert concatted[i] == actual[i] "Wrong instruction at index $(i). Expected $concatted, got $actual instead."
     end
 
     true

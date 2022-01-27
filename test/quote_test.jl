@@ -6,10 +6,8 @@
             ("quote(foobar)", "foobar"),
             ("quote(foobar + barfoo)", "(foobar + barfoo)"),
         ]
-            @test begin
-                evaluated = m.evaluate(input)
-                test_quote_object(evaluated, expected)
-            end
+            evaluated = m.evaluate(input)
+            test_quote_object(evaluated, expected)
         end
     end
 
@@ -25,17 +23,15 @@
             ("quote(unquote(\"hello\"))", "\"hello\""),
             ("quote(unquote([1, 2, 3]))", "[1, 2, 3]"),
             ("quote(unquote({2 + 3: \"4\" + \"5\"}))", "{5:\"45\"}"),
-            ("quote(unquote(fn(x){x}))", "fn(x) {x}"),
+            ("quote(unquote(fn(x){x}))", "fn(x) {\n    x\n}"),
             ("quote(unquote(quote(4 + 4)))", "(4 + 4)"),
             (
                 "let quotedInfixExpression = quote(4 + 4); quote(unquote(4 + 4) + unquote(quotedInfixExpression))",
                 "(8 + (4 + 4))",
             ),
         ]
-            @test begin
-                evaluated = m.evaluate(input)
-                test_quote_object(evaluated, expected)
-            end
+            evaluated = m.evaluate(input)
+            test_quote_object(evaluated, expected)
         end
     end
 end

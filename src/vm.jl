@@ -37,9 +37,11 @@ end
 
 push_frame!(vm::VM, frame::Frame) = push!(vm.frames, frame)
 
-push_closure!(vm::VM, id::Int) = begin
+push_closure!(vm::VM, id::Int, free_count::Integer) = begin
     fn = vm.constants[id]
-    closure = ClosureObj(fn, [])
+    free = vm.stack[vm.sp[]-free_count:vm.sp[]-1]
+    vm.sp[] -= free_count
+    closure = ClosureObj(fn, free)
     push!(vm, closure)
 end
 
@@ -106,32 +108,36 @@ run!(vm::VM) = begin
             end
         elseif OpGetGlobal <= op <= OpSetGlobal
             cip[] += 2
-            global_index = read_uint16(ins[ip+1:ip+2])
+            global_id = read_uint16(ins[ip+1:ip+2])
 
             if op == OpSetGlobal
-                if global_index + 1 > length(vm.globals)
+                if global_id + 1 > length(vm.globals)
                     push!(vm.globals, pop!(vm))
                 else
-                    vm.globals[global_index+1] = pop!(vm)
+                    vm.globals[global_id+1] = pop!(vm)
                 end
             else
-                push!(vm, vm.globals[global_index+1])
+                push!(vm, vm.globals[global_id+1])
             end
         elseif OpGetLocal <= op <= OpSetLocal
             cip[] += 1
-            local_index = ins[ip+1]
+            local_id = ins[ip+1]
             frame = current_frame(vm)
 
             if op == OpSetLocal
-                vm.stack[frame.base_ptr+local_index] = pop!(vm)
+                vm.stack[frame.base_ptr+local_id] = pop!(vm)
             else
-                push!(vm, vm.stack[frame.base_ptr+local_index])
+                push!(vm, vm.stack[frame.base_ptr+local_id])
             end
         elseif op == OpGetBuiltin
             cip[] += 1
-            builtin_index = ins[ip+1]
-            builtin = BUILTINS[builtin_index+1].second
+            builtin_id = ins[ip+1] + 1
+            builtin = BUILTINS[builtin_id].second
             push!(vm, builtin)
+        elseif op == OpGetFree
+            cip[] += 1
+            free_id = ins[ip+1] + 1
+            push!(vm, current_frame(vm).cl.free[free_id])
         elseif op == OpArray
             cip[] += 2
             element_count = read_uint16(ins[ip+1:ip+2])
@@ -146,7 +152,9 @@ run!(vm::VM) = begin
             cip[] += 3
             const_id = read_uint16(ins[ip+1:ip+2]) + 1
             free_count = ins[ip+3]
-            push_closure!(vm, const_id)
+            push_closure!(vm, const_id, free_count)
+        elseif op == OpCurrentClosure
+            push!(vm, current_frame(vm).cl)
         elseif op == OpIndex
             index = pop!(vm)
             left = pop!(vm)

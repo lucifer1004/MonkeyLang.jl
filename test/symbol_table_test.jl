@@ -69,4 +69,98 @@
             end
         end
     end
+
+    @testset "Free Variables" begin
+        g = m.SymbolTable()
+        m.define!(g, "a")
+        m.define!(g, "b")
+
+        l1 = m.SymbolTable(g)
+        m.define!(l1, "c")
+        m.define!(l1, "d")
+
+        l2 = m.SymbolTable(l1)
+        m.define!(l2, "e")
+        m.define!(l2, "f")
+
+        for (table, expected_symbols, expected_free_symbols) in [
+            (
+                l1,
+                [
+                    m.MonkeySymbol("a", m.GLOBAL_SCOPE, 0),
+                    m.MonkeySymbol("b", m.GLOBAL_SCOPE, 1),
+                    m.MonkeySymbol("c", m.LOCAL_SCOPE, 0),
+                    m.MonkeySymbol("d", m.LOCAL_SCOPE, 1),
+                ],
+                [],
+            ),
+            (
+                l2,
+                [
+                    m.MonkeySymbol("a", m.GLOBAL_SCOPE, 0),
+                    m.MonkeySymbol("b", m.GLOBAL_SCOPE, 1),
+                    m.MonkeySymbol("c", m.FREE_SCOPE, 0),
+                    m.MonkeySymbol("d", m.FREE_SCOPE, 1),
+                    m.MonkeySymbol("e", m.LOCAL_SCOPE, 0),
+                    m.MonkeySymbol("f", m.LOCAL_SCOPE, 1),
+                ],
+                [
+                    m.MonkeySymbol("c", m.LOCAL_SCOPE, 0),
+                    m.MonkeySymbol("d", m.LOCAL_SCOPE, 1),
+                ],
+            ),
+        ]
+            for sym in expected_symbols
+                @test m.resolve(table, sym.name) == sym
+            end
+
+            @test length(table.free_symbols) == length(expected_free_symbols)
+
+            for (actual, expected) in zip(table.free_symbols, expected_free_symbols)
+                @test actual == expected
+            end
+        end
+    end
+
+    @testset "Unresolvable Free Variables" begin
+        g = m.SymbolTable()
+        m.define!(g, "a")
+
+        l1 = m.SymbolTable(g)
+        m.define!(l1, "c")
+
+        l2 = m.SymbolTable(l1)
+        m.define!(l2, "e")
+        m.define!(l2, "f")
+
+        expected = [
+            m.MonkeySymbol("a", m.GLOBAL_SCOPE, 0),
+            m.MonkeySymbol("c", m.FREE_SCOPE, 0),
+            m.MonkeySymbol("e", m.LOCAL_SCOPE, 0),
+            m.MonkeySymbol("f", m.LOCAL_SCOPE, 1),
+        ]
+
+        for sym in expected
+            @test m.resolve(l2, sym.name) == sym
+        end
+
+        for name in ["b", "d"]
+            @test isnothing(m.resolve(l2, name))
+        end
+    end
+
+    @testset "Define And Resolve Function Name" begin
+        g = m.SymbolTable()
+        m.define_function!(g, "a")
+
+        @test m.resolve(g, "a") == m.MonkeySymbol("a", m.FUNCTION_SCOPE, 0)
+    end
+
+    @testset "Shadowing Function Name" begin
+        g = m.SymbolTable()
+        m.define_function!(g, "a")
+        m.define!(g, "a")
+
+        @test m.resolve(g, "a") == m.MonkeySymbol("a", m.GLOBAL_SCOPE, 0)
+    end
 end

@@ -107,15 +107,16 @@ struct FunctionLiteral <: Expression
     token::Token
     parameters::Vector{Identifier}
     body::BlockStatement
+    name::String
+
+    FunctionLiteral(token::Token, parameters::Vector{Identifier}, body::BlockStatement; name::String = "") =
+        new(token, parameters, body, name)
 end
 
-Base.string(fl::FunctionLiteral) =
-    fl.token.literal *
-    "(" *
-    join(map(string, fl.parameters), ", ") *
-    ") {" *
-    string(fl.body) *
-    "}"
+Base.string(fl::FunctionLiteral) = """
+$(fl.token.literal)$(isempty(fl.name) ? "" : " " * fl.name)($(join(map(string, fl.parameters), ", "))) {
+    $(fl.body)
+}"""
 
 struct MacroLiteral <: Expression
     token::Token
