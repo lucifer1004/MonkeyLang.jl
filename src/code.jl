@@ -6,7 +6,7 @@ end
 
 Base.length(ins::Instructions) = length(ins.codes)
 Base.getindex(ins::Instructions, i::Int) = ins.codes[i]
-Base.getindex(ins::Instructions, r::UnitRange{Int}) = Instructions(@view ins.codes[r])
+Base.getindex(ins::Instructions, r::UnitRange{Int}) = Instructions(ins.codes[r])
 Base.setindex!(ins::Instructions, val::UInt8, i::Int) = ins.codes[i] = val
 Base.lastindex(ins::Instructions) = lastindex(ins.codes)
 Base.vcat(is::Vararg{Instructions}) = Instructions(vcat(map(x -> x.codes, is)...))

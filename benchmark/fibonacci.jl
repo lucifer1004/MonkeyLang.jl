@@ -16,7 +16,7 @@ let fibonacci = fn(x) {
     }
 };
 
-fibonacci(15);
+fibonacci(35);
 """
 
 println("=== Using evaluator ===")

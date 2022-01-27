@@ -146,6 +146,10 @@ evaluate(block::BlockStatement, env::Environment) = begin
 end
 
 evaluate(program::Program, env::Environment) = begin
+    if isempty(program.statements)
+        return nothing
+    end
+
     result = _NULL
 
     for statement in program.statements
