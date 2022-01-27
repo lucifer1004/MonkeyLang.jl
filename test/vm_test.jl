@@ -555,7 +555,6 @@
                 15,
             ),
         ]
-
             @test test_vm(input, expected)
         end
     end

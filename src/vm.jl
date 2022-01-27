@@ -61,6 +61,24 @@ current_frame(vm::VM) = vm.frames[end]
 
 instructions(vm::VM) = instructions(current_frame(vm))
 
+run(code::String) = begin
+    symbol_table = SymbolTable()
+    for (i, (name, _)) in enumerate(BUILTINS)
+        define_builtin!(symbol_table, name, i - 1)
+    end
+
+    l = Lexer(code)
+    p = Parser(l)
+    program = parse!(p)
+    c = Compiler(symbol_table, Object[])
+    compile!(c, program)
+
+    vm = VM(bytecode(c), Object[])
+    run!(vm)
+
+    return last_popped(vm)
+end
+
 run!(vm::VM) = begin
     while current_frame(vm).ip[] < length(instructions(vm))
         cip = current_frame(vm).ip

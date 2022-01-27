@@ -92,7 +92,8 @@ function parse_let_statement!(p::Parser)
     value = parse_expression!(p, LOWEST)
 
     if isa(value, FunctionLiteral)
-        value = FunctionLiteral(value.token, value.parameters, value.body; name = name.value)
+        value =
+            FunctionLiteral(value.token, value.parameters, value.body; name = name.value)
     end
 
     if p.peek_token.type == SEMICOLON

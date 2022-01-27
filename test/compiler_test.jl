@@ -422,7 +422,11 @@
                 ],
                 [m.make(m.OpClosure, 2, 0), m.make(m.OpPop)],
             ),
-            ("fn() { }", [m.make(m.OpReturn)], [m.make(m.OpClosure, 0, 0), m.make(m.OpPop)]),
+            (
+                "fn() { }",
+                [m.make(m.OpReturn)],
+                [m.make(m.OpClosure, 0, 0), m.make(m.OpPop)],
+            ),
         ]
             @test run_compiler_tests(input, expected_constants, expected_instructions)
         end
@@ -601,12 +605,9 @@
                         m.make(m.OpGetLocal, 0),
                         m.make(m.OpClosure, 0, 1),
                         m.make(m.OpReturnValue),
-                    )
+                    ),
                 ],
-                [
-                    m.make(m.OpClosure, 1, 0),
-                    m.make(m.OpPop)
-                ]
+                [m.make(m.OpClosure, 1, 0), m.make(m.OpPop)],
             ),
             (
                 """
@@ -639,10 +640,7 @@
                         m.make(m.OpReturnValue),
                     ),
                 ],
-                [
-                    m.make(m.OpClosure, 2, 0),
-                    m.make(m.OpPop),
-                ],
+                [m.make(m.OpClosure, 2, 0), m.make(m.OpPop)],
             ),
             (
                 """
@@ -659,7 +657,10 @@
                 }
                 """,
                 [
-                    55, 66, 77, 88,
+                    55,
+                    66,
+                    77,
+                    88,
                     vcat(
                         m.make(m.OpConstant, 3),
                         m.make(m.OpSetLocal, 0),

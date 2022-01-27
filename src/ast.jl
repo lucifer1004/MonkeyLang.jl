@@ -109,8 +109,12 @@ struct FunctionLiteral <: Expression
     body::BlockStatement
     name::String
 
-    FunctionLiteral(token::Token, parameters::Vector{Identifier}, body::BlockStatement; name::String = "") =
-        new(token, parameters, body, name)
+    FunctionLiteral(
+        token::Token,
+        parameters::Vector{Identifier},
+        body::BlockStatement;
+        name::String = "",
+    ) = new(token, parameters, body, name)
 end
 
 Base.string(fl::FunctionLiteral) = """

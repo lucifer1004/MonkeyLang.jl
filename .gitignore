@@ -1,5 +1,9 @@
 *.jl.*.cov
 *.jl.cov
 *.jl.mem
+*.png
+*.css
+*.html
+*.info
 /docs/build/
 /*.jl
