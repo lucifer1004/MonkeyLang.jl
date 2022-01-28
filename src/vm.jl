@@ -62,21 +62,14 @@ current_frame(vm::VM) = vm.frames[end]
 instructions(vm::VM) = instructions(current_frame(vm))
 
 run(code::String) = begin
-    symbol_table = SymbolTable()
-    for (i, (name, _)) in enumerate(BUILTINS)
-        define_builtin!(symbol_table, name, i - 1)
-    end
-
     l = Lexer(code)
     p = Parser(l)
     program = parse!(p)
-    c = Compiler(symbol_table, Object[])
+    c = Compiler()
     compile!(c, program)
 
     vm = VM(bytecode(c), Object[])
-    run!(vm)
-
-    return last_popped(vm)
+    return run!(vm)
 end
 
 run!(vm::VM) = begin
@@ -88,7 +81,7 @@ run!(vm::VM) = begin
         op = OpCode(ins[ip])
         if op == OpConstant
             cip[] += 2
-            const_id = read_uint16(ins[ip+1:ip+2]) + 1
+            const_id = read_uint16(ins, ip + 1) + 1
             if 1 <= const_id <= length(vm.constants)
                 push!(vm, vm.constants[const_id])
             else
@@ -113,7 +106,7 @@ run!(vm::VM) = begin
         elseif op == OpNull
             push!(vm, _NULL)
         elseif OpJump <= op <= OpJumpNotTruthy
-            pos = read_uint16(ins[ip+1:ip+2])
+            pos = read_uint16(ins, ip + 1)
 
             if op == OpJump
                 cip[] = pos
@@ -126,7 +119,7 @@ run!(vm::VM) = begin
             end
         elseif OpGetGlobal <= op <= OpSetGlobal
             cip[] += 2
-            global_id = read_uint16(ins[ip+1:ip+2])
+            global_id = read_uint16(ins, ip + 1)
 
             if op == OpSetGlobal
                 if global_id + 1 > length(vm.globals)
@@ -158,17 +151,17 @@ run!(vm::VM) = begin
             push!(vm, current_frame(vm).cl.free[free_id])
         elseif op == OpArray
             cip[] += 2
-            element_count = read_uint16(ins[ip+1:ip+2])
+            element_count = read_uint16(ins, ip + 1)
             arr = build_array!(vm, element_count)
             push!(vm, arr)
         elseif op == OpHash
             cip[] += 2
-            element_count = read_uint16(ins[ip+1:ip+2])
+            element_count =read_uint16(ins, ip + 1)
             hash = build_hash!(vm, element_count)
             push!(vm, hash)
         elseif op == OpClosure
             cip[] += 3
-            const_id = read_uint16(ins[ip+1:ip+2]) + 1
+            const_id = read_uint16(ins, ip + 1) + 1
             free_count = ins[ip+3]
             push_closure!(vm, const_id, free_count)
         elseif op == OpCurrentClosure
@@ -214,7 +207,7 @@ run!(vm::VM) = begin
         end
     end
 
-    return
+    return last_popped(vm)
 end
 
 execute_unary_operation!(vm::VM, op::OpCode, right::Object) = begin

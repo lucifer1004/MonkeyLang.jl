@@ -107,7 +107,7 @@ function read_operands(def::Definition, ins::Instructions)::Tuple{Vector{Int},In
     offset = 0
     for width in def.operand_widths
         if width == 2
-            push!(operands, read_uint16(ins[offset+1:offset+2]))
+            push!(operands, read_uint16(ins, offset + 1))
         elseif width == 1
             push!(operands, ins[offset+1])
         end
@@ -116,6 +116,6 @@ function read_operands(def::Definition, ins::Instructions)::Tuple{Vector{Int},In
     return operands, offset
 end
 
-function read_uint16(ins::Instructions)::UInt16
-    return hton(reinterpret(UInt16, ins.codes)[1])
+function read_uint16(ins::Instructions, pos::Int)::UInt16
+    return UInt16(ins.codes[pos]) << 8 + ins.codes[pos + 1]
 end

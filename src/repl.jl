@@ -72,8 +72,7 @@ function start_repl(; input::IO = stdin, output::IO = stdout, use_jit::Bool = fa
 
                     try
                         vm = VM(bytecode(c), globals)
-                        run!(vm)
-                        result = last_popped(vm)
+                        result = run!(vm)
                         if !isnothing(result)
                             println(output, result)
                         end
