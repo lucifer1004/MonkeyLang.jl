@@ -145,8 +145,6 @@ load_symbol!(c::Compiler, s::MonkeySymbol) = begin
     end
 end
 
-compile!(::Compiler, ::Node) = nothing
-
 compile!(c::Compiler, il::IntegerLiteral) =
     emit!(c, OpConstant, add!(c, IntegerObj(il.value)) - 1)
 

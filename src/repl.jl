@@ -70,16 +70,10 @@ function start_repl(; input::IO = stdin, output::IO = stdout, use_jit::Bool = fa
                         continue
                     end
 
-                    try
-                        vm = VM(bytecode(c), globals)
-                        result = run!(vm)
-                        if !isnothing(result)
-                            println(output, result)
-                        end
-                    catch e
-                        msg = hasproperty(e, :msg) ? e.msg : "unknown error"
-                        println(output, ErrorObj("runtime error: $msg"))
-                        continue
+                    vm = VM(bytecode(c), globals; input = input, output = output)
+                    result = run!(vm)
+                    if !isnothing(result)
+                        println(output, result)
                     end
                 else
                     evaluated = evaluate(expanded, env)
@@ -89,11 +83,15 @@ function start_repl(; input::IO = stdin, output::IO = stdout, use_jit::Bool = fa
                 end
             catch e
                 if isa(e, StackOverflowError) # `StackOverflowError` does not have `:msg` field
-                    println(output, ErrorObj("stack overflow"))
-                elseif :msg in fieldnames(typeof(e))
-                    println(output, ErrorObj(e.msg))
+                    println(output, ErrorObj("runtime error: stack overflow"))
+                elseif hasproperty(e, :msg)
+                    if occursin("macro error", e.msg)
+                        println(output, ErrorObj(e.msg))
+                    else
+                        println(output, ErrorObj("runtime error: " * e.msg))
+                    end
                 else
-                    println(output, ErrorObj("unknown error"))
+                    println(output, ErrorObj("runtime error: unknown error"))
                 end
             end
         catch e

@@ -191,11 +191,5 @@ function run_compiler_tests(
 end
 
 function test_vm(input::String, expected)
-    program = m.parse(input)
-    c = m.Compiler()
-    m.compile!(c, program)
-    vm = m.VM(m.bytecode(c))
-    m.run!(vm)
-
-    test_object(m.last_popped(vm), expected)
+    test_object(m.run(input), expected)
 end

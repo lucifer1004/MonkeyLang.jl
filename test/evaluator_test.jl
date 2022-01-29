@@ -1,4 +1,21 @@
 @testset "Test Evaluator" begin
+    @testset "Test Evaluating Empty Program" begin
+        @test isnothing(m.evaluate(""))
+    end
+
+    # These cases should not occur unless the internal data are malformed.
+    @testset "Test Malformed Expressions" begin
+        @test test_object(
+            m.evaluate_prefix_expression("+", m.IntegerObj(1)),
+            "unknown operator: +INTEGER", 
+        )
+
+        @test test_object(
+            m.evaluate_infix_expression("&", m.IntegerObj(1), m.IntegerObj(1)),
+            "unknown operator: INTEGER & INTEGER", 
+        )
+    end
+
     @testset "Test Evaluating Integer Expressions" begin
         for (code, expected) in [
             ("5", 5),
@@ -454,6 +471,8 @@
             ("{5: 5}[5]", 5),
             ("{true: 5}[true]", 5),
             ("{false: 5}[false]", 5),
+            ("let a = [1, 2]; {a: 2}[1, 2]", 2),
+            ("let a = {1: 2, 3: 4}; {a: 2}[{3: 4, 1: 2}]", 2),
         ]
             @test begin
                 evaluated = m.evaluate(code)

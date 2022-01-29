@@ -19,8 +19,13 @@ function peek_char(l::Lexer)
         return
     else
         _, state = l.next
-        ch, _ = iterate(l.input, state)
-        return ch
+        nxt = iterate(l.input, state)
+        if !isnothing(nxt)
+            ch, _ = nxt
+            return ch
+        else
+            return
+        end
     end
 end
 

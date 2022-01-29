@@ -769,4 +769,39 @@
             @test run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
+
+    @testset "Error handling" begin
+        for (input, error_message) in [("a", "identifier not found: a")]
+            @test_throws ErrorException(error_message) begin
+                program = m.parse(input)
+                c = m.Compiler()
+                m.compile!(c, program)
+            end
+        end
+
+        @test_throws ErrorException("unknown operator: &") begin
+            c = m.Compiler()
+            m.compile!(
+                c,
+                m.InfixExpression(
+                    m.Token(m.PLUS, "+"),
+                    m.IntegerLiteral(m.Token(m.INT, "2"), 2),
+                    "&",
+                    m.IntegerLiteral(m.Token(m.INT, "2"), 2),
+                ),
+            )
+        end
+
+        @test_throws ErrorException("unknown operator: +") begin
+            c = m.Compiler()
+            m.compile!(
+                c,
+                m.PrefixExpression(
+                    m.Token(m.PLUS, "+"),
+                    "+",
+                    m.IntegerLiteral(m.Token(m.INT, "2"), 2),
+                ),
+            )
+        end
+    end
 end

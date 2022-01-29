@@ -182,9 +182,9 @@ function evaluate_infix_expression(operator::String, left::Object, right::Object
     end
 
     if operator == "=="
-        return left === right ? _TRUE : _FALSE
+        return left == right ? _TRUE : _FALSE
     elseif operator == "!="
-        return left !== right ? _TRUE : _FALSE
+        return left != right ? _TRUE : _FALSE
     else
         return ErrorObj(
             "unknown operator: " * type_of(left) * " " * operator * " " * type_of(right),
@@ -228,7 +228,7 @@ function evaluate_infix_expression(operator::String, left::IntegerObj, right::In
         return left.value != right.value ? _TRUE : _FALSE
     else
         return ErrorObj(
-            "unknown operator: " * type_of(left) * " " * operator * type_of(right),
+            "unknown operator: " * type_of(left) * " " * operator * " " * type_of(right),
         )
     end
 end

@@ -17,7 +17,6 @@ const CLOSURE_OBJ = "CLOSURE"
 
 is_truthy(::Object) = true
 Base.show(io::IO, object::Object) = print(io, string(object))
-Base.isless(a::Object, b::Object) = isless(string(a), string(b))
 
 struct IntegerObj <: Object
     value::Int64
@@ -25,6 +24,8 @@ end
 
 type_of(::IntegerObj) = INTEGER_OBJ
 Base.string(i::IntegerObj) = string(i.value)
+Base.:(==)(a::IntegerObj, b::IntegerObj) = a.value == b.value
+Base.hash(i::IntegerObj) = hash(i.value)
 
 struct BooleanObj <: Object
     value::Bool
@@ -32,9 +33,11 @@ end
 
 const _TRUE = BooleanObj(true)
 const _FALSE = BooleanObj(false)
-is_truthy(i::BooleanObj) = i.value
+is_truthy(b::BooleanObj) = b.value
 type_of(::BooleanObj) = BOOLEAN_OBJ
-Base.string(i::BooleanObj) = string(i.value)
+Base.string(b::BooleanObj) = string(b.value)
+Base.:(==)(a::BooleanObj, b::BooleanObj) = a.value == b.value
+Base.hash(b::BooleanObj) = hash(b.value)
 
 struct NullObj <: Object end
 
@@ -48,7 +51,7 @@ struct ReturnValue <: Object
 end
 
 type_of(::ReturnValue) = RETURN_VALUE
-Base.string(i::ReturnValue) = string(i.value)
+Base.string(r::ReturnValue) = string(r.value)
 
 struct ErrorObj <: Object
     message::String
@@ -91,6 +94,8 @@ end
 
 type_of(::StringObj) = STRING_OBJ
 Base.string(s::StringObj) = "\"" * string(s.value) * "\""
+Base.:(==)(a::StringObj, b::StringObj) = a.value == b.value
+Base.hash(s::StringObj) = hash(s.value)
 
 struct ArrayObj <: Object
     elements::Vector{Object}
@@ -98,6 +103,8 @@ end
 
 type_of(::ArrayObj) = ARRAY_OBJ
 Base.string(a::ArrayObj) = "[" * join(map(string, a.elements), ", ") * "]"
+Base.:(==)(a::ArrayObj, b::ArrayObj) = a.elements == b.elements
+Base.hash(a::ArrayObj) = hash(a.elements)
 
 struct Builtin <: Object
     fn::Function
@@ -113,6 +120,8 @@ end
 type_of(::HashObj) = HASH_OBJ
 Base.string(h::HashObj) =
     "{" * join(map(x -> string(x[1]) * ":" * string(x[2]), collect(h.pairs)), ", ") * "}"
+Base.:(==)(a::HashObj, b::HashObj) = a.pairs == b.pairs
+Base.hash(h::HashObj) = hash(h.pairs)
 
 struct QuoteObj <: Object
     node::Node

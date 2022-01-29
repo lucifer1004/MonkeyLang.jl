@@ -12,6 +12,7 @@
             (m.OpGreaterThan, [], [UInt8(m.OpGreaterThan)]),
             (m.OpGetLocal, [255], [UInt8(m.OpGetLocal), 255]),
             (m.OpClosure, [65534, 255], [UInt8(m.OpClosure), 255, 254, 255]),
+            (m.OpIllegal, [], []),
         ]
             @test begin
                 instruction = m.make(op, operands...)
@@ -100,14 +101,9 @@
                 ],
                 "0000 OpAdd\n0001 OpGetLocal 1\n0003 OpConstant 2\n0006 OpConstant 65535\n0009 OpClosure 65535 255\n",
             ),
+            ([m.Instructions([UInt8(m.OpIllegal)])], "ERROR: unknown opcode: 31\n"),
         ]
-            @test begin
-                concatted = vcat(instructions...)
-
-                @assert string(concatted) == expected "Instructions wrongly formatted. Expected $(expected), got $(string(concatted)) instead."
-
-                true
-            end
+            @test string(vcat(instructions...)) == expected
         end
     end
 

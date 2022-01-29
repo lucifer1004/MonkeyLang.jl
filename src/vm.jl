@@ -14,14 +14,17 @@ struct VM
     sp::Ref{Int64}
     globals::Vector{Object}
     frames::Vector{Frame}
+    input::IO
+    output::IO
 
-    VM(bc::ByteCode, globals::Vector{Object} = Object[]) = begin
-        main_fn = CompiledFunctionObj(bc.instructions, 0, 0)
-        main_closure = ClosureObj(main_fn, [])
-        main_frame = Frame(main_closure, 0)
-        frames = [main_frame]
-        new(bc.constants, [], Ref(1), globals, frames)
-    end
+    VM(bc::ByteCode, globals::Vector{Object} = Object[]; input = stdin, output = stdout) =
+        begin
+            main_fn = CompiledFunctionObj(bc.instructions, 0, 0)
+            main_closure = ClosureObj(main_fn, [])
+            main_frame = Frame(main_closure, 0)
+            frames = [main_frame]
+            new(bc.constants, [], Ref(1), globals, frames, input, output)
+        end
 end
 
 Base.push!(vm::VM, obj::Object) = begin
@@ -156,7 +159,7 @@ run!(vm::VM) = begin
             push!(vm, arr)
         elseif op == OpHash
             cip[] += 2
-            element_count =read_uint16(ins, ip + 1)
+            element_count = read_uint16(ins, ip + 1)
             hash = build_hash!(vm, element_count)
             push!(vm, hash)
         elseif op == OpClosure
@@ -272,6 +275,9 @@ execute_binary_operation!(vm::VM, op::OpCode, left::IntegerObj, right::IntegerOb
     elseif op == OpMul
         IntegerObj(lval * rval)
     elseif op == OpDiv
+        if rval == 0
+            return runtime_error!(vm, "divide error: division by zero")
+        end
         IntegerObj(lval ÷ rval)
     elseif op == OpEqual
         native_bool_to_boolean_obj(lval == rval)
@@ -322,7 +328,8 @@ end
 
 call!(vm::VM, builtin::Builtin, arg_count::Integer) = begin
     args = vm.stack[vm.sp[]-arg_count:vm.sp[]-1]
-    result = builtin.fn(args...)
+    result =
+        builtin.fn(args...; env = Environment(; input = vm.input, output = vm.output))
     vm.sp[] -= arg_count + 1
     push!(vm, result)
 end

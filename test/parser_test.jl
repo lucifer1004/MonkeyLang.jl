@@ -607,6 +607,7 @@
                 "100000000000000000000",
                 ["ERROR: parse error: could not parse 100000000000000000000 as integer"],
             ),
+            ("2!", ["ERROR: parse error: no prefix parse function for EOF found"]),
             (
                 "{1:2",
                 ["ERROR: parse error: expected next token to be COMMA, got EOF instead"],

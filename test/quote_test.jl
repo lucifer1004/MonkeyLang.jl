@@ -1,5 +1,7 @@
 @testset "Test Quote" begin
     @testset "quote" begin
+        @test isa(m.evaluate("quote()"), m.NullObj)
+
         for (input, expected) in [
             ("quote(5)", "5"),
             ("quote(5 + 8)", "(5 + 8)"),

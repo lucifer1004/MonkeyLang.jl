@@ -1,4 +1,4 @@
-@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLessThan OpGreaterThan OpMinus OpBang OpTrue OpFalse OpNull OpPop OpJump OpJumpNotTruthy OpGetGlobal OpSetGlobal OpGetLocal OpSetLocal OpGetBuiltin OpGetFree OpCurrentClosure OpArray OpHash OpClosure OpIndex OpCall OpReturnValue OpReturn
+@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLessThan OpGreaterThan OpMinus OpBang OpTrue OpFalse OpNull OpPop OpJump OpJumpNotTruthy OpGetGlobal OpSetGlobal OpGetLocal OpSetLocal OpGetBuiltin OpGetFree OpCurrentClosure OpArray OpHash OpClosure OpIndex OpCall OpReturnValue OpReturn OpIllegal
 
 struct Instructions
     codes::Vector{UInt8}
@@ -10,10 +10,8 @@ Base.getindex(ins::Instructions, r::UnitRange{Int}) = Instructions(ins.codes[r])
 Base.setindex!(ins::Instructions, val::UInt8, i::Int) = ins.codes[i] = val
 Base.lastindex(ins::Instructions) = lastindex(ins.codes)
 Base.vcat(is::Vararg{Instructions}) = Instructions(vcat(map(x -> x.codes, is)...))
-Base.push!(ins::Instructions, code::UInt8) = push!(ins.codes, code)
 Base.append!(ins::Instructions, other::Instructions) = append!(ins.codes, other.codes)
 Base.splice!(ins::Instructions, r::UnitRange{Int}) = splice!(ins.codes, r)
-Base.show(io::IO, ins::Instructions) = show(io, string(ins))
 Base.string(ins::Instructions) = begin
     out = IOBuffer()
     i = 1
@@ -21,6 +19,7 @@ Base.string(ins::Instructions) = begin
         def = lookup(ins[i])
         if isnothing(def)
             write(out, "ERROR: unknown opcode: $(ins[i])\n")
+            i += 1
             continue
         end
 
@@ -85,7 +84,7 @@ end
 
 function make(op::OpCode, operands::Vararg{Int})::Instructions
     if op ∉ keys(DEFINITIONS)
-        return UInt8[]
+        return Instructions(UInt8[])
     end
 
     def = DEFINITIONS[op]
@@ -93,7 +92,8 @@ function make(op::OpCode, operands::Vararg{Int})::Instructions
 
     for (operand, width) in zip(operands, def.operand_widths)
         if width == 2
-            append!(codes, reinterpret(UInt8, [hton(UInt16(operand))]))
+            push!(codes, UInt8(operand >> 8))
+            push!(codes, UInt8(operand & 0xFF))
         elseif width == 1
             push!(codes, UInt8(operand))
         end
@@ -117,5 +117,5 @@ function read_operands(def::Definition, ins::Instructions)::Tuple{Vector{Int},In
 end
 
 function read_uint16(ins::Instructions, pos::Int)::UInt16
-    return UInt16(ins.codes[pos]) << 8 + ins.codes[pos + 1]
+    return UInt16(ins.codes[pos]) << 8 | ins.codes[pos+1]
 end

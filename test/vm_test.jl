@@ -58,6 +58,16 @@
         end
     end
 
+    @testset "Invalid Unary And Binary Expressions" begin
+        for (input, expected) in [
+            ("-false", "unsupported type for negation: BOOLEAN"),
+            ("2 + false", "type mismatch: left: INTEGER, right: BOOLEAN"),
+            ("false + false", "unknown operator: BOOLEAN OpAdd BOOLEAN"),
+        ]
+            @test test_vm(input, expected)
+        end
+    end
+
     @testset "Conditionals" begin
         for (input, expected) in [
             ("if (true) { 10 }", 10),
@@ -125,6 +135,9 @@
             ("{1: 1, 2: 2}[1]", 1),
             ("{1: 1, 2: 2}[2]", 2),
             ("{1: 1}[0]", nothing),
+            ("[1, 2][\"a\"]", "invalid index \"a\" for ARRAY"),
+            ("let a = [1, 2]; {a: 2}[[1, 2]]", 2),
+            ("let a = {1: 2, 3: 4}; {a: 2}[{3: 4, 1: 2}]", 2),
         ]
             @test test_vm(input, expected)
         end
