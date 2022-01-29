@@ -28,11 +28,11 @@ let fibonacci = fn(x) {
     }
 };
 
-fibonacci(15);
+fibonacci(35);
 """
 
 println("=== Julia native ===")
-@btime fib(15)
+@btime fib(35)
 
 println("=== Using evaluator ===")
 @btime m.evaluate($input)

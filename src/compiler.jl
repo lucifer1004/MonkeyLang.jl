@@ -19,8 +19,8 @@ last_instruction(c::CompilationScope) =
 prev_instruction(c::CompilationScope) =
     length(c.previous_instructions) < 2 ? nothing : c.previous_instructions[1]
 
-struct Compiler
-    symbol_table::Ref{SymbolTable}
+mutable struct Compiler
+    symbol_table::SymbolTable
     constants::Vector{Object}
     scopes::Vector{CompilationScope}
 
@@ -29,10 +29,10 @@ struct Compiler
         for (i, (name, _)) in enumerate(BUILTINS)
             define_builtin!(s, name, i - 1)
         end
-        new(Ref(s), [], [CompilationScope(Instructions([]), [])])
+        new(s, [], [CompilationScope(Instructions([]), [])])
     end
     Compiler(s::SymbolTable, constants::Vector{Object}) =
-        new(Ref(s), constants, [CompilationScope(Instructions([]), [])])
+        new(s, constants, [CompilationScope(Instructions([]), [])])
 end
 
 Base.length(c::Compiler) = length(current_scope(c).instructions)
@@ -122,12 +122,12 @@ emit!(c::Compiler, op::OpCode, operands::Vararg{Int})::Int64 = begin
 end
 
 enter_scope!(c::Compiler) = begin
-    c.symbol_table[] = SymbolTable(c.symbol_table[])
+    c.symbol_table = SymbolTable(c.symbol_table)
     push!(c.scopes, CompilationScope(Instructions([]), []))
 end
 
 leave_scope!(c::Compiler)::CompilationScope = begin
-    c.symbol_table[] = c.symbol_table[].outer
+    c.symbol_table = c.symbol_table.outer
     pop!(c.scopes)
 end
 
@@ -183,11 +183,11 @@ compile!(c::Compiler, fl::FunctionLiteral) = begin
     enter_scope!(c)
 
     if !isempty(fl.name)
-        define_function!(c.symbol_table[], fl.name)
+        define_function!(c.symbol_table, fl.name)
     end
 
     for param in fl.parameters
-        define!(c.symbol_table[], param.value)
+        define!(c.symbol_table, param.value)
     end
 
     compile!(c, fl.body)
@@ -196,8 +196,8 @@ compile!(c::Compiler, fl::FunctionLiteral) = begin
         emit!(c, OpReturn)
     end
 
-    free_symbols = c.symbol_table[].free_symbols
-    local_count = c.symbol_table[].definition_count[]
+    free_symbols = c.symbol_table.free_symbols
+    local_count = c.symbol_table.definition_count[]
     instructions = leave_scope!(c).instructions
 
     for sym in free_symbols
@@ -209,7 +209,7 @@ compile!(c::Compiler, fl::FunctionLiteral) = begin
 end
 
 compile!(c::Compiler, ident::Identifier) = begin
-    sym = resolve(c.symbol_table[], ident.value)
+    sym = resolve(c.symbol_table, ident.value)
 
     if isnothing(sym)
         error("identifier not found: $(ident.value)")
@@ -224,7 +224,7 @@ compile!(c::Compiler, es::ExpressionStatement) = begin
 end
 
 compile!(c::Compiler, ls::LetStatement) = begin
-    sym = define!(c.symbol_table[], ls.name.value)
+    sym = define!(c.symbol_table, ls.name.value)
     compile!(c, ls.value)
     if sym.scope == GLOBAL_SCOPE
         emit!(c, OpSetGlobal, sym.index)

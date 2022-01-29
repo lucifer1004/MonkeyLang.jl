@@ -1,17 +1,17 @@
-struct Frame
+mutable struct Frame
     cl::ClosureObj
-    ip::Ref{Int}
+    ip::Int
     base_ptr::Int
 
-    Frame(cl::ClosureObj, base_ptr::Int) = new(cl, Ref(0), base_ptr)
+    Frame(cl::ClosureObj, base_ptr::Int) = new(cl, 0, base_ptr)
 end
 
 instructions(f::Frame) = f.cl.fn.instructions
 
-struct VM
+mutable struct VM
     constants::Vector{Object}
     stack::Vector{Object}
-    sp::Ref{Int64}
+    sp::Int64
     globals::Vector{Object}
     frames::Vector{Frame}
     input::IO
@@ -23,42 +23,42 @@ struct VM
             main_closure = ClosureObj(main_fn, [])
             main_frame = Frame(main_closure, 0)
             frames = [main_frame]
-            new(bc.constants, [], Ref(1), globals, frames, input, output)
+            new(bc.constants, [], 1, globals, frames, input, output)
         end
 end
 
 Base.push!(vm::VM, obj::Object) = begin
-    if vm.sp[] > length(vm.stack)
-        append!(vm.stack, fill(_NULL, vm.sp[] - 1 - length(vm.stack)))
+    if vm.sp > length(vm.stack)
+        append!(vm.stack, fill(_NULL, vm.sp - 1 - length(vm.stack)))
         push!(vm.stack, obj)
     else
-        vm.stack[vm.sp[]] = obj
+        vm.stack[vm.sp] = obj
     end
 
-    vm.sp[] += 1
+    vm.sp += 1
 end
 
 push_frame!(vm::VM, frame::Frame) = push!(vm.frames, frame)
 
 push_closure!(vm::VM, id::Int, free_count::Integer) = begin
     fn = vm.constants[id]
-    free = vm.stack[vm.sp[]-free_count:vm.sp[]-1]
-    vm.sp[] -= free_count
+    free = vm.stack[vm.sp-free_count:vm.sp-1]
+    vm.sp -= free_count
     closure = ClosureObj(fn, free)
     push!(vm, closure)
 end
 
 Base.pop!(vm::VM) = begin
-    if vm.sp[] == 1
+    if vm.sp == 1
         return nothing
     end
-    vm.sp[] -= 1
-    return vm.stack[vm.sp[]]
+    vm.sp -= 1
+    return vm.stack[vm.sp]
 end
 
 pop_frame!(vm::VM) = pop!(vm.frames)
 
-last_popped(vm::VM) = vm.sp[] > length(vm.stack) ? nothing : vm.stack[vm.sp[]]
+last_popped(vm::VM) = vm.sp > length(vm.stack) ? nothing : vm.stack[vm.sp]
 
 current_frame(vm::VM) = vm.frames[end]
 
@@ -77,13 +77,12 @@ end
 
 run!(vm::VM) = begin
     while current_frame(vm).ip[] < length(instructions(vm))
-        cip = current_frame(vm).ip
-        cip[] += 1
-        ip = cip[]
+        current_frame(vm).ip += 1
+        ip = current_frame(vm).ip
         ins = instructions(vm)
         op = OpCode(ins[ip])
         if op == OpConstant
-            cip[] += 2
+            current_frame(vm).ip += 2
             const_id = read_uint16(ins, ip + 1) + 1
             if 1 <= const_id <= length(vm.constants)
                 push!(vm, vm.constants[const_id])
@@ -112,16 +111,16 @@ run!(vm::VM) = begin
             pos = read_uint16(ins, ip + 1)
 
             if op == OpJump
-                cip[] = pos
+                current_frame(vm).ip = pos
             else
-                cip[] += 2
+                current_frame(vm).ip += 2
                 condition = pop!(vm)
                 if !is_truthy(condition)
-                    cip[] = pos
+                    current_frame(vm).ip = pos
                 end
             end
         elseif OpGetGlobal <= op <= OpSetGlobal
-            cip[] += 2
+            current_frame(vm).ip += 2
             global_id = read_uint16(ins, ip + 1)
 
             if op == OpSetGlobal
@@ -134,7 +133,7 @@ run!(vm::VM) = begin
                 push!(vm, vm.globals[global_id+1])
             end
         elseif OpGetLocal <= op <= OpSetLocal
-            cip[] += 1
+            current_frame(vm).ip += 1
             local_id = ins[ip+1]
             frame = current_frame(vm)
 
@@ -144,26 +143,26 @@ run!(vm::VM) = begin
                 push!(vm, vm.stack[frame.base_ptr+local_id])
             end
         elseif op == OpGetBuiltin
-            cip[] += 1
+            current_frame(vm).ip += 1
             builtin_id = ins[ip+1] + 1
             builtin = BUILTINS[builtin_id].second
             push!(vm, builtin)
         elseif op == OpGetFree
-            cip[] += 1
+            current_frame(vm).ip += 1
             free_id = ins[ip+1] + 1
             push!(vm, current_frame(vm).cl.free[free_id])
         elseif op == OpArray
-            cip[] += 2
+            current_frame(vm).ip += 2
             element_count = read_uint16(ins, ip + 1)
             arr = build_array!(vm, element_count)
             push!(vm, arr)
         elseif op == OpHash
-            cip[] += 2
+            current_frame(vm).ip += 2
             element_count = read_uint16(ins, ip + 1)
             hash = build_hash!(vm, element_count)
             push!(vm, hash)
         elseif op == OpClosure
-            cip[] += 3
+            current_frame(vm).ip += 3
             const_id = read_uint16(ins, ip + 1) + 1
             free_count = ins[ip+3]
             push_closure!(vm, const_id, free_count)
@@ -194,18 +193,18 @@ run!(vm::VM) = begin
                 runtime_error!(vm, "index operator not supported on $(type_of(left))")
             end
         elseif op == OpCall
-            cip[] += 1
+            current_frame(vm).ip += 1
             arg_count = ins[ip+1]
-            callee = vm.stack[vm.sp[]-1-arg_count]
+            callee = vm.stack[vm.sp-1-arg_count]
             call!(vm, callee, arg_count)
         elseif op == OpReturnValue
             return_value = pop!(vm)
             frame = pop_frame!(vm)
-            vm.sp[] = frame.base_ptr - 1
+            vm.sp = frame.base_ptr - 1
             push!(vm, return_value)
         elseif op == OpReturn
             frame = pop_frame!(vm)
-            vm.sp[] = frame.base_ptr - 1
+            vm.sp = frame.base_ptr - 1
             push!(vm, _NULL)
         end
     end
@@ -295,16 +294,16 @@ execute_binary_operation!(vm::VM, op::OpCode, left::IntegerObj, right::IntegerOb
 end
 
 build_array!(vm::VM, element_count::Integer) = begin
-    elements = vm.stack[vm.sp[]-element_count:vm.sp[]-1]
+    elements = vm.stack[vm.sp-element_count:vm.sp-1]
 
-    vm.sp[] -= element_count
+    vm.sp -= element_count
 
     return ArrayObj(elements)
 end
 
 build_hash!(vm::VM, element_count::Integer) = begin
-    elements = vm.stack[vm.sp[]-element_count:vm.sp[]-1]
-    vm.sp[] -= element_count
+    elements = vm.stack[vm.sp-element_count:vm.sp-1]
+    vm.sp -= element_count
     prs = Dict(elements[i] => elements[i+1] for i = 1:2:length(elements))
     return HashObj(prs)
 end
@@ -314,23 +313,23 @@ call!(vm::VM, ::Object, ::Integer) =
 
 call!(vm::VM, cl::ClosureObj, arg_count::Integer) = begin
     if arg_count != cl.fn.param_count
-        vm.sp[] += cl.fn.local_count - arg_count
+        vm.sp += cl.fn.local_count - arg_count
         runtime_error!(
             vm,
             "wrong number of arguments: expected $(cl.fn.param_count), got $(arg_count)",
         )
     else
-        frame = Frame(cl, vm.sp[] - arg_count)
+        frame = Frame(cl, vm.sp - arg_count)
         push_frame!(vm, frame)
-        vm.sp[] += cl.fn.local_count - arg_count
+        vm.sp += cl.fn.local_count - arg_count
     end
 end
 
 call!(vm::VM, builtin::Builtin, arg_count::Integer) = begin
-    args = vm.stack[vm.sp[]-arg_count:vm.sp[]-1]
+    args = vm.stack[vm.sp-arg_count:vm.sp-1]
     result =
         builtin.fn(args...; env = Environment(; input = vm.input, output = vm.output))
-    vm.sp[] -= arg_count + 1
+    vm.sp -= arg_count + 1
     push!(vm, result)
 end
 

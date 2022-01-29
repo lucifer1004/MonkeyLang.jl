@@ -434,7 +434,7 @@
 
     @testset "Compiler Scopes" begin
         c = m.Compiler()
-        g = c.symbol_table[]
+        g = c.symbol_table
         @test length(c.scopes) == 1
 
         m.emit!(c, m.OpMul)
@@ -446,12 +446,12 @@
 
         last = m.last_instruction(c)
         @test last.op == m.OpSub
-        @test c.symbol_table[].outer == g
+        @test c.symbol_table.outer == g
 
         m.leave_scope!(c)
         @test length(c.scopes) == 1
-        @test c.symbol_table[] == g
-        @test isnothing(c.symbol_table[].outer)
+        @test c.symbol_table == g
+        @test isnothing(c.symbol_table.outer)
 
         m.emit!(c, m.OpAdd)
         @test length(c) == 2

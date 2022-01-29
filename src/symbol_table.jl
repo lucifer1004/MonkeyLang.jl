@@ -10,20 +10,20 @@ struct MonkeySymbol
     index::Int
 end
 
-struct SymbolTable
+mutable struct SymbolTable
     store::Dict{String,MonkeySymbol}
-    definition_count::Ref{Int}
+    definition_count::Int
     outer::Union{SymbolTable,Nothing}
     free_symbols::Vector{MonkeySymbol}
 
-    SymbolTable(outer = nothing) = new(Dict(), Ref(0), outer, [])
+    SymbolTable(outer = nothing) = new(Dict(), 0, outer, [])
 end
 
 define!(s::SymbolTable, name::String) = begin
     scope = isnothing(s.outer) ? GLOBAL_SCOPE : LOCAL_SCOPE
-    sym = MonkeySymbol(name, scope, s.definition_count[])
+    sym = MonkeySymbol(name, scope, s.definition_count)
     s.store[name] = sym
-    s.definition_count[] += 1
+    s.definition_count += 1
     return sym
 end
 
