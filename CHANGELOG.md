@@ -4,7 +4,8 @@
 
 ### Added
 
-- Bytecode VM implemented according to [the Compiler Book](https://compilerbook.com). VM powered repl can be used with the newly added `use_jit` option of the `MonkeyLang.start_repl()` function.
+- `MonkeyLang.jl` can now be built into a standalone executable.
+- Bytecode VM implemented according to [the Compiler Book](https://compilerbook.com). VM powered repl can be used with the newly added `use_vm` option of the `MonkeyLang.start_repl()` function.
 - Macro system (`quote` / `unquote` / `macro`) implemented according to [the Lost Chapter](https://interpreterbook.com/lost/))
 - `NullLiteral`
 - `evaluate(::String)` for direct code evaluation (macros not supported yet)

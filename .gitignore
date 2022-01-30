@@ -5,5 +5,7 @@
 *.css
 *.html
 *.info
+/build/
 /docs/build/
 /*.jl
+/monkey

@@ -10,6 +10,7 @@
 **Table of Contents**
 
 - [MonkeyLang](#monkeylang)
+  - [Compile MonkeyLang.jl to a standalone executable](#compile-monkeylangjl-to-a-standalone-executable)
   - [Start the REPL](#start-the-repl)
   - [Documentation](#documentation)
     - [Summary](#summary)
@@ -43,17 +44,33 @@
       - [A custom `reduce` function](#a-custom-reduce-function)
     - [Macro System](#macro-system)
 
+## Compile MonkeyLang.jl to a standalone executable
+
+Clone the repo, and run `make build` in the root directory.
+
+> Caution: The compilation may take up to ~5 minutes.
+
 ## Start the REPL
 
+You can start the REPL in a Julia script or in the Julia REPL:
+
 ```julia
-import Pkg; Pkg.add(url="https://github.com/lucifer1004/MonkeyLang.jl")
+import Pkg; Pkg.add("MonkeyLang")
 
 using MonkeyLang
 
 MonkeyLang.start_repl()
+MonkeyLang.start_repl(; use_vm = true) # use VM
 ```
 
-You can enter a blank line to exit the REPL.
+You can press `Ctrl-C` or `Ctrl-D` to exit the REPL.
+
+If you have compiled `MonkeyLang.jl` locally, then you can directly start the REPL by:
+
+```sh
+./monkey repl
+./monkey repl --vm # use VM
+```
 
 ## Documentation
 

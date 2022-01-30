@@ -70,7 +70,7 @@ using .Threads
         ]
             input = IOBuffer(raw_input)
             output = IOBuffer(UInt8[], read = true, write = true)
-            m.start_repl(input = input, output = output, use_jit = true)
+            m.start_repl(input = input, output = output, use_vm = true)
             @test String(output.data) ==
                   m.REPL_PRELUDE *
                   "\n" *

@@ -11,17 +11,17 @@ const REPL_PRELUDE = """
 const REPL_FAREWELL = "Good bye!"
 const _READY_TO_READ = Threads.Condition() # For test-use only.
 
-function start_repl(; input::IO = stdin, output::IO = stdout, use_jit::Bool = false)
+function start_repl(; input::IO = stdin, output::IO = stdout, use_vm::Bool = false)
     # Handle SIGINT more elegantly
     Base.exit_on_sigint(false)
 
-    env = use_jit ? nothing : Environment(; input = input, output = output)
+    env = use_vm ? nothing : Environment(; input = input, output = output)
     macro_env = Environment(; input = input, output = output)
-    constants = use_jit ? Object[] : nothing
-    globals = use_jit ? Object[] : nothing
-    symbol_table = use_jit ? SymbolTable() : nothing
+    constants = use_vm ? Object[] : nothing
+    globals = use_vm ? Object[] : nothing
+    symbol_table = use_vm ? SymbolTable() : nothing
 
-    if use_jit
+    if use_vm
         for (i, (name, _)) in enumerate(BUILTINS)
             define_builtin!(symbol_table, name, i - 1)
         end
@@ -60,7 +60,7 @@ function start_repl(; input::IO = stdin, output::IO = stdout, use_jit::Bool = fa
 
             try
                 expanded = expand_macros(program, macro_env)
-                if use_jit
+                if use_vm
                     c = Compiler(symbol_table, constants)
                     try
                         compile!(c, expanded)

@@ -1,3 +1,5 @@
+import Pkg; Pkg.instantiate()
+
 using BenchmarkTools
 using MonkeyLang
 
