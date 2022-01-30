@@ -7,12 +7,12 @@
     @testset "Test Malformed Expressions" begin
         @test test_object(
             m.evaluate_prefix_expression("+", m.IntegerObj(1)),
-            "unknown operator: +INTEGER", 
+            "unknown operator: +INTEGER",
         )
 
         @test test_object(
             m.evaluate_infix_expression("&", m.IntegerObj(1), m.IntegerObj(1)),
-            "unknown operator: INTEGER & INTEGER", 
+            "unknown operator: INTEGER & INTEGER",
         )
     end
 

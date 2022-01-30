@@ -1,7 +1,12 @@
-evaluate(code::String; input = stdin, output = stdout) =
-    evaluate(parse!(Parser(Lexer(code))), Environment(; input = input, output = output))
-evaluate(::Node, ::Environment) = _NULL
+evaluate(code::String; input = stdin, output = stdout) = begin
+    raw_program = parse(code)
+    macro_env = Environment(; input = input, output = output)
+    program = define_macros!(macro_env, raw_program)
+    expanded = expand_macros(program, macro_env)
+    evaluate(expanded, Environment(; input = input, output = output))
+end
 
+evaluate(::Node, ::Environment) = _NULL
 evaluate(node::ExpressionStatement, env::Environment) = evaluate(node.expression, env)
 evaluate(node::IntegerLiteral, ::Environment) = IntegerObj(node.value)
 evaluate(node::BooleanLiteral, ::Environment) = node.value ? _TRUE : _FALSE

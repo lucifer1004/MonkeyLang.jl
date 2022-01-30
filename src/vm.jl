@@ -64,14 +64,14 @@ current_frame(vm::VM) = vm.frames[end]
 
 instructions(vm::VM) = instructions(current_frame(vm))
 
-run(code::String) = begin
-    l = Lexer(code)
-    p = Parser(l)
-    program = parse!(p)
+run(code::String; input = stdin, output = stdout) = begin
+    raw_program = parse(code)
+    macro_env = Environment(; input = input, output = output)
+    program = define_macros!(macro_env, raw_program)
+    expanded = expand_macros(program, macro_env)
     c = Compiler()
-    compile!(c, program)
-
-    vm = VM(bytecode(c), Object[])
+    compile!(c, expanded)
+    vm = VM(bytecode(c), Object[]; input = input, output = output)
     return run!(vm)
 end
 

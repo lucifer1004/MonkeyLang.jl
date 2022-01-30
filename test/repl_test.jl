@@ -23,6 +23,10 @@ using .Threads
                 b"let a = macro(x) {x + x}; a(2)\n",
                 ["ERROR: macro error: we only support returning AST-nodes from macros"],
             ),
+            (
+                b"let reverse = macro(a, b) { quote(unquote(b) - unquote(a)); }; reverse(2 + 2, 10 - 5);\n",
+                ["1"],
+            ),
             (b"puts(\"Hello, world!\")\n", ["Hello, world!\nnull"]),
         ]
             input = IOBuffer(raw_input)
@@ -57,6 +61,10 @@ using .Threads
             (
                 b"let a = macro(x) {x + x}; a(2)\n",
                 ["ERROR: macro error: we only support returning AST-nodes from macros"],
+            ),
+            (
+                b"let reverse = macro(a, b) { quote(unquote(b) - unquote(a)); }; reverse(2 + 2, 10 - 5);\n",
+                ["1"],
             ),
             (b"puts(\"Hello, world!\")\n", ["Hello, world!\nnull"]),
         ]

@@ -49,8 +49,12 @@ modify(node::HashLiteral, modifier::Function) = HashLiteral(
     ),
 )
 
-modify(node::FunctionLiteral, modifier::Function) =
-    FunctionLiteral(node.token, node.parameters, modify(node.body, modifier))
+modify(node::FunctionLiteral, modifier::Function) = FunctionLiteral(
+    node.token,
+    node.parameters,
+    modify(node.body, modifier);
+    name = node.name,
+)
 
 # !!! Do not add the function below.
 # !!! We should not call recursively on `CallExpression`s since we need to actually modify them (the `unquote()` calls).
