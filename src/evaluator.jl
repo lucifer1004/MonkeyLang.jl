@@ -128,13 +128,37 @@ evaluate(node::LetStatement, env::Environment) = begin
     if isa(val, ErrorObj)
         return val
     end
-    set!(env, node.name.value, val)
+    if node.reassign
+        return reassign!(env, node.name.value, val)
+    else
+        if node.name.value ∈ keys(env.store)
+            return ErrorObj("$(node.name.value) is already defined")
+        end
+        set!(env, node.name.value, val)
+    end
     return val
 end
 
 evaluate(node::ReturnStatement, env::Environment) = begin
     val = evaluate(node.return_value, env)
     return isa(val, ErrorObj) ? val : ReturnValue(val)
+end
+
+evaluate(node::WhileStatement, env::Environment) = begin
+    while true
+        condition = evaluate(node.condition, env)
+        if isa(condition, ErrorObj)
+            return condition
+        end
+
+        if is_truthy(condition)
+            evaluate(node.body, Environment(env))
+        else
+            break
+        end
+    end
+
+    return _NULL
 end
 
 evaluate(block::BlockStatement, env::Environment) = begin

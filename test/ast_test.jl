@@ -8,6 +8,7 @@
                         m.Token(m.LET, "let"),
                         m.Identifier(m.Token(m.IDENT, "myVar"), "myVar"),
                         m.Identifier(m.Token(m.IDENT, "anotherVar"), "anotherVar"),
+                        false,
                     ),
                 ]),
                 "let",
@@ -23,6 +24,7 @@
                 m.Token(m.LET, "let"),
                 m.Identifier(m.Token(m.IDENT, "myVar"), "myVar"),
                 m.Identifier(m.Token(m.IDENT, "anotherVar"), "anotherVar"),
+                false,
             ),
         ])
 

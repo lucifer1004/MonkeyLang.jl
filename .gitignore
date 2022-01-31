@@ -8,4 +8,5 @@
 /build/
 /docs/build/
 /*.jl
+/*.mo
 /monkey

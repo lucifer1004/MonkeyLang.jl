@@ -18,7 +18,7 @@
             ("-50 + 100 + -50", 0),
             ("(5 + 10 * 2 + 15 / 3) * 2 + -10", 50),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -54,7 +54,7 @@
             ("\"monkey\"!=\"monkey\"", false),
             ("\"monkey\"!=\"monke\"", true),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -64,12 +64,13 @@
             ("2 + false", "type mismatch: left: INTEGER, right: BOOLEAN"),
             ("false + false", "unknown operator: BOOLEAN OpAdd BOOLEAN"),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
     @testset "Conditionals" begin
         for (input, expected) in [
+            ("if (true) {}", nothing),
             ("if (true) { 10 }", 10),
             ("if (true) { 10 } else { 20 }", 10),
             ("if (false) { 10 } else { 20 }", 20),
@@ -81,7 +82,7 @@
             ("if (false) { 10 }", nothing),
             ("if ((if (false) { 10 })) { 10 } else { 20 }", 20),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -91,7 +92,7 @@
             ("let one = 1; let two = 2; one + two", 3),
             ("let one = 1; let two = one + one; one + two", 3),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -101,14 +102,14 @@
             ("\"mon\" + \"key\"", "monkey"),
             ("\"mon\" + \"key\" + \"banana\"", "monkeybanana"),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
     @testset "Array Literals" begin
         for (input, expected) in
             [("[]", []), ("[1, 2, 3]", [1, 2, 3]), ("[1 + 2, 3 * 4, 5 + 6]", [3, 12, 11])]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -120,7 +121,7 @@
                 Dict(m.IntegerObj(2) => 4, m.IntegerObj(6) => 16),
             ),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -139,7 +140,7 @@
             ("let a = [1, 2]; {a: 2}[[1, 2]]", 2),
             ("let a = {1: 2, 3: 4}; {a: 2}[{3: 4, 1: 2}]", 2),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -164,7 +165,7 @@
                 3,
             ),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -185,7 +186,7 @@
                 99,
             ),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -208,7 +209,7 @@
                 nothing,
             ),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -233,7 +234,7 @@
                 1,
             ),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -285,7 +286,7 @@
                 97,
             ),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -355,7 +356,7 @@
                 50,
             ),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -365,7 +366,7 @@
             ("fn(a) { a; }();", "wrong number of arguments: expected 1, got 0"),
             ("fn(a, b) { a + b; }(1);", "wrong number of arguments: expected 2, got 1"),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -397,7 +398,7 @@
             ("type(null)", "NULL"),
             ("type(len(1))", "ERROR"),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -440,7 +441,77 @@
             ),
             ("type(1, 2)", "argument error: wrong number of arguments. Got 2 instead of 1"),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
+        end
+    end
+
+    @testset "While Statements" begin
+        @testset "Plain" begin
+            for (input, expected) in [(
+                """
+                let x = 1;
+                while (x > 0) {
+                    x = x - 1;
+                }
+                x;
+                """,
+                0,
+            )]
+                test_vm(input, expected)
+            end
+        end
+
+        @testset "Nested" begin
+            for (input, expected) in [(
+                """
+                let a = 6;
+                let b = 0;
+                let x = 1;
+                while (x > 0) {
+                    x = x - 1;
+                    let a = 5;
+                    a = a + 3;
+                    b = b + a;
+                    let y = 1;
+                    while (y > 0) {
+                        y = y - 1;
+                        a = a + 3;
+                        b = b + a;
+                    }
+                }
+                b = b + a;
+                """,
+                25,
+            )]
+                test_vm(input, expected)
+            end
+        end
+
+        @testset "Inside Functions" begin
+            for (input, expected) in [(
+                """
+                let x = 5;
+                let y = 0;
+                while (x > 0) {
+                    x = x - 1;
+                    let z = 5;
+                    let f = fn() {
+                        let w = 1;
+                        while (z > 0) {
+                            w = w * 2;
+                            y = y + z * w;
+                            z = z - 1;
+                            f();
+                        }
+                    }
+                    f();
+                }
+                y;
+                """,
+                150,
+            )]
+                test_vm(input, expected)
+            end
         end
     end
 
@@ -519,7 +590,7 @@
                 99,
             ),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 
@@ -568,7 +639,7 @@
                 15,
             ),
         ]
-            @test test_vm(input, expected)
+            test_vm(input, expected)
         end
     end
 end

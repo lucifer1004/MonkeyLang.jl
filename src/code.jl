@@ -1,4 +1,4 @@
-@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLessThan OpGreaterThan OpMinus OpBang OpTrue OpFalse OpNull OpPop OpJump OpJumpNotTruthy OpGetGlobal OpSetGlobal OpGetLocal OpSetLocal OpGetBuiltin OpGetFree OpCurrentClosure OpArray OpHash OpClosure OpIndex OpCall OpReturnValue OpReturn OpIllegal
+@enum OpCode::UInt8 OpConstant OpAdd OpSub OpMul OpDiv OpEqual OpNotEqual OpLessThan OpGreaterThan OpMinus OpBang OpTrue OpFalse OpNull OpPop OpJump OpJumpNotTruthy OpGetGlobal OpSetGlobal OpGetLocal OpSetLocal OpGetBuiltin OpGetFree OpSetFree OpGetOuter OpSetOuter OpCurrentClosure OpArray OpHash OpClosure OpIndex OpCall OpReturnValue OpReturn OpIllegal
 
 struct Instructions
     codes::Vector{UInt8}
@@ -60,6 +60,9 @@ const DEFINITIONS = Dict{OpCode,Definition}(
     OpSetLocal => Definition("OpSetLocal", [1]),
     OpGetBuiltin => Definition("OpGetBuiltin", [1]),
     OpGetFree => Definition("OpGetFree", [1]),
+    OpSetFree => Definition("OpSetFree", [1]),
+    OpGetOuter => Definition("OpGetOuter", [1, 1, 1]),
+    OpSetOuter => Definition("OpSetOuter", [1, 1, 1]),
     OpCurrentClosure => Definition("OpCurrentClosure", []),
     OpArray => Definition("OpArray", [2]),
     OpHash => Definition("OpHash", [2]),

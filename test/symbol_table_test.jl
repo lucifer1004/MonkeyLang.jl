@@ -1,12 +1,12 @@
 @testset "Test Symbol Table" begin
     @testset "Scope" begin
         expected = Dict(
-            "a" => m.MonkeySymbol("a", m.GLOBAL_SCOPE, 0),
-            "b" => m.MonkeySymbol("b", m.GLOBAL_SCOPE, 1),
-            "c" => m.MonkeySymbol("c", m.LOCAL_SCOPE, 0),
-            "d" => m.MonkeySymbol("d", m.LOCAL_SCOPE, 1),
-            "e" => m.MonkeySymbol("e", m.LOCAL_SCOPE, 0),
-            "f" => m.MonkeySymbol("f", m.LOCAL_SCOPE, 1),
+            "a" => m.MonkeySymbol("a", m.GlobalScope, 0, nothing),
+            "b" => m.MonkeySymbol("b", m.GlobalScope, 1, nothing),
+            "c" => m.MonkeySymbol("c", m.LocalScope, 0, nothing),
+            "d" => m.MonkeySymbol("d", m.LocalScope, 1, nothing),
+            "e" => m.MonkeySymbol("e", m.LocalScope, 0, nothing),
+            "f" => m.MonkeySymbol("f", m.LocalScope, 1, nothing),
         )
 
         g = m.SymbolTable()
@@ -33,26 +33,50 @@
         f = m.define!(l2, "f")
         @test f == expected["f"]
 
-        @test m.resolve(g, "a") == expected["a"]
-        @test m.resolve(g, "b") == expected["b"]
+        @test m.resolve(g, "a")[1] == expected["a"]
+        @test m.resolve(g, "b")[1] == expected["b"]
 
-        @test m.resolve(l1, "a") == expected["a"]
-        @test m.resolve(l1, "b") == expected["b"]
-        @test m.resolve(l1, "c") == expected["c"]
-        @test m.resolve(l1, "d") == expected["d"]
+        @test m.resolve(l1, "a")[1] == expected["a"]
+        @test m.resolve(l1, "b")[1] == expected["b"]
+        @test m.resolve(l1, "c")[1] == expected["c"]
+        @test m.resolve(l1, "d")[1] == expected["d"]
 
-        @test m.resolve(l2, "a") == expected["a"]
-        @test m.resolve(l2, "b") == expected["b"]
-        @test m.resolve(l2, "e") == expected["e"]
-        @test m.resolve(l2, "f") == expected["f"]
+        @test m.resolve(l2, "a")[1] == expected["a"]
+        @test m.resolve(l2, "b")[1] == expected["b"]
+        @test m.resolve(l2, "e")[1] == expected["e"]
+        @test m.resolve(l2, "f")[1] == expected["f"]
+    end
+
+    @testset "Shadowing Variables" begin
+        g = m.SymbolTable()
+        a = m.define!(g, "a")
+        b = m.define!(g, "b")
+
+        l1 = m.SymbolTable(g)
+        @test m.resolve(l1, "a")[1] == m.MonkeySymbol("a", m.GlobalScope, 0, nothing)
+
+        a1 = m.define!(l1, "a")
+        @test a1 == m.MonkeySymbol("a", m.LocalScope, 0, nothing)
+        @test m.resolve(l1, "a")[1] == m.MonkeySymbol("a", m.LocalScope, 0, nothing)
+        @test m.resolve(l1, "b")[1] == m.MonkeySymbol("b", m.GlobalScope, 1, nothing)
+
+        l2 = m.SymbolTable(l1)
+        @test m.resolve(l2, "a")[1] ==
+              m.MonkeySymbol("a", m.OuterScope, 0, m.SymbolPointer(1, m.LocalScope, 0))
+        @test m.resolve(l2, "b")[1] == m.MonkeySymbol("b", m.GlobalScope, 1, nothing)
+
+        l3 = m.SymbolTable(l2)
+        @test m.resolve(l3, "a")[1] ==
+              m.MonkeySymbol("a", m.OuterScope, 0, m.SymbolPointer(2, m.LocalScope, 0))
+        @test m.resolve(l3, "b")[1] == m.MonkeySymbol("b", m.GlobalScope, 1, nothing)
     end
 
     @testset "Builtins" begin
         expected = Dict(
-            "a" => m.MonkeySymbol("a", m.BUILTIN_SCOPE, 0),
-            "c" => m.MonkeySymbol("c", m.BUILTIN_SCOPE, 1),
-            "e" => m.MonkeySymbol("e", m.BUILTIN_SCOPE, 2),
-            "f" => m.MonkeySymbol("f", m.BUILTIN_SCOPE, 3),
+            "a" => m.MonkeySymbol("a", m.BuiltinScope, 0, nothing),
+            "c" => m.MonkeySymbol("c", m.BuiltinScope, 1, nothing),
+            "e" => m.MonkeySymbol("e", m.BuiltinScope, 2, nothing),
+            "f" => m.MonkeySymbol("f", m.BuiltinScope, 3, nothing),
         )
 
         g = m.SymbolTable()
@@ -65,7 +89,7 @@
 
         for s in [g, l1, l2]
             for (k, v) in expected
-                @test m.resolve(s, k) == v
+                @test m.resolve(s, k)[1] == v
             end
         end
     end
@@ -79,7 +103,7 @@
         m.define!(l1, "c")
         m.define!(l1, "d")
 
-        l2 = m.SymbolTable(l1)
+        l2 = m.SymbolTable(l1, true)
         m.define!(l2, "e")
         m.define!(l2, "f")
 
@@ -87,31 +111,31 @@
             (
                 l1,
                 [
-                    m.MonkeySymbol("a", m.GLOBAL_SCOPE, 0),
-                    m.MonkeySymbol("b", m.GLOBAL_SCOPE, 1),
-                    m.MonkeySymbol("c", m.LOCAL_SCOPE, 0),
-                    m.MonkeySymbol("d", m.LOCAL_SCOPE, 1),
+                    m.MonkeySymbol("a", m.GlobalScope, 0, nothing),
+                    m.MonkeySymbol("b", m.GlobalScope, 1, nothing),
+                    m.MonkeySymbol("c", m.LocalScope, 0, nothing),
+                    m.MonkeySymbol("d", m.LocalScope, 1, nothing),
                 ],
                 [],
             ),
             (
                 l2,
                 [
-                    m.MonkeySymbol("a", m.GLOBAL_SCOPE, 0),
-                    m.MonkeySymbol("b", m.GLOBAL_SCOPE, 1),
-                    m.MonkeySymbol("c", m.FREE_SCOPE, 0),
-                    m.MonkeySymbol("d", m.FREE_SCOPE, 1),
-                    m.MonkeySymbol("e", m.LOCAL_SCOPE, 0),
-                    m.MonkeySymbol("f", m.LOCAL_SCOPE, 1),
+                    m.MonkeySymbol("a", m.GlobalScope, 0, nothing),
+                    m.MonkeySymbol("b", m.GlobalScope, 1, nothing),
+                    m.MonkeySymbol("c", m.FreeScope, 0, nothing),
+                    m.MonkeySymbol("d", m.FreeScope, 1, nothing),
+                    m.MonkeySymbol("e", m.LocalScope, 0, nothing),
+                    m.MonkeySymbol("f", m.LocalScope, 1, nothing),
                 ],
                 [
-                    m.MonkeySymbol("c", m.LOCAL_SCOPE, 0),
-                    m.MonkeySymbol("d", m.LOCAL_SCOPE, 1),
+                    m.MonkeySymbol("c", m.LocalScope, 0, nothing),
+                    m.MonkeySymbol("d", m.LocalScope, 1, nothing),
                 ],
             ),
         ]
             for sym in expected_symbols
-                @test m.resolve(table, sym.name) == sym
+                @test m.resolve(table, sym.name)[1] == sym
             end
 
             @test length(table.free_symbols) == length(expected_free_symbols)
@@ -129,23 +153,23 @@
         l1 = m.SymbolTable(g)
         m.define!(l1, "c")
 
-        l2 = m.SymbolTable(l1)
+        l2 = m.SymbolTable(l1, true)
         m.define!(l2, "e")
         m.define!(l2, "f")
 
         expected = [
-            m.MonkeySymbol("a", m.GLOBAL_SCOPE, 0),
-            m.MonkeySymbol("c", m.FREE_SCOPE, 0),
-            m.MonkeySymbol("e", m.LOCAL_SCOPE, 0),
-            m.MonkeySymbol("f", m.LOCAL_SCOPE, 1),
+            m.MonkeySymbol("a", m.GlobalScope, 0, nothing),
+            m.MonkeySymbol("c", m.FreeScope, 0, nothing),
+            m.MonkeySymbol("e", m.LocalScope, 0, nothing),
+            m.MonkeySymbol("f", m.LocalScope, 1, nothing),
         ]
 
         for sym in expected
-            @test m.resolve(l2, sym.name) == sym
+            @test m.resolve(l2, sym.name)[1] == sym
         end
 
         for name in ["b", "d"]
-            @test isnothing(m.resolve(l2, name))
+            @test isnothing(m.resolve(l2, name)[1])
         end
     end
 
@@ -153,7 +177,7 @@
         g = m.SymbolTable()
         m.define_function!(g, "a")
 
-        @test m.resolve(g, "a") == m.MonkeySymbol("a", m.FUNCTION_SCOPE, 0)
+        @test m.resolve(g, "a")[1] == m.MonkeySymbol("a", m.FunctionScope, 0, nothing)
     end
 
     @testset "Shadowing Function Name" begin
@@ -161,6 +185,6 @@
         m.define_function!(g, "a")
         m.define!(g, "a")
 
-        @test m.resolve(g, "a") == m.MonkeySymbol("a", m.GLOBAL_SCOPE, 0)
+        @test m.resolve(g, "a")[1] == m.MonkeySymbol("a", m.GlobalScope, 0, nothing)
     end
 end

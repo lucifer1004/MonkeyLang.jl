@@ -5,7 +5,7 @@ modify(program::Program, modifier::Function) =
     Program(map(statement -> modify(statement, modifier), program.statements))
 
 modify(node::LetStatement, modifier::Function) =
-    LetStatement(node.token, node.name, modify(node.value, modifier))
+    LetStatement(node.token, node.name, modify(node.value, modifier), node.reassign)
 
 modify(node::ReturnStatement, modifier::Function) =
     ReturnStatement(node.token, modify(node.return_value, modifier))

@@ -11,6 +11,8 @@
             (m.OpLessThan, [], [UInt8(m.OpLessThan)]),
             (m.OpGreaterThan, [], [UInt8(m.OpGreaterThan)]),
             (m.OpGetLocal, [255], [UInt8(m.OpGetLocal), 255]),
+            (m.OpGetFree, [1], [UInt8(m.OpGetFree), 1]),
+            (m.OpGetOuter, [1, 2, 3], [UInt8(m.OpGetOuter), 1, 2, 3]),
             (m.OpClosure, [65534, 255], [UInt8(m.OpClosure), 255, 254, 255]),
             (m.OpIllegal, [], []),
         ]
@@ -101,7 +103,7 @@
                 ],
                 "0000 OpAdd\n0001 OpGetLocal 1\n0003 OpConstant 2\n0006 OpConstant 65535\n0009 OpClosure 65535 255\n",
             ),
-            ([m.Instructions([UInt8(m.OpIllegal)])], "ERROR: unknown opcode: 31\n"),
+            ([m.Instructions([UInt8(m.OpIllegal)])], "ERROR: unknown opcode: 34\n"),
         ]
             @test string(vcat(instructions...)) == expected
         end

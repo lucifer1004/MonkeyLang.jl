@@ -121,8 +121,8 @@ emit!(c::Compiler, op::OpCode, operands::Vararg{Int})::Int64 = begin
     return pos
 end
 
-enter_scope!(c::Compiler) = begin
-    c.symbol_table = SymbolTable(c.symbol_table)
+enter_scope!(c::Compiler; is_fn::Bool = false) = begin
+    c.symbol_table = SymbolTable(c.symbol_table, is_fn)
     push!(c.scopes, CompilationScope(Instructions([]), []))
 end
 
@@ -132,14 +132,16 @@ leave_scope!(c::Compiler)::CompilationScope = begin
 end
 
 load_symbol!(c::Compiler, s::MonkeySymbol) = begin
-    if s.scope == GLOBAL_SCOPE
+    if s.scope == GlobalScope
         emit!(c, OpGetGlobal, s.index)
-    elseif s.scope == LOCAL_SCOPE
+    elseif s.scope == LocalScope
         emit!(c, OpGetLocal, s.index)
-    elseif s.scope == BUILTIN_SCOPE
+    elseif s.scope == BuiltinScope
         emit!(c, OpGetBuiltin, s.index)
-    elseif s.scope == FREE_SCOPE
+    elseif s.scope == FreeScope
         emit!(c, OpGetFree, s.index)
+    elseif s.scope == OuterScope
+        emit!(c, OpGetOuter, s.ptr.level, Int(s.ptr.scope), s.ptr.index)
     else
         emit!(c, OpCurrentClosure)
     end
@@ -179,8 +181,8 @@ compile!(c::Compiler, hl::HashLiteral) = begin
     emit!(c, OpHash, length(ks) * 2)
 end
 
-compile!(c::Compiler, fl::FunctionLiteral) = begin
-    enter_scope!(c)
+compile!(c::Compiler, fl::FunctionLiteral; is_fn::Bool = true) = begin
+    enter_scope!(c; is_fn)
 
     if !isempty(fl.name)
         define_function!(c.symbol_table, fl.name)
@@ -197,7 +199,7 @@ compile!(c::Compiler, fl::FunctionLiteral) = begin
     end
 
     free_symbols = c.symbol_table.free_symbols
-    local_count = c.symbol_table.definition_count[]
+    local_count = c.symbol_table.definition_count
     instructions = leave_scope!(c).instructions
 
     for sym in free_symbols
@@ -209,7 +211,7 @@ compile!(c::Compiler, fl::FunctionLiteral) = begin
 end
 
 compile!(c::Compiler, ident::Identifier) = begin
-    sym = resolve(c.symbol_table, ident.value)
+    sym, _ = resolve(c.symbol_table, ident.value)
 
     if isnothing(sym)
         error("identifier not found: $(ident.value)")
@@ -224,12 +226,49 @@ compile!(c::Compiler, es::ExpressionStatement) = begin
 end
 
 compile!(c::Compiler, ls::LetStatement) = begin
-    sym = define!(c.symbol_table, ls.name.value)
     compile!(c, ls.value)
-    if sym.scope == GLOBAL_SCOPE
-        emit!(c, OpSetGlobal, sym.index)
+
+    if ls.reassign
+        sym, _ = resolve(c.symbol_table, ls.name.value)
+
+        # Cannot reassign an nonexistent variable
+        if isnothing(sym)
+            error("identifier not found: $(ls.name.value)")
+        end
+
+        if sym.scope == GlobalScope
+            # Reassign a global variable
+            emit!(c, OpSetGlobal, sym.index)
+        elseif sym.scope == LocalScope
+            # Reassign a local variable
+            emit!(c, OpSetLocal, sym.index)
+        elseif sym.scope == FreeScope
+            # Reassign a free variable (for functions)
+            emit!(c, OpSetFree, sym.index)
+        else
+            # Reassign an outer variable (for while loops)
+            if sym.ptr.scope == FunctionScope
+                error("cannot reassign the current function being defined")
+            end
+
+            emit!(c, OpSetOuter, sym.ptr.level, Int(sym.ptr.scope), sym.ptr.index)
+        end
     else
-        emit!(c, OpSetLocal, sym.index)
+        # Cannot redefine variables
+        if ls.name.value ∈ keys(c.symbol_table.store)
+            sym = c.symbol_table.store[ls.name.value]
+            if (isnothing(c.symbol_table.outer) && sym.scope == GlobalScope) ||
+               (!isnothing(c.symbol_table.outer) && sym.scope == LocalScope)
+                error("$(ls.name.value) is already defined")
+            end
+        end
+
+        sym = define!(c.symbol_table, ls.name.value)
+        if sym.scope == GlobalScope
+            emit!(c, OpSetGlobal, sym.index)
+        else
+            emit!(c, OpSetLocal, sym.index)
+        end
     end
 end
 
@@ -274,21 +313,47 @@ compile!(c::Compiler, ie::IfExpression) = begin
     compile!(c, ie.condition)
     jump_not_truthy_pos = emit!(c, OpJumpNotTruthy, 9999)
     compile!(c, ie.consequence)
-    remove_last_pop!(c)
+    if isempty(ie.consequence.statements)
+        emit!(c, OpNull)
+    else
+        remove_last_pop!(c)
+    end
 
     jump_pos = emit!(c, OpJump, 9999)
     after_consequence_pos = length(c)
     change_operand!(c, jump_not_truthy_pos, after_consequence_pos)
 
-    if !isnothing(ie.alternative)
+    if isnothing(ie.alternative) || isempty(ie.alternative.statements)
+        emit!(c, OpNull)
+    else
         compile!(c, ie.alternative)
         remove_last_pop!(c)
-    else
-        emit!(c, OpNull)
     end
 
     after_alternative_pos = length(c)
     change_operand!(c, jump_pos, after_alternative_pos)
+end
+
+compile!(c::Compiler, ws::WhileStatement) = begin
+    loop_start_pos = length(c)
+    compile!(c, ws.condition)
+    jump_not_truthy_pos = emit!(c, OpJumpNotTruthy, 9999)
+
+    # Compile body of a while statement to a special closure that resolves 
+    # outer variables instead of free variables.
+    fl = FunctionLiteral(Token(FUNCTION, "fn"), Identifier[], ws.body)
+    compile!(c, fl; is_fn = false)
+
+    # Call the closure and discard the return value by a pop
+    emit!(c, OpCall, 0)
+
+    emit!(c, OpJump, loop_start_pos)
+    after_body_pos = length(c)
+
+    change_operand!(c, jump_not_truthy_pos, after_body_pos)
+
+    emit!(c, OpNull)
+    emit!(c, OpPop)
 end
 
 compile!(c::Compiler, ie::IndexExpression) = begin

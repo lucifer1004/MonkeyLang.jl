@@ -47,7 +47,7 @@ function julia_main(; input::IO = stdin, output::IO = stdout)::Cint
             return 0
         end
 
-        if !isfile(ARGS[2]) 
+        if !isfile(ARGS[2])
             println(output, "ERROR: File not found!")
             return 0
         end

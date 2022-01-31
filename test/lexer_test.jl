@@ -147,40 +147,54 @@
                     (m.SEMICOLON, ";"),
                     (m.RBRACE, "}"),
                     (m.SEMICOLON, ";"),
+                    (m.WHILE, "while"),
+                    (m.LPAREN, "("),
+                    (m.TRUE, "true"),
+                    (m.RPAREN, ")"),
+                    (m.LBRACE, "{"),
+                    (m.IDENT, "puts"),
+                    (m.LPAREN, "("),
+                    (m.INT, "3"),
+                    (m.RPAREN, ")"),
+                    (m.SEMICOLON, ";"),
+                    (m.RBRACE, "}"),
+                    (m.SEMICOLON, ";"),
                     (m.EOF, ""),
                 ],
             )
 
             l = m.Lexer("""
-              let five = 5;
-              let ten = 10;
-                
-              let add = fn(x, y) {
-                x + y;
-              };
+            let five = 5;
+            let ten = 10;
 
-              let result = add(five, ten);
-              !-/*5;
-              5 < 10 > 5;
+            let add = fn(x, y) {
+            x + y;
+            };
 
-              if (5 < 10) {
-                return true;
-              } else {
-                return false;
-              }
+            let result = add(five, ten);
+            !-/*5;
+            5 < 10 > 5;
 
-              10 == 10;
-              10 != 9;
-              "foobar"
-              "foo bar"
-              [1, 2];
-              {"foo": "bar"};
-              null;
-              macro(x, y) { x + y; };
+            if (5 < 10) {
+            return true;
+            } else {
+            return false;
+            }
+
+            10 == 10;
+            10 != 9;
+            "foobar"
+            "foo bar"
+            [1, 2];
+            {"foo": "bar"};
+            null;
+            macro(x, y) { x + y; };
+
+            while (true) { puts(3); };
             """)
 
             for token in expected
-                @test test_token(m.next_token!(l), token)
+                test_token(m.next_token!(l), token)
             end
         end
     end
