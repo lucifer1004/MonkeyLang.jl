@@ -6,6 +6,8 @@ using MonkeyLang
 
 const m = MonkeyLang
 
+upper = 35
+
 fib(x) = begin
     if x == 0
         0
@@ -18,7 +20,7 @@ fib(x) = begin
     end
 end
 
-input = """
+naive = """
 let fibonacci = fn(x) {
     if (x == 0) {
         0
@@ -31,14 +33,68 @@ let fibonacci = fn(x) {
     }
 };
 
-fibonacci(35);
+fibonacci($upper);
+"""
+
+memoized = """
+let d = {};
+
+let fibonacci = fn(x) {
+    if (x == 0) {
+        0
+    } else {
+        if (x == 1) {
+            1;
+        } else {
+            if (type(d[x]) == "NULL") {
+                let g = fibonacci(x - 1) + fibonacci(x - 2);
+                d = push(d, x, g);
+            }
+
+            d[x];
+        }
+    }
+}
+
+fibonacci($upper);
+"""
+
+dp = """
+let fibonacci = fn(x) {
+    let i = 2;
+    let a = 0;
+    let b = 1;
+
+    while (!(i > x)) {
+        let c = a + b;
+        a = b;
+        b = c;
+        i = i + 1;
+    }
+
+    b;
+}
+
+fibonacci($upper);
 """
 
 println("=== Julia native ===")
-@btime fib(35)
+@btime fib($upper)
 
 println("=== Using evaluator ===")
-@btime m.evaluate($input)
+@btime m.evaluate($naive)
 
 println("=== Using compiler ===")
-@btime m.run($input)
+@btime m.run($naive)
+
+println("=== Using evaluator (memoized) ===")
+@btime m.evaluate($memoized)
+
+println("=== Using compiler (memoized) ===")
+@btime m.run($memoized)
+
+println("=== Using evaluator (dp) ===")
+@btime m.evaluate($dp)
+
+println("=== Using compiler (dp) ===")
+@btime m.run($dp)

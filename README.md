@@ -354,6 +354,36 @@ callTwoTimes(3, addThree);
 
 Passing around functions, higher-order functions and closures will also work.
 
+> The evaluation order of function parameters is **left to right**.
+
+So a memoized Fibonacci function should be implemented like:
+
+```julia
+let d = {}
+
+let fibonacci = fn(x) {
+    if (x == 0) {
+        0
+    } else {
+        if (x == 1) {
+            1;
+        } else {
+            if (type(d[x]) == "NULL") {
+                # You cannot use `d = push(d, x, fibonacci(x - 1) + fibonacci(x - 2))`
+                # since `d` is evaluated first, which means it will not be updated
+                # when `fibonacci(x - 1)` and `fibonacci(x - 2)` are called.
+                let g = fibonacci(x - 1) + fibonacci(x - 2);
+                d = push(d, x, g);
+            }
+
+            d[x];
+        }
+    }
+};
+
+fibonacci(35);
+```
+
 ### Built-in Functions
 
 You can use the following built-in functions :rocket:
