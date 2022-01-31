@@ -16,6 +16,7 @@
     - [Summary](#summary)
     - [Syntax overview](#syntax-overview)
       - [If](#if)
+      - [While](#while)
       - [Operators](#operators)
       - [Return](#return)
     - [Variable bindings](#variable-bindings)
@@ -118,6 +119,18 @@ if (true) {
 }
 ```
 
+#### While
+
+It also supports `while` loops.
+
+```julia
+let x = 5;
+while (x > 0) {
+  puts(x);
+  x = x - 1;
+}
+```
+
 #### Operators
 
 It supports the general operations.
@@ -151,12 +164,14 @@ identity("Monkey");
 
 ### Variable bindings
 
-Variable bindings, such as those supported by many programming languages, are implemented. Variables can be defined using the `let` keyword.
+Variable bindings, such as those supported by many programming languages, are implemented. Variables can be defined using the `let` keyword. Variables cannot be redefined in the same scope, but they can be reassigned.
 
 **Format:**
 
 ```julia
-let <identifier> = <expression>;
+let <identifier> = <expression>; # Define
+
+<identifier> = <expression>; # Reassign
 ```
 
 **Example:**
@@ -167,6 +182,9 @@ let y = 10;
 let foobar = add(5, 5);
 let alias = foobar;
 let identity = fn(x) { x };
+
+x = x + 1;
+y = x - y;
 ```
 
 ### Literals

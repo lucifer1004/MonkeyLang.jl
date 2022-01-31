@@ -4,6 +4,8 @@
 
 ### Added
 
+- Support `while` loops.
+- Support mutable variables.
 - `MonkeyLang.jl` can now be built into a standalone executable.
 - Bytecode VM implemented according to [the Compiler Book](https://compilerbook.com). VM powered repl can be used with the newly added `use_vm` option of the `MonkeyLang.start_repl()` function.
 - Macro system (`quote` / `unquote` / `macro`) implemented according to [the Lost Chapter](https://interpreterbook.com/lost/))
