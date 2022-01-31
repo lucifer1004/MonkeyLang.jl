@@ -53,7 +53,7 @@
             ),
             ("-1", [1], [m.make(m.OpConstant, 0), m.make(m.OpMinus), m.make(m.OpPop)]),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
@@ -118,7 +118,7 @@
             ),
             ("!true", [], [m.make(m.OpTrue), m.make(m.OpBang), m.make(m.OpPop)]),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
@@ -153,7 +153,7 @@
                 ],
             ),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
@@ -192,7 +192,7 @@
                 ],
             ),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
@@ -246,7 +246,7 @@
                 [m.make(m.OpClosure, 2, 0), m.make(m.OpPop)],
             ),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
@@ -264,7 +264,7 @@
                 ],
             ),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
@@ -300,7 +300,7 @@
                 ],
             ),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
@@ -338,7 +338,7 @@
                 ],
             ),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
@@ -374,7 +374,7 @@
                 ],
             ),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
@@ -428,7 +428,7 @@
                 [m.make(m.OpClosure, 0, 0), m.make(m.OpPop)],
             ),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
@@ -546,7 +546,7 @@
                 ],
             ),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
@@ -580,7 +580,7 @@
                 [m.make(m.OpClosure, 0, 0), m.make(m.OpPop)],
             ),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
@@ -648,8 +648,10 @@
                 fn() {
                     let a = 66;
                     fn() {
+                        a = a + 2;
                         let b = 77;
                         fn() {
+                            global = global + 4;
                             let c = 88;
                             global + a + b + c
                         }
@@ -659,10 +661,16 @@
                 [
                     55,
                     66,
+                    2,
                     77,
+                    4,
                     88,
                     vcat(
-                        m.make(m.OpConstant, 3),
+                        m.make(m.OpGetGlobal, 0),
+                        m.make(m.OpConstant, 4),
+                        m.make(m.OpAdd),
+                        m.make(m.OpSetGlobal, 0),
+                        m.make(m.OpConstant, 5),
                         m.make(m.OpSetLocal, 0),
                         m.make(m.OpGetGlobal, 0),
                         m.make(m.OpGetFree, 0),
@@ -674,30 +682,110 @@
                         m.make(m.OpReturnValue),
                     ),
                     vcat(
+                        m.make(m.OpGetFree, 0),
                         m.make(m.OpConstant, 2),
+                        m.make(m.OpAdd),
+                        m.make(m.OpSetFree, 0),
+                        m.make(m.OpConstant, 3),
                         m.make(m.OpSetLocal, 0),
                         m.make(m.OpGetFree, 0),
                         m.make(m.OpGetLocal, 0),
-                        m.make(m.OpClosure, 4, 2),
+                        m.make(m.OpClosure, 6, 2),
                         m.make(m.OpReturnValue),
                     ),
                     vcat(
                         m.make(m.OpConstant, 1),
                         m.make(m.OpSetLocal, 0),
                         m.make(m.OpGetLocal, 0),
-                        m.make(m.OpClosure, 5, 1),
+                        m.make(m.OpClosure, 7, 1),
                         m.make(m.OpReturnValue),
                     ),
                 ],
                 [
                     m.make(m.OpConstant, 0),
                     m.make(m.OpSetGlobal, 0),
-                    m.make(m.OpClosure, 6, 0),
+                    m.make(m.OpClosure, 8, 0),
+                    m.make(m.OpPop),
+                ],
+            ),
+            (
+                """
+                let i = 2;
+                while (i > 0) {
+                    i = i - 1;
+                    let j = 3;
+                    let f = fn() {
+                        i + j;
+                    }
+                    while (j > 0) {
+                        j = j - 1;
+                        puts(f() + j);
+                    }
+                }
+                """,
+                [
+                    2,
+                    0,
+                    1,
+                    3,
+                    vcat(
+                        m.make(m.OpGetGlobal, 0),
+                        m.make(m.OpGetFree, 0),
+                        m.make(m.OpAdd),
+                        m.make(m.OpReturnValue),
+                    ),
+                    0,
+                    1,
+                    vcat(
+                        m.make(m.OpGetOuter, 1, 1, 0),
+                        m.make(m.OpConstant, 6),
+                        m.make(m.OpSub),
+                        m.make(m.OpSetOuter, 1, 1, 0),
+                        m.make(m.OpGetBuiltin, 5),
+                        m.make(m.OpGetOuter, 1, 1, 1),
+                        m.make(m.OpCall, 0),
+                        m.make(m.OpGetOuter, 1, 1, 0),
+                        m.make(m.OpAdd),
+                        m.make(m.OpCall, 1),
+                        m.make(m.OpReturnValue),
+                    ),
+                    vcat(
+                        m.make(m.OpGetGlobal, 0),
+                        m.make(m.OpConstant, 2),
+                        m.make(m.OpSub),
+                        m.make(m.OpSetGlobal, 0),
+                        m.make(m.OpConstant, 3),
+                        m.make(m.OpSetLocal, 0),
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpClosure, 4, 1),
+                        m.make(m.OpSetLocal, 1),
+                        m.make(m.OpGetLocal, 0),
+                        m.make(m.OpConstant, 5),
+                        m.make(m.OpGreaterThan),
+                        m.make(m.OpJumpNotTruthy, 41),
+                        m.make(m.OpClosure, 7, 0),
+                        m.make(m.OpCall, 0),
+                        m.make(m.OpJump, 23),
+                        m.make(m.OpNull),
+                        m.make(m.OpReturnValue),
+                    ),
+                ],
+                [
+                    m.make(m.OpConstant, 0),
+                    m.make(m.OpSetGlobal, 0),
+                    m.make(m.OpGetGlobal, 0),
+                    m.make(m.OpConstant, 1),
+                    m.make(m.OpGreaterThan),
+                    m.make(m.OpJumpNotTruthy, 25),
+                    m.make(m.OpClosure, 8, 0),
+                    m.make(m.OpCall, 0),
+                    m.make(m.OpJump, 6),
+                    m.make(m.OpNull),
                     m.make(m.OpPop),
                 ],
             ),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
@@ -766,12 +854,28 @@
                 ],
             ),
         ]
-            @test run_compiler_tests(input, expected_constants, expected_instructions)
+            run_compiler_tests(input, expected_constants, expected_instructions)
         end
     end
 
     @testset "Error handling" begin
-        for (input, error_message) in [("a", "identifier not found: a")]
+        for (input, error_message) in [
+            ("a", "identifier not found: a"),
+            ("a = 2", "identifier not found: a"),
+            ("let a = 2; let a = 3;", "a is already defined"),
+            (
+                """
+                let f = fn(x) {
+                    while (false) {
+                        f = 2;
+                    }
+
+                    return g;
+                }
+                """,
+                "cannot reassign the current function being defined",
+            ),
+        ]
             @test_throws ErrorException(error_message) begin
                 program = m.parse(input)
                 c = m.Compiler()

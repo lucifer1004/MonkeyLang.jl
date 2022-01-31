@@ -9,96 +9,86 @@
             test_let_statement(ls::m.LetStatement, name::String) =
                 ls.name.value == name && m.token_literal(ls.name) == name
 
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
 
-                check_parser_errors(p)
+            check_parser_errors(p)
 
-                @assert length(program.statements) == 1 "program.statements does not contain 1 statement. Got $(length(program.statements)) instead."
+            @test length(program.statements) == 1
 
-                statement = program.statements[1]
-                test_let_statement(statement, expected_ident)
+            statement = program.statements[1]
+            test_let_statement(statement, expected_ident)
 
-                val = statement.value
-                test_literal_expression(val, expected_value)
-            end
+            val = statement.value
+            test_literal_expression(val, expected_value)
         end
     end
 
     @testset "Test Parsing Return Statements" begin
         for (input, expected_value) in
             [("return 5;", 5), ("return false;", false), ("return y;", "y")]
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
 
-                check_parser_errors(p)
+            check_parser_errors(p)
 
-                @assert length(program.statements) == 1 "program.statements does not contain 1 statement. Got $(length(program.statements)) instead."
+            @test length(program.statements) == 1
 
-                statement = program.statements[1]
-                test_literal_expression(statement.return_value, expected_value)
-            end
+            statement = program.statements[1]
+            test_literal_expression(statement.return_value, expected_value)
         end
     end
 
     @testset "Test Parsing Identifier Expression" begin
         for (input, value) in [("foobar;", "foobar")]
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
 
-                check_parser_errors(p)
+            check_parser_errors(p)
 
-                @assert length(program.statements) == 1 "program.statements does not contain 1 statement. Got $(length(program.statements)) instead."
-                @assert isa(program.statements[1], m.ExpressionStatement) "program.statements[1] is not an ExpressionStatement. Got $(typeof(program.statements[1])) instead."
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.ExpressionStatement)
 
-                statement = program.statements[1]
-                ident = statement.expression
-                test_literal_expression(ident, value)
-            end
+            statement = program.statements[1]
+            ident = statement.expression
+            test_literal_expression(ident, value)
         end
     end
 
     @testset "Test Parsing BooleanLiteral Expression" begin
         for (input, value) in [("true;", true), ("false;", false)]
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
 
-                check_parser_errors(p)
+            check_parser_errors(p)
 
-                @assert length(program.statements) == 1 "program.statements does not contain 1 statement. Got $(length(program.statements)) instead."
-                @assert isa(program.statements[1], m.ExpressionStatement) "program.statements[1] is not an ExpressionStatement. Got $(typeof(program.statements[1])) instead."
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.ExpressionStatement)
 
-                statement = program.statements[1]
-                bool = statement.expression
-                test_literal_expression(bool, value)
-            end
+            statement = program.statements[1]
+            bool = statement.expression
+            test_literal_expression(bool, value)
         end
     end
 
     @testset "Test Parsing Integer Literal Expression" begin
         for (input, value) in [("5;", 5)]
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
 
-                check_parser_errors(p)
+            check_parser_errors(p)
 
-                @assert length(program.statements) == 1 "program.statements does not contain 1 statement. Got $(length(program.statements)) instead."
-                @assert isa(program.statements[1], m.ExpressionStatement) "program.statements[1] is not an ExpressionStatement. Got $(typeof(program.statements[1])) instead."
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.ExpressionStatement)
 
-                statement = program.statements[1]
-                il = statement.expression
-                test_literal_expression(il, value)
-            end
+            statement = program.statements[1]
+            il = statement.expression
+            test_literal_expression(il, value)
         end
     end
 
@@ -110,23 +100,21 @@
             ("!true", "!", true),
             ("!false", "!", false),
         ]
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
 
-                check_parser_errors(p)
+            check_parser_errors(p)
 
-                @assert length(program.statements) == 1 "program.statements does not contain 1 statement. Got $(length(program.statements)) instead."
-                @assert isa(program.statements[1], m.ExpressionStatement) "program.statements[1] is not an ExpressionStatement. Got $(typeof(program.statements[1])) instead."
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.ExpressionStatement)
 
-                statement = program.statements[1]
-                expr = statement.expression
-                @assert isa(expr, m.PrefixExpression) "statement.expression is not a PrefixExpression. Got $(typeof(expr)) instead."
-                @assert expr.operator == operator "expr.operator is not $operator. Got $(expr.operator) instead."
+            statement = program.statements[1]
+            expr = statement.expression
+            @test isa(expr, m.PrefixExpression)
+            @test expr.operator == operator
 
-                test_literal_expression(expr.right, right_value)
-            end
+            test_literal_expression(expr.right, right_value)
         end
     end
 
@@ -144,119 +132,134 @@
             ("true != false", true, "!=", false),
             ("false == false", false, "==", false),
         ]
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
 
-                check_parser_errors(p)
+            check_parser_errors(p)
 
-                @assert length(program.statements) == 1 "program.statements does not contain 1 statement. Got $(length(program.statements)) instead."
-                @assert isa(program.statements[1], m.ExpressionStatement) "program.statements[1] is not an ExpressionStatement. Got $(typeof(program.statements[1])) instead."
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.ExpressionStatement)
 
-                statement = program.statements[1]
-                expr = statement.expression
-                test_infix_expression(expr, left_value, operator, right_value)
-            end
+            statement = program.statements[1]
+            expr = statement.expression
+            test_infix_expression(expr, left_value, operator, right_value)
         end
     end
 
     @testset "Test Parsing If Expression" begin
         for (input) in [("if (x < y) { x }")]
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
 
-                check_parser_errors(p)
+            check_parser_errors(p)
 
-                @assert length(program.statements) == 1 "program.statements does not contain 1 statement. Got $(length(program.statements)) instead."
-                @assert isa(program.statements[1], m.ExpressionStatement) "program.statements[1] is not an ExpressionStatement. Got $(typeof(program.statements[1])) instead."
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.ExpressionStatement)
 
-                statement = program.statements[1]
-                expr = statement.expression
+            statement = program.statements[1]
+            expr = statement.expression
 
-                @assert isa(expr, m.IfExpression) "expr is not an IfExpression. Got $(typeof(expr)) instead."
+            @test isa(expr, m.IfExpression)
 
-                test_infix_expression(expr.condition, "x", "<", "y")
+            test_infix_expression(expr.condition, "x", "<", "y")
 
-                @assert length(expr.consequence.statements) == 1 "consequence.statements does not contain 1 statement. Got $(length(expr.consequence.statements)) instead."
+            @test length(expr.consequence.statements) == 1
 
-                consequence = expr.consequence.statements[1]
-                @assert isa(consequence, m.ExpressionStatement) "consequence.statements[1] is not an ExpressionStatement. Got $(typeof(consequence.statements[1])) instead."
+            consequence = expr.consequence.statements[1]
+            @test isa(consequence, m.ExpressionStatement)
 
-                test_identifier(consequence.expression, "x")
+            test_identifier(consequence.expression, "x")
 
-                @assert isnothing(expr.alternative) "expr.alternative is not nothing. Got $(expr.alternative) instead."
-
-                true
-            end
+            @test isnothing(expr.alternative)
         end
     end
 
     @testset "Test Parsing If Else Expression" begin
         for (input) in [("if (x < y) { x } else { y }")]
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
 
-                check_parser_errors(p)
+            check_parser_errors(p)
 
-                @assert length(program.statements) == 1 "program.statements does not contain 1 statement. Got $(length(program.statements)) instead."
-                @assert isa(program.statements[1], m.ExpressionStatement) "program.statements[1] is not an ExpressionStatement. Got $(typeof(program.statements[1])) instead."
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.ExpressionStatement)
 
-                statement = program.statements[1]
-                expr = statement.expression
+            statement = program.statements[1]
+            expr = statement.expression
 
-                @assert isa(expr, m.IfExpression) "expr is not an IfExpression. Got $(typeof(expr)) instead."
+            @test isa(expr, m.IfExpression)
 
-                test_infix_expression(expr.condition, "x", "<", "y")
+            test_infix_expression(expr.condition, "x", "<", "y")
 
-                @assert length(expr.consequence.statements) == 1 "consequence.statements does not contain 1 statement. Got $(length(expr.consequence.statements)) instead."
+            @test length(expr.consequence.statements) == 1
 
-                consequence = expr.consequence.statements[1]
-                @assert isa(consequence, m.ExpressionStatement) "consequence.statements[1] is not an ExpressionStatement. Got $(typeof(consequence.statements[1])) instead."
+            consequence = expr.consequence.statements[1]
+            @test isa(consequence, m.ExpressionStatement)
 
-                test_identifier(consequence.expression, "x")
+            test_identifier(consequence.expression, "x")
 
-                alternative = expr.alternative.statements[1]
-                @assert isa(alternative, m.ExpressionStatement) "alternative.statements[1] is not an ExpressionStatement. Got $(typeof(alternative.statements[1])) instead."
+            alternative = expr.alternative.statements[1]
+            @test isa(alternative, m.ExpressionStatement)
 
-                test_identifier(alternative.expression, "y")
-            end
+            test_identifier(alternative.expression, "y")
+        end
+    end
+
+    @testset "Test Parsing While Statement" begin
+        for (input) in [("while (x < y) { x = x + 1 }")]
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
+
+            check_parser_errors(p)
+
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.WhileStatement)
+
+            statement = program.statements[1]
+
+            @test isa(statement, m.WhileStatement)
+
+            test_infix_expression(statement.condition, "x", "<", "y")
+
+            @test length(statement.body.statements) == 1
+
+            ls = statement.body.statements[1]
+            @test isa(ls, m.LetStatement)
+            @test ls.reassign
+
+            test_identifier(ls.name, "x")
+            test_infix_expression(ls.value, "x", "+", 1)
         end
     end
 
     @testset "Test Parsing Functional Literal" begin
         for (input) in [("fn(x, y) { x + y; }")]
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
+            check_parser_errors(p)
 
-                check_parser_errors(p)
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.ExpressionStatement)
 
-                @assert length(program.statements) == 1 "program.statements does not contain 1 statement. Got $(length(program.statements)) instead."
-                @assert isa(program.statements[1], m.ExpressionStatement) "program.statements[1] is not an ExpressionStatement. Got $(typeof(program.statements[1])) instead."
+            statement = program.statements[1]
+            fn = statement.expression
 
-                statement = program.statements[1]
-                fn = statement.expression
+            @test isa(fn, m.FunctionLiteral)
+            @test length(fn.parameters) == 2
 
-                @assert isa(fn, m.FunctionLiteral) "fn is not a FunctionLiteral. Got $(typeof(fn)) instead."
+            test_literal_expression(fn.parameters[1], "x")
+            test_literal_expression(fn.parameters[2], "y")
 
-                @assert length(fn.parameters) == 2 "fn.parameters does not contain 2 parameters. Got $(length(fn.parameters)) instead."
+            @test length(fn.body.statements) == 1
 
-                test_literal_expression(fn.parameters[1], "x")
-                test_literal_expression(fn.parameters[2], "y")
-
-                @assert length(fn.body.statements) == 1 "fn.body.statements does not contain 1 statement. Got $(length(fn.body.statements)) instead."
-
-                body_statement = fn.body.statements[1]
-                @assert isa(body_statement, m.ExpressionStatement) "body.statement[1] is not an ExpressionStatement. Got $(typeof(body_statement)) instead."
-
-                test_infix_expression(body_statement.expression, "x", "+", "y")
-            end
+            body_statement = fn.body.statements[1]
+            @test isa(body_statement, m.ExpressionStatement)
+            test_infix_expression(body_statement.expression, "x", "+", "y")
         end
     end
 
@@ -279,144 +282,108 @@
     @testset "Test Parsing Function Parameters" begin
         for (input, expected) in
             [("fn() {};", []), ("fn(x) {};", ["x"]), ("fn(x, y, z) {};", ["x", "y", "z"])]
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
+            check_parser_errors(p)
 
-                check_parser_errors(p)
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.ExpressionStatement)
 
-                @assert length(program.statements) == 1 "program.statements does not contain 1 statement. Got $(length(program.statements)) instead."
-                @assert isa(program.statements[1], m.ExpressionStatement) "program.statements[1] is not an ExpressionStatement. Got $(typeof(program.statements[1])) instead."
+            statement = program.statements[1]
+            fn = statement.expression
 
-                statement = program.statements[1]
-                fn = statement.expression
+            @test length(fn.parameters) == length(expected)
 
-                @assert length(fn.parameters) == length(expected) "fn.parameters does not contain $(length(expected)) parameters. Got $(length(fn.parameters)) instead."
-
-                for (parameter, expected_parameter) in zip(fn.parameters, expected)
-                    test_literal_expression(parameter, expected_parameter)
-                end
-
-                true
+            for (parameter, expected_parameter) in zip(fn.parameters, expected)
+                test_literal_expression(parameter, expected_parameter)
             end
         end
     end
 
     @testset "Test Parsing Call Expression" begin
         for (input) in [("add(1, 2 * 3, 4 + 5)")]
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
+            check_parser_errors(p)
 
-                check_parser_errors(p)
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.ExpressionStatement)
 
-                @assert length(program.statements) == 1 "program.statements does not contain 1 statement. Got $(length(program.statements)) instead."
-                @assert isa(program.statements[1], m.ExpressionStatement) "program.statements[1] is not an ExpressionStatement. Got $(typeof(program.statements[1])) instead."
+            statement = program.statements[1]
+            expr = statement.expression
+            @test isa(expr, m.CallExpression)
+            test_identifier(expr.fn, "add")
 
-                statement = program.statements[1]
-                expr = statement.expression
-
-                @assert isa(expr, m.CallExpression) "expr is not a CallExpression. Got $(typeof(expr)) instead."
-
-                test_identifier(expr.fn, "add")
-
-                @assert length(expr.arguments) == 3 "expr.arguments does not contain $(length(expected)) arguments. Got $(length(expr.arguments)) instead."
-
-                test_literal_expression(expr.arguments[1], 1)
-                test_infix_expression(expr.arguments[2], 2, "*", 3)
-                test_infix_expression(expr.arguments[3], 4, "+", 5)
-            end
+            @test length(expr.arguments) == 3
+            test_literal_expression(expr.arguments[1], 1)
+            test_infix_expression(expr.arguments[2], 2, "*", 3)
+            test_infix_expression(expr.arguments[3], 4, "+", 5)
         end
     end
 
     @testset "Test Parsing String Literal Expression" begin
         input = "\"hello world\""
+        l = m.Lexer(input)
+        p = m.Parser(l)
+        program = m.parse!(p)
 
-        @test begin
-            l = m.Lexer(input)
-            p = m.Parser(l)
-            program = m.parse!(p)
+        check_parser_errors(p)
 
-            check_parser_errors(p)
-
-            expr = program.statements[1].expression
-            @assert isa(expr, m.StringLiteral) "expr is not a StringLiteral. Got $(typeof(expr)) instead."
-
-            @assert expr.value == "hello world" "expr.value is not \"hello world\". Got $(expr.value) instead."
-
-            true
-        end
+        expr = program.statements[1].expression
+        @test isa(expr, m.StringLiteral)
+        @test expr.value == "hello world"
     end
 
     @testset "Test Parsing Array Literal" begin
         input = "[1, 2 * 2, 3 + 3]"
+        l = m.Lexer(input)
+        p = m.Parser(l)
+        program = m.parse!(p)
 
-        @test begin
-            l = m.Lexer(input)
-            p = m.Parser(l)
-            program = m.parse!(p)
+        check_parser_errors(p)
 
-            check_parser_errors(p)
+        arr = program.statements[1].expression
+        @test isa(arr, m.ArrayLiteral)
+        @test length(arr.elements) == 3
 
-            arr = program.statements[1].expression
-            @assert isa(arr, m.ArrayLiteral) "expr is not a ArrayLiteral. Got $(typeof(arr)) instead."
-
-            @assert length(arr.elements) == 3 "length(arr.elements) is not 3. Got $(length(arr.elements)) instead."
-
-            test_integer_literal(arr.elements[1], 1)
-            test_infix_expression(arr.elements[2], 2, "*", 2)
-            test_infix_expression(arr.elements[3], 3, "+", 3)
-
-            true
-        end
+        test_integer_literal(arr.elements[1], 1)
+        test_infix_expression(arr.elements[2], 2, "*", 2)
+        test_infix_expression(arr.elements[3], 3, "+", 3)
     end
 
     @testset "Test Parsing Index Expression" begin
         input = "myArray[1 + 1]"
+        l = m.Lexer(input)
+        p = m.Parser(l)
+        program = m.parse!(p)
+        check_parser_errors(p)
 
-        @test begin
-            l = m.Lexer(input)
-            p = m.Parser(l)
-            program = m.parse!(p)
+        expr = program.statements[1].expression
+        @test isa(expr, m.IndexExpression)
 
-            check_parser_errors(p)
-
-            expr = program.statements[1].expression
-            @assert isa(expr, m.IndexExpression) "expr is not an IndexExpression. Got $(typeof(expr)) instead."
-
-            test_identifier(expr.left, "myArray")
-            test_infix_expression(expr.index, 1, "+", 1)
-        end
+        test_identifier(expr.left, "myArray")
+        test_infix_expression(expr.index, 1, "+", 1)
     end
 
     @testset "Test Parsing Hash Literal" begin
         @testset "Test Parsing Hash Literal with String Keys" begin
             input = """{"one": 1, "two": 2, "three": 3}"""
             expected = Dict("one" => 1, "two" => 2, "three" => 3)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
+            check_parser_errors(p)
 
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            hash = program.statements[1].expression
+            @test isa(hash, m.HashLiteral)
+            @test length(hash.pairs) == 3
 
-                check_parser_errors(p)
-
-                hash = program.statements[1].expression
-                @assert isa(hash, m.HashLiteral) "hash is not a HashLiteral. Got $(typeof(hash)) instead."
-
-                @assert length(hash.pairs) == 3 "length(hash.pairs) is not 3. Got $(length(hash.pairs)) instead."
-
-                for (key, value) in hash.pairs
-                    @assert isa(key, m.StringLiteral) "key is not a StringLiteral. Got $(typeof(key)) instead."
-
-                    @assert key.value ∈ keys(expected) "$key should not exist"
-
-                    test_integer_literal(value, expected[key.value])
-                end
-
-                true
+            for (key, value) in hash.pairs
+                @test isa(key, m.StringLiteral)
+                @test key.value ∈ keys(expected)
+                test_integer_literal(value, expected[key.value])
             end
         end
 
@@ -428,128 +395,106 @@
                 "three" => x -> test_infix_expression(x, 15, "/", 5),
             )
 
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
-
-                check_parser_errors(p)
-
-                hash = program.statements[1].expression
-                @assert isa(hash, m.HashLiteral) "hash is not a HashLiteral. Got $(typeof(hash)) instead."
-
-                @assert length(hash.pairs) == 3 "length(hash.pairs) is not 3. Got $(length(hash.pairs)) instead."
-
-                for (key, value) in hash.pairs
-                    @assert isa(key, m.StringLiteral) "key is not a StringLiteral. Got $(typeof(key)) instead."
-
-                    @assert key.value ∈ keys(tests) "$key should not exist"
-
-                    tests[key.value](value)
-                end
-
-                true
-            end
-        end
-
-        @testset "Test Parsing Hash Literal with Integer Keys" begin
-            input = "{1: 1, 2: 2, 3: 3}"
-            expected = Dict(1 => 1, 2 => 2, 3 => 3)
-
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
-
-                check_parser_errors(p)
-
-                hash = program.statements[1].expression
-                @assert isa(hash, m.HashLiteral) "hash is not a HashLiteral. Got $(typeof(hash)) instead."
-
-                @assert length(hash.pairs) == 3 "length(hash.pairs) is not 3. Got $(length(hash.pairs)) instead."
-
-                for (key, value) in hash.pairs
-                    @assert isa(key, m.IntegerLiteral) "key is not an IntegerLiteral. Got $(typeof(key)) instead."
-
-                    @assert key.value ∈ keys(expected) "$key should not exist"
-
-                    test_integer_literal(value, expected[key.value])
-                end
-
-                true
-            end
-        end
-
-        @testset "Test Parsing Hash Literal with Boolean Keys" begin
-            input = "{false: 0, true: 1}"
-            expected = Dict(false => 0, true => 1)
-
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
-
-                check_parser_errors(p)
-
-                hash = program.statements[1].expression
-                @assert isa(hash, m.HashLiteral) "hash is not a HashLiteral. Got $(typeof(hash)) instead."
-
-                @assert length(hash.pairs) == 2 "length(hash.pairs) is not 2. Got $(length(hash.pairs)) instead."
-
-                for (key, value) in hash.pairs
-                    @assert isa(key, m.BooleanLiteral) "key is not a BooleanLiteral. Got $(typeof(key)) instead."
-
-                    @assert key.value ∈ keys(expected) "$key should not exist"
-
-                    test_integer_literal(value, expected[key.value])
-                end
-
-                true
-            end
-        end
-
-        @testset "Test Parsing Empty Hash Literal" begin
-            input = "{}"
-
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
-
-                check_parser_errors(p)
-
-                hash = program.statements[1].expression
-                @assert isa(hash, m.HashLiteral) "hash is not a HashLiteral. Got $(typeof(hash)) instead."
-
-                @assert length(hash.pairs) == 0 "length(hash.pairs) is not 0. Got $(length(hash.pairs)) instead."
-
-                true
-            end
-        end
-    end
-
-    @testset "Test Parsing Macro Literal" begin
-        input = "macro(x, y) { x + y; }"
-
-        @test begin
             l = m.Lexer(input)
             p = m.Parser(l)
             program = m.parse!(p)
 
             check_parser_errors(p)
 
-            ml = program.statements[1].expression
-            @assert isa(ml, m.MacroLiteral) "ml is not a MacroLiteral. Got $(typeof(ml)) instead."
+            hash = program.statements[1].expression
+            @test isa(hash, m.HashLiteral)
 
-            @assert length(ml.parameters) == 2 "length(ml.parameters) is not 2. Got $(length(ml.parameters)) instead."
+            @test length(hash.pairs) == 3
 
-            test_literal_expression(ml.parameters[1], "x")
-            test_literal_expression(ml.parameters[2], "y")
+            for (key, value) in hash.pairs
+                @test isa(key, m.StringLiteral)
 
-            @assert length(ml.body.statements) == 1 "length(ml.body.statements) is not 1. Got $(length(ml.body.statements)) instead."
+                @test key.value ∈ keys(tests)
 
-            test_infix_expression(ml.body.statements[1].expression, "x", "+", "y")
+                tests[key.value](value)
+            end
         end
+
+        @testset "Test Parsing Hash Literal with Integer Keys" begin
+            input = "{1: 1, 2: 2, 3: 3}"
+            expected = Dict(1 => 1, 2 => 2, 3 => 3)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
+
+            check_parser_errors(p)
+
+            hash = program.statements[1].expression
+            @test isa(hash, m.HashLiteral)
+
+            @test length(hash.pairs) == 3
+
+            for (key, value) in hash.pairs
+                @test isa(key, m.IntegerLiteral)
+
+                @test key.value ∈ keys(expected)
+
+                test_integer_literal(value, expected[key.value])
+            end
+        end
+
+        @testset "Test Parsing Hash Literal with Boolean Keys" begin
+            input = "{false: 0, true: 1}"
+            expected = Dict(false => 0, true => 1)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
+
+            check_parser_errors(p)
+
+            hash = program.statements[1].expression
+            @test isa(hash, m.HashLiteral)
+
+            @test length(hash.pairs) == 2
+
+            for (key, value) in hash.pairs
+                @test isa(key, m.BooleanLiteral)
+
+                @test key.value ∈ keys(expected)
+
+                test_integer_literal(value, expected[key.value])
+            end
+        end
+
+        @testset "Test Parsing Empty Hash Literal" begin
+            input = "{}"
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
+
+            check_parser_errors(p)
+
+            hash = program.statements[1].expression
+            @test isa(hash, m.HashLiteral)
+
+            @test length(hash.pairs) == 0
+        end
+    end
+
+    @testset "Test Parsing Macro Literal" begin
+        input = "macro(x, y) { x + y; }"
+        l = m.Lexer(input)
+        p = m.Parser(l)
+        program = m.parse!(p)
+
+        check_parser_errors(p)
+
+        ml = program.statements[1].expression
+        @test isa(ml, m.MacroLiteral)
+
+        @test length(ml.parameters) == 2
+
+        test_literal_expression(ml.parameters[1], "x")
+        test_literal_expression(ml.parameters[2], "y")
+
+        @test length(ml.body.statements) == 1
+
+        test_infix_expression(ml.body.statements[1].expression, "x", "+", "y")
     end
 
     @testset "Test Operator Order" begin
@@ -587,17 +532,13 @@
                 "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))",
             ),
         ]
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
 
-                check_parser_errors(p)
+            check_parser_errors(p)
 
-                @assert string(program) == expected "expected = $expected, got = $(string(program))"
-
-                true
-            end
+            @test string(program) == expected
         end
     end
 
@@ -658,6 +599,20 @@
                 "if (x) { 1 } else 2",
                 ["ERROR: parse error: expected next token to be LBRACE, got INT instead"],
             ),
+            ("if (true) {", ["ERROR: parse error: braces must be closed"]),
+            (
+                "while",
+                ["ERROR: parse error: expected next token to be LPAREN, got EOF instead"],
+            ),
+            (
+                "while (true",
+                ["ERROR: parse error: expected next token to be RPAREN, got EOF instead"],
+            ),
+            (
+                "while (true)",
+                ["ERROR: parse error: expected next token to be LBRACE, got EOF instead"],
+            ),
+            ("while (true) {", ["ERROR: parse error: braces must be closed"]),
             (
                 "let 5",
                 ["ERROR: parse error: expected next token to be IDENT, got INT instead"],
@@ -683,14 +638,10 @@
             ),
             ("macro (x) {x", ["ERROR: parse error: braces must be closed"]),
         ]
-            @test begin
-                l = m.Lexer(input)
-                p = m.Parser(l)
-                program = m.parse!(p)
-                @assert map(string, p.errors) == expected "expected = $expected, got = $(map(string, p.errors))"
-
-                true
-            end
+            l = m.Lexer(input)
+            p = m.Parser(l)
+            program = m.parse!(p)
+            @test map(string, p.errors) == expected
         end
     end
 end

@@ -1,7 +1,5 @@
 function test_token(token::m.Token, expected::m.Token)
-    @assert token == expected "Expected $(expected.type), got $(token.type) instead"
-
-    true
+    @test token == expected
 end
 
 function check_parser_errors(p::m.Parser)
@@ -18,35 +16,25 @@ function check_parser_errors(p::m.Parser)
 end
 
 function test_identifier(expr::m.Expression, value::String)
-    @assert isa(expr, m.Identifier) "expr is not an Identifier. Got $(typeof(expr)) instead."
-
-    @assert expr.value == value "expr.value is not $value. Got $(expr.value) instead."
-
-    @assert m.token_literal(expr) == value "token_literal(expr) is not $value. Got $(m.token_literal(expr)) instead."
-
-    true
+    @test isa(expr, m.Identifier)
+    @test expr.value == value
+    @test m.token_literal(expr) == value
 end
 
 function test_integer_literal(il::m.Expression, value::Int64)
-    @assert isa(il, m.IntegerLiteral) "il is not an IntegerLiteral. Got $(typeof(il)) instead."
-    @assert il.value == value "il.value is not $value. Got $(il.value) instead."
-    @assert m.token_literal(il) == string(value) "token_literal(il) is not $value. Got $(m.token_literal(il)) instead."
-
-    true
+    @test isa(il, m.IntegerLiteral)
+    @test il.value == value
+    @test m.token_literal(il) == string(value)
 end
 
 function test_boolean_literal(bl::m.Expression, value::Bool)
-    @assert isa(bl, m.BooleanLiteral) "il is not a BooleanLiteral. Got $(typeof(bl)) instead."
-    @assert bl.value == value "bl.value is not $value. Got $(bl.value) instead."
-    @assert m.token_literal(bl) == string(value) "token_literal(bl) is not $value. Got $(m.token_literal(bl)) instead."
-
-    true
+    @test isa(bl, m.BooleanLiteral)
+    @test bl.value == value
+    @test m.token_literal(bl) == string(value)
 end
 
 function test_null_literal(bl::m.Expression)
-    @assert isa(bl, m.NullLiteral) "il is not a NullLiteral. Got $(typeof(bl)) instead."
-
-    true
+    @test isa(bl, m.NullLiteral)
 end
 
 function test_literal_expression(expr::m.Expression, expected)
@@ -61,20 +49,16 @@ function test_literal_expression(expr::m.Expression, expected)
     else
         error("unexpected type for expected")
     end
-
-    true
 end
 
 function test_infix_expression(expr::m.Expression, left, operator::String, right)
-    @assert isa(expr, m.InfixExpression) "expr is not an InfixExpression. Got $(typeof(expr)) instead."
+    @test isa(expr, m.InfixExpression)
 
     test_literal_expression(expr.left, left)
 
-    @assert expr.operator == operator "expr.operator is not $operator. Got $(expr.operator) instead."
+    @test expr.operator == operator
 
     test_literal_expression(expr.right, right)
-
-    true
 end
 
 function test_quote_object(evaluated::m.Object, expected::String)
@@ -83,25 +67,17 @@ function test_quote_object(evaluated::m.Object, expected::String)
 end
 
 function test_object(obj::m.Object, expected::Int64)
-    @assert isa(obj, m.IntegerObj) "obj is not an INTEGER. Got $(m.type_of(obj)) instead."
-
-    @assert obj.value == expected "obj.value is not $expected. Got $(obj.value) instead."
-
-    true
+    @test isa(obj, m.IntegerObj)
+    @test obj.value == expected
 end
 
 function test_object(obj::m.Object, expected::Bool)
-    @assert isa(obj, m.BooleanObj) "obj is not a BOOLEAN. Got $(m.type_of(obj)) instead."
-
-    @assert obj.value == expected "obj.value is not $expected. Got $(obj.value) instead."
-
-    true
+    @test isa(obj, m.BooleanObj)
+    @test obj.value == expected
 end
 
 function test_object(obj::m.Object, ::Nothing)
-    @assert obj === m._NULL "obj is not NULL. Got $(m.type_of(obj)) instead."
-
-    true
+    @test obj === m._NULL
 end
 
 function test_object(obj::m.Object, expected::String)
@@ -113,17 +89,15 @@ function test_object(obj::m.Object, expected::String)
 end
 
 function test_object(obj::m.ArrayObj, expected::Vector)
-    @assert length(obj.elements) == length(expected) "Wrong number of elements. Expected $(length(expected)), got $(length(obj.elements)) instead."
+    @test length(obj.elements) == length(expected)
 
     for (ca, ce) in zip(obj.elements, expected)
         test_object(ca, ce)
     end
-
-    true
 end
 
 function test_object(obj::m.HashObj, expected::Dict)
-    @assert length(obj.pairs) == length(expected) "Wrong number of pairs. Expected $(length(expected)), got $(length(obj.pairs)) instead."
+    @test length(obj.pairs) == length(expected)
 
     for (k, ce) in collect(expected)
         if isa(k, Int)
@@ -131,14 +105,10 @@ function test_object(obj::m.HashObj, expected::Dict)
             test_object(ca, ce)
         end
     end
-
-    true
 end
 
 function test_object(obj::m.ErrorObj, expected::String)
-    @assert obj.message == expected "wrong error message. Expected \"$expected\". Got \"$(obj.message)\" instead."
-
-    true
+    @test obj.message == expected
 end
 
 function test_object(obj::m.CompiledFunctionObj, expected::m.Instructions)
@@ -146,31 +116,21 @@ function test_object(obj::m.CompiledFunctionObj, expected::m.Instructions)
 end
 
 function test_string_object(obj::m.StringObj, expected::String)
-    @assert obj.value == expected "Expected $expected. Got $(obj.value) instead."
-
-    true
+    @test obj.value == expected
 end
 
 function test_instructions(actual, expected)
     concatted = vcat(expected...)
 
-    @assert length(concatted) == length(actual) "Wrong instructions length. Expected $concatted, got $actual instead."
-
-    for i = 1:length(concatted)
-        @assert concatted[i] == actual[i] "Wrong instruction at index $(i). Expected $concatted, got $actual instead."
-    end
-
-    true
+    @test string(actual) == string(concatted)
 end
 
 function test_constants(actual, expected)
-    @assert length(expected) == length(actual) "Wrong constants length. Expected $(length(expected)), got $(length(actual)) instead."
+    @test length(expected) == length(actual)
 
     for (ca, ce) in zip(actual, expected)
         test_object(ca, ce)
     end
-
-    true
 end
 
 function run_compiler_tests(
@@ -186,8 +146,6 @@ function run_compiler_tests(
 
     test_instructions(bc.instructions, expected_instructions)
     test_constants(bc.constants, expected_constants)
-
-    true
 end
 
 function test_vm(input::String, expected)

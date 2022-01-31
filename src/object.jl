@@ -77,6 +77,18 @@ get(env::Environment, name::String) = begin
     return result
 end
 set!(env::Environment, name::String, value::Object) = push!(env.store, name => value)
+reassign!(env::Environment, name::String, value::Object) = begin
+    result = Base.get(env.store, name, nothing)
+    if isnothing(result) && !isnothing(env.outer)
+        return reassign!(env.outer, name, value)
+    end
+    if isnothing(result)
+        return ErrorObj("identifier not found: $name")
+    else
+        set!(env, name, value)
+        return value
+    end
+end
 
 struct FunctionObj <: Object
     parameters::Vector{Identifier}

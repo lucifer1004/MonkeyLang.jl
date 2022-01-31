@@ -76,6 +76,8 @@ run(code::String; input = stdin, output = stdout) = begin
 end
 
 run!(vm::VM) = begin
+    @debug "Executing instructions:\n$(string(instructions(vm)))"
+
     while current_frame(vm).ip[] < length(instructions(vm))
         current_frame(vm).ip += 1
         ip = current_frame(vm).ip
@@ -142,15 +144,43 @@ run!(vm::VM) = begin
             else
                 push!(vm, vm.stack[frame.base_ptr+local_id])
             end
+        elseif OpGetOuter <= op <= OpSetOuter
+            current_frame(vm).ip += 3
+            level = ins[ip+1]
+            scope = Scope(ins[ip+2])
+            id = ins[ip+3]
+
+            frame = vm.frames[end-level]
+
+            if op == OpGetOuter
+                if scope == LocalScope
+                    push!(vm, vm.stack[frame.base_ptr+id])
+                elseif scope == FreeScope
+                    push!(vm, frame.cl.free[id+1])
+                elseif scope == FunctionScope
+                    push!(vm, frame.cl)
+                end
+            else
+                if scope == LocalScope
+                    vm.stack[frame.base_ptr+id] = pop!(vm)
+                elseif scope == FreeScope
+                    frame.cl.free[id+1] = pop!(vm)
+                end
+            end
         elseif op == OpGetBuiltin
             current_frame(vm).ip += 1
             builtin_id = ins[ip+1] + 1
             builtin = BUILTINS[builtin_id].second
             push!(vm, builtin)
-        elseif op == OpGetFree
+        elseif OpGetFree <= op <= OpSetFree
             current_frame(vm).ip += 1
             free_id = ins[ip+1] + 1
-            push!(vm, current_frame(vm).cl.free[free_id])
+
+            if op == OpGetFree
+                push!(vm, current_frame(vm).cl.free[free_id])
+            else
+                current_frame(vm).cl.free[free_id] = pop!(vm)
+            end
         elseif op == OpArray
             current_frame(vm).ip += 2
             element_count = read_uint16(ins, ip + 1)

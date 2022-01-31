@@ -145,14 +145,25 @@ end
 Base.string(ce::CallExpression) =
     string(ce.fn) * "(" * join(map(string, ce.arguments), ", ") * ")"
 
+struct WhileStatement <: Statement
+    token::Token
+    condition::Expression
+    body::BlockStatement
+end
+
 struct LetStatement <: Statement
     token::Token
     name::Identifier
     value::Expression
+    reassign::Bool
 end
 
 Base.string(ls::LetStatement) =
-    ls.token.literal * " " * string(ls.name) * " = " * string(ls.value) * ";"
+    (ls.reassign ? "" : ls.token.literal * " ") *
+    string(ls.name) *
+    " = " *
+    string(ls.value) *
+    ";"
 
 struct ReturnStatement <: Statement
     token::Token

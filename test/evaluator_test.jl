@@ -5,12 +5,12 @@
 
     # These cases should not occur unless the internal data are malformed.
     @testset "Test Malformed Expressions" begin
-        @test test_object(
+        test_object(
             m.evaluate_prefix_expression("+", m.IntegerObj(1)),
             "unknown operator: +INTEGER",
         )
 
-        @test test_object(
+        test_object(
             m.evaluate_infix_expression("&", m.IntegerObj(1), m.IntegerObj(1)),
             "unknown operator: INTEGER & INTEGER",
         )
@@ -34,10 +34,8 @@
             ("3 * (3 * 3) + 10", 37),
             ("(5 + 10 * 2 + 15 / 3) * 2 + -10", 50),
         ]
-            @test begin
-                evaluated = m.evaluate(code)
-                test_object(evaluated, expected)
-            end
+            evaluated = m.evaluate(code)
+            test_object(evaluated, expected)
         end
     end
 
@@ -67,10 +65,8 @@
             ("\"a\" == \"b\"", false),
             ("\"a\" != \"b\"", true),
         ]
-            @test begin
-                evaluated = m.evaluate(code)
-                test_object(evaluated, expected)
-            end
+            evaluated = m.evaluate(code)
+            test_object(evaluated, expected)
         end
     end
 
@@ -83,10 +79,8 @@
             ("!!false", false),
             ("!!5", true),
         ]
-            @test begin
-                evaluated = m.evaluate(code)
-                test_object(evaluated, expected)
-            end
+            evaluated = m.evaluate(code)
+            test_object(evaluated, expected)
         end
     end
 
@@ -101,10 +95,18 @@
             ("if (1 > 2) { 10 } else { 20 }", 20),
             ("if (1 < 2) { 10 } else { 20 }", 10),
         ]
-            @test begin
-                evaluated = m.evaluate(code)
-                test_object(evaluated, expected)
-            end
+            evaluated = m.evaluate(code)
+            test_object(evaluated, expected)
+        end
+    end
+
+    @testset "Test While Statements" begin
+        for (code, expected) in [
+            ("let x = 1; while (false) { x = x + 1; }; x", 1),
+            ("let x = 1; let y = 1; while (y > 0) { y = y - 1; x = x + 1; }; x", 2),
+        ]
+            evaluated = m.evaluate(code)
+            test_object(evaluated, expected)
         end
     end
 
@@ -127,10 +129,8 @@
                 10,
             ),
         ]
-            @test begin
-                evaluated = m.evaluate(code)
-                test_object(evaluated, expected)
-            end
+            evaluated = m.evaluate(code)
+            test_object(evaluated, expected)
         end
     end
 
@@ -171,40 +171,69 @@
             ("[1, 2, 3][\"23\"]", "unsupported index type: STRING"),
             ("if (true) { 5 / 0; 2 + 3; 4; }", "divide error: division by zero"),
             ("2(3)", "not a function: INTEGER"),
+            ("x = 2;", "identifier not found: x"),
+            (
+                "while (len(1)) { puts(2); }",
+                "argument error: argument to `len` is not supported, got INTEGER",
+            ),
+            ("let a = 2; let a = 4;", "a is already defined"),
         ]
-            @test begin
-                test_object(m.evaluate(code), expected_message)
-
-                true
-            end
+            test_object(m.evaluate(code), expected_message)
         end
     end
 
     @testset "Test Let Statements" begin
-        for (code, expected) in [
-            ("let a = 5; a;", 5),
-            ("let a = 5 * 5; a;", 25),
-            ("let a = 5; let b = a; b;", 5),
-            ("let a = 5; let b = a; let c = a + b + 5; c;", 15),
-        ]
-            @test begin
+        @testset "Plain" begin
+            for (code, expected) in [
+                ("let a = 5; a;", 5),
+                ("let a = 5 * 5; a;", 25),
+                ("let a = 5; let b = a; b;", 5),
+                ("let a = 5; let b = a; let c = a + b + 5; c;", 15),
+                ("let a = 5; a = a + 1; a;", 6),
+            ]
+                test_object(m.evaluate(code), expected)
+            end
+        end
+
+        @testset "Reassign" begin
+            for (code, expected) in [("let a = 5; a = a + 1; a;", 6)]
+                test_object(m.evaluate(code), expected)
+            end
+        end
+
+        @testset "Nested Scopes" begin
+            for (code, expected) in [(
+                """
+                let a = 6;
+                let b = 0;
+                let x = 1;
+                while (x > 0) {
+                    x = x - 1;
+                    let a = 5;
+                    b = b + a;
+                    let y = 1;
+                    while (y > 0) {
+                        y = y - 1;
+                        a = a + 3;
+                        b = b + a;
+                    }
+                }
+                b = b + a;
+                """,
+                19,
+            )]
                 test_object(m.evaluate(code), expected)
             end
         end
     end
 
     @testset "Test Function Object" begin
-        @test begin
-            code = "fn(x) { x + 2; };"
-            evaluated = m.evaluate(code)
-            @assert isa(evaluated, m.FunctionObj) "object is not a FUNCTION. Got $(m.type_of(evaluated)) instead."
+        code = "fn(x) { x + 2; };"
+        evaluated = m.evaluate(code)
 
-            @assert string(evaluated.parameters[1]) == "x" "parameters[1] is not 'x'. Got $(string(evaluated.parameters[1])) instead."
-
-            @assert string(evaluated.body) == "(x + 2)" "body is not '(x + 2)'. Got $(evaluated.body) instead."
-
-            true
-        end
+        @test isa(evaluated, m.FunctionObj)
+        @test string(evaluated.parameters[1]) == "x"
+        @test string(evaluated.body) == "(x + 2)"
     end
 
     @testset "Test Function Application" begin
@@ -216,9 +245,7 @@
             ("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20),
             ("fn(x) { x; }(5)", 5),
         ]
-            @test begin
-                test_object(m.evaluate(code), expected)
-            end
+            test_object(m.evaluate(code), expected)
         end
     end
 
@@ -232,35 +259,23 @@
         addTwo(2);
         """
 
-        @test begin
-            test_object(m.evaluate(code), 4)
-        end
+        test_object(m.evaluate(code), 4)
     end
 
     @testset "Test String Literal" begin
         code = "\"Hello World!\""
+        evaluated = m.evaluate(code)
 
-        @test begin
-            evaluated = m.evaluate(code)
-            @assert isa(evaluated, m.StringObj) "object is not a STRING. Got $(m.type_of(evaluated)) instead."
-
-            @assert evaluated.value == "Hello World!" "value is not 'Hello World!'. Got $(evaluated.value) instead."
-
-            true
-        end
+        @test isa(evaluated, m.StringObj)
+        @test evaluated.value == "Hello World!"
     end
 
     @testset "Test String Concatenation" begin
         code = """"Hello" + " " + "World!\""""
+        evaluated = m.evaluate(code)
 
-        @test begin
-            evaluated = m.evaluate(code)
-            @assert isa(evaluated, m.StringObj) "object is not a STRING. Got $(m.type_of(evaluated)) instead."
-
-            @assert evaluated.value == "Hello World!" "value is not 'Hello World!'. Got $(evaluated.value) instead."
-
-            true
-        end
+        @test isa(evaluated, m.StringObj)
+        @test evaluated.value == "Hello World!"
     end
 
     @testset "Test Builtin Functions" begin
@@ -367,10 +382,8 @@
             ("type([1, 2])", "ARRAY"),
             ("type({1:2})", "HASH"),
         ]
-            @test begin
-                evaluated = m.evaluate(code)
-                test_object(evaluated, expected)
-            end
+            evaluated = m.evaluate(code)
+            test_object(evaluated, expected)
         end
 
         @testset "Test puts()" begin
@@ -380,30 +393,24 @@
                 ("puts(\"hello\")", "hello\n"),
                 ("puts([23, \"hello\"])", "[23, \"hello\"]\n"),
             ]
-                @test begin
-                    output = IOBuffer(UInt8[], read = true, write = true)
-                    evaluated = m.evaluate(code; output = output)
-                    test_object(evaluated, nothing)
-                    String(output.data) == expected
-                end
+                output = IOBuffer(UInt8[], read = true, write = true)
+                evaluated = m.evaluate(code; output = output)
+                test_object(evaluated, nothing)
+                String(output.data) == expected
             end
         end
     end
 
     @testset "Test Array Literal" begin
         code = "[1, 2 * 2, 3 + 3]"
+        evaluated = m.evaluate(code)
 
-        @test begin
-            evaluated = m.evaluate(code)
+        @test isa(evaluated, m.ArrayObj)
+        @test length(evaluated.elements) == 3
 
-            @assert isa(evaluated, m.ArrayObj) "evaluated is not an ARRAY. Got $(m.type_of(evaluated)) instead."
-
-            @assert length(evaluated.elements) == 3 "length(evaluated.elements) is not 3. Got $(length(evaluated.elements)) instead."
-
-            test_object(evaluated.elements[1], 1)
-            test_object(evaluated.elements[2], 4)
-            test_object(evaluated.elements[3], 6)
-        end
+        test_object(evaluated.elements[1], 1)
+        test_object(evaluated.elements[2], 4)
+        test_object(evaluated.elements[3], 6)
     end
 
     @testset "Test Array Index Expressions" begin
@@ -419,10 +426,8 @@
             ("[1, 2, 3][3]", nothing),
             ("[1, 2, 3][-1]", nothing),
         ]
-            @test begin
-                evaluated = m.evaluate(code)
-                test_object(evaluated, expected)
-            end
+            evaluated = m.evaluate(code)
+            test_object(evaluated, expected)
         end
     end
 
@@ -439,26 +444,22 @@
           }
         """
 
-        @test begin
-            hash = m.evaluate(code)
+        hash = m.evaluate(code)
 
-            expected = [
-                (m.StringObj("one"), 1),
-                (m.StringObj("two"), 2),
-                (m.StringObj("three"), 3),
-                (m.IntegerObj(4), 4),
-                (m.BooleanObj(true), 5),
-                (m.BooleanObj(false), 6),
-            ]
+        expected = [
+            (m.StringObj("one"), 1),
+            (m.StringObj("two"), 2),
+            (m.StringObj("three"), 3),
+            (m.IntegerObj(4), 4),
+            (m.BooleanObj(true), 5),
+            (m.BooleanObj(false), 6),
+        ]
 
-            @assert length(hash.pairs) == 6 "length(hash.pairs) is not 6. Got $(length(hash.pairs)) instead."
+        @test length(hash.pairs) == 6
 
-            for (key, value) in expected
-                @assert key ∈ keys(hash.pairs) "$key not found."
-                test_object(hash.pairs[key], value)
-            end
-
-            true
+        for (key, value) in expected
+            @test key ∈ keys(hash.pairs)
+            test_object(hash.pairs[key], value)
         end
     end
 
@@ -474,10 +475,8 @@
             ("let a = [1, 2]; {a: 2}[1, 2]", 2),
             ("let a = {1: 2, 3: 4}; {a: 2}[{3: 4, 1: 2}]", 2),
         ]
-            @test begin
-                evaluated = m.evaluate(code)
-                test_object(evaluated, expected)
-            end
+            evaluated = m.evaluate(code)
+            test_object(evaluated, expected)
         end
     end
 
@@ -498,10 +497,8 @@
         fibonacci(10)
         """
 
-        @test begin
-            evaluated = m.evaluate(code)
-            test_object(evaluated, 55)
-        end
+        evaluated = m.evaluate(code)
+        test_object(evaluated, 55)
     end
 
     @testset "Test Defining Macro" begin
@@ -511,27 +508,19 @@
           let mymacro = macro(x, y) { x + y };
         """
 
-        @test begin
-            env = m.Environment()
-            program = m.define_macros!(env, m.parse(code))
+        env = m.Environment()
+        program = m.define_macros!(env, m.parse(code))
 
-            @assert length(program.statements) == 2 "length(program.statements) is not 2. Got $(length(program.statements)) instead."
-            @assert isnothing(m.get(env, "number")) "number should not be defined"
-            @assert isnothing(m.get(env, "function")) "function should not be defined"
+        @test length(program.statements) == 2
+        @test isnothing(m.get(env, "number"))
+        @test isnothing(m.get(env, "function"))
 
-            mc = m.get(env, "mymacro")
-            @assert !isnothing(mc) "mymacro should be defined"
-
-            @assert length(mc.parameters) == 2 "length(mc.parameters) is not 2. Got $(length(mc.parameters)) instead."
-
-            @assert string(mc.parameters[1]) == "x" "mc.parameters[1] is not x. Got $(string(mc.parameters[1])) instead."
-
-            @assert string(mc.parameters[2]) == "y" "mc.parameters[2] is not y. Got $(string(mc.parameters[2])) instead."
-
-            @assert string(mc.body) == "(x + y)" "mc.body is not (x + y). Got $(string(mc.body)) instead."
-
-            true
-        end
+        mc = m.get(env, "mymacro")
+        @test !isnothing(mc)
+        @test length(mc.parameters) == 2
+        @test string(mc.parameters[1]) == "x"
+        @test string(mc.parameters[2]) == "y"
+        @test string(mc.body) == "(x + y)"
     end
 
     @testset "Test Expanding Macros" begin
@@ -559,15 +548,10 @@
                 "if ((!(10 > 5))) { puts(\"not greater\") } else { puts(\"greater\") }",
             ),
         ]
-            @test begin
-                env = m.Environment()
-                program = m.define_macros!(env, m.parse(code))
-                expanded = m.expand_macros(program, env)
-
-                @assert string(expanded) == expected "Expected $expected. Got $expanded instead."
-
-                true
-            end
+            env = m.Environment()
+            program = m.define_macros!(env, m.parse(code))
+            expanded = m.expand_macros(program, env)
+            @test string(expanded) == expected
         end
     end
 end

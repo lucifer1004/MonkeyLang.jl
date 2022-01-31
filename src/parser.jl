@@ -65,10 +65,12 @@ function next_token!(p::Parser)
 end
 
 function parse_statement!(p::Parser)
-    if p.cur_token.type == LET
+    if p.cur_token.type == LET || (p.cur_token.type == IDENT && p.peek_token.type == ASSIGN)
         return parse_let_statement!(p)
     elseif p.cur_token.type == RETURN
         return parse_return_statement!(p)
+    elseif p.cur_token.type == WHILE
+        return parse_while_statement!(p)
     else
         return parse_expression_statement!(p)
     end
@@ -76,8 +78,9 @@ end
 
 function parse_let_statement!(p::Parser)
     token = p.cur_token
+    reassign = token.type == IDENT
 
-    if !expect_peek!(p, IDENT)
+    if !reassign && !expect_peek!(p, IDENT)
         return nothing
     end
 
@@ -100,7 +103,7 @@ function parse_let_statement!(p::Parser)
         next_token!(p)
     end
 
-    return LetStatement(token, name, value)
+    return LetStatement(token, name, value, reassign)
 end
 
 function parse_return_statement!(p::Parser)
@@ -115,6 +118,29 @@ function parse_return_statement!(p::Parser)
     end
 
     return ReturnStatement(token, value)
+end
+
+function parse_while_statement!(p::Parser)
+    token = p.cur_token
+
+    if !expect_peek!(p, LPAREN)
+        return nothing
+    end
+
+    next_token!(p)
+    condition = parse_expression!(p, LOWEST)
+
+    if !expect_peek!(p, RPAREN)
+        return nothing
+    end
+
+    if !expect_peek!(p, LBRACE)
+        return nothing
+    end
+
+    body = parse_block_statement!(p; must_close = true)
+
+    return WhileStatement(token, condition, body)
 end
 
 function parse_expression_statement!(p::Parser)
@@ -313,7 +339,7 @@ function parse_if_expression!(p::Parser)
         return nothing
     end
 
-    consequence = parse_block_statement!(p)
+    consequence = parse_block_statement!(p; must_close = true)
 
     if p.peek_token.type == ELSE
         next_token!(p)
@@ -322,7 +348,7 @@ function parse_if_expression!(p::Parser)
             return nothing
         end
 
-        alternative = parse_block_statement!(p)
+        alternative = parse_block_statement!(p; must_close = true)
     else
         alternative = nothing
     end

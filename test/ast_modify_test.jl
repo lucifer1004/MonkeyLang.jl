@@ -79,11 +79,13 @@ Base.:(==)(x::m.Node, y::m.Node) = structEqual(x, y)
                 m.Token(m.IDENT, "x"),
                 m.Identifier(m.Token(m.IDENT, "x"), "x"),
                 one(),
+                false,
             ),
             m.LetStatement(
                 m.Token(m.IDENT, "x"),
                 m.Identifier(m.Token(m.IDENT, "x"), "x"),
                 two(),
+                false,
             ),
         ),
         (
