@@ -36,6 +36,18 @@ let fibonacci = fn(x) {
 fibonacci($upper);
 """
 
+tailrec = """
+let fibonacci = fn(x, a, b) {
+    if (x == 1) {
+        b
+    } else {
+        fibonacci(x - 1, b, a + b)
+    }
+};
+
+fibonacci($upper);
+"""
+
 memoized = """
 let d = {};
 
@@ -86,6 +98,12 @@ println("=== Using evaluator ===")
 
 println("=== Using compiler ===")
 @btime m.run($naive)
+
+println("=== Using evaluator (tailrec) ===")
+@btime m.evaluate($tailrec)
+
+println("=== Using compiler (tailrec) ===")
+@btime m.run($tailrec)
 
 println("=== Using evaluator (memoized) ===")
 @btime m.evaluate($memoized)
