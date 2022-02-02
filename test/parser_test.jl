@@ -1,6 +1,6 @@
 @testset "Test Parser" begin
     @testset "Test Parsing Let Statements" begin
-        for (input, expected_ident, expected_value) in [
+        for (code, expected_ident, expected_value) in [
             ("let x = 5;", "x", 5),
             ("let y = true;", "y", true),
             ("let foobar = y;", "foobar", "y"),
@@ -9,7 +9,7 @@
             test_let_statement(ls::m.LetStatement, name::String) =
                 ls.name.value == name && m.token_literal(ls.name) == name
 
-            l = m.Lexer(input)
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -26,9 +26,9 @@
     end
 
     @testset "Test Parsing Return Statements" begin
-        for (input, expected_value) in
+        for (code, expected_value) in
             [("return 5;", 5), ("return false;", false), ("return y;", "y")]
-            l = m.Lexer(input)
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -42,8 +42,8 @@
     end
 
     @testset "Test Parsing Identifier Expression" begin
-        for (input, value) in [("foobar;", "foobar")]
-            l = m.Lexer(input)
+        for (code, value) in [("foobar;", "foobar")]
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -59,8 +59,8 @@
     end
 
     @testset "Test Parsing BooleanLiteral Expression" begin
-        for (input, value) in [("true;", true), ("false;", false)]
-            l = m.Lexer(input)
+        for (code, value) in [("true;", true), ("false;", false)]
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -76,8 +76,8 @@
     end
 
     @testset "Test Parsing Integer Literal Expression" begin
-        for (input, value) in [("5;", 5)]
-            l = m.Lexer(input)
+        for (code, value) in [("5;", 5)]
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -93,14 +93,14 @@
     end
 
     @testset "Test Parsing Prefix Expressions" begin
-        for (input, operator, right_value) in [
+        for (code, operator, right_value) in [
             ("!5", "!", 5),
             ("-15", "-", 15),
             ("-a", "-", "a"),
             ("!true", "!", true),
             ("!false", "!", false),
         ]
-            l = m.Lexer(input)
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -119,7 +119,7 @@
     end
 
     @testset "Test Parsing Infix Expressions" begin
-        for (input, left_value, operator, right_value) in [
+        for (code, left_value, operator, right_value) in [
             ("5 + 5", 5, "+", 5),
             ("5 - 5", 5, "-", 5),
             ("5 * 5", 5, "*", 5),
@@ -132,7 +132,7 @@
             ("true != false", true, "!=", false),
             ("false == false", false, "==", false),
         ]
-            l = m.Lexer(input)
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -148,8 +148,8 @@
     end
 
     @testset "Test Parsing If Expression" begin
-        for (input) in [("if (x < y) { x }")]
-            l = m.Lexer(input)
+        for (code) in [("if (x < y) { x }")]
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -177,8 +177,8 @@
     end
 
     @testset "Test Parsing If Else Expression" begin
-        for (input) in [("if (x < y) { x } else { y }")]
-            l = m.Lexer(input)
+        for (code) in [("if (x < y) { x } else { y }")]
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -209,8 +209,8 @@
     end
 
     @testset "Test Parsing While Statement" begin
-        for (input) in [("while (x < y) { x = x + 1 }")]
-            l = m.Lexer(input)
+        for (code) in [("while (x < y) { x = x + 1 }")]
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -237,8 +237,8 @@
     end
 
     @testset "Test Parsing Functional Literal" begin
-        for (input) in [("fn(x, y) { x + y; }")]
-            l = m.Lexer(input)
+        for (code) in [("fn(x, y) { x + y; }")]
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
             check_parser_errors(p)
@@ -264,8 +264,8 @@
     end
 
     @testset "Test Parsing Functional Literal With Name" begin
-        for (input) in [("let myFunction = fn() { };")]
-            l = m.Lexer(input)
+        for (code) in [("let myFunction = fn() { };")]
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -280,9 +280,9 @@
     end
 
     @testset "Test Parsing Function Parameters" begin
-        for (input, expected) in
+        for (code, expected) in
             [("fn() {};", []), ("fn(x) {};", ["x"]), ("fn(x, y, z) {};", ["x", "y", "z"])]
-            l = m.Lexer(input)
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
             check_parser_errors(p)
@@ -302,8 +302,8 @@
     end
 
     @testset "Test Parsing Call Expression" begin
-        for (input) in [("add(1, 2 * 3, 4 + 5)")]
-            l = m.Lexer(input)
+        for (code) in [("add(1, 2 * 3, 4 + 5)")]
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
             check_parser_errors(p)
@@ -324,8 +324,8 @@
     end
 
     @testset "Test Parsing String Literal Expression" begin
-        input = "\"hello world\""
-        l = m.Lexer(input)
+        code = "\"hello world\""
+        l = m.Lexer(code)
         p = m.Parser(l)
         program = m.parse!(p)
 
@@ -337,8 +337,8 @@
     end
 
     @testset "Test Parsing Array Literal" begin
-        input = "[1, 2 * 2, 3 + 3]"
-        l = m.Lexer(input)
+        code = "[1, 2 * 2, 3 + 3]"
+        l = m.Lexer(code)
         p = m.Parser(l)
         program = m.parse!(p)
 
@@ -354,8 +354,8 @@
     end
 
     @testset "Test Parsing Index Expression" begin
-        input = "myArray[1 + 1]"
-        l = m.Lexer(input)
+        code = "myArray[1 + 1]"
+        l = m.Lexer(code)
         p = m.Parser(l)
         program = m.parse!(p)
         check_parser_errors(p)
@@ -369,9 +369,9 @@
 
     @testset "Test Parsing Hash Literal" begin
         @testset "Test Parsing Hash Literal with String Keys" begin
-            input = """{"one": 1, "two": 2, "three": 3}"""
+            code = """{"one": 1, "two": 2, "three": 3}"""
             expected = Dict("one" => 1, "two" => 2, "three" => 3)
-            l = m.Lexer(input)
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
             check_parser_errors(p)
@@ -388,14 +388,14 @@
         end
 
         @testset "Test Parsing Hash Literal with String Keys and Expression Values" begin
-            input = """{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}"""
+            code = """{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}"""
             tests = Dict(
                 "one" => x -> test_infix_expression(x, 0, "+", 1),
                 "two" => x -> test_infix_expression(x, 10, "-", 8),
                 "three" => x -> test_infix_expression(x, 15, "/", 5),
             )
 
-            l = m.Lexer(input)
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -416,9 +416,9 @@
         end
 
         @testset "Test Parsing Hash Literal with Integer Keys" begin
-            input = "{1: 1, 2: 2, 3: 3}"
+            code = "{1: 1, 2: 2, 3: 3}"
             expected = Dict(1 => 1, 2 => 2, 3 => 3)
-            l = m.Lexer(input)
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -439,9 +439,9 @@
         end
 
         @testset "Test Parsing Hash Literal with Boolean Keys" begin
-            input = "{false: 0, true: 1}"
+            code = "{false: 0, true: 1}"
             expected = Dict(false => 0, true => 1)
-            l = m.Lexer(input)
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -462,8 +462,8 @@
         end
 
         @testset "Test Parsing Empty Hash Literal" begin
-            input = "{}"
-            l = m.Lexer(input)
+            code = "{}"
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -477,8 +477,8 @@
     end
 
     @testset "Test Parsing Macro Literal" begin
-        input = "macro(x, y) { x + y; }"
-        l = m.Lexer(input)
+        code = "macro(x, y) { x + y; }"
+        l = m.Lexer(code)
         p = m.Parser(l)
         program = m.parse!(p)
 
@@ -498,7 +498,7 @@
     end
 
     @testset "Test Operator Order" begin
-        for (input, expected) in [
+        for (code, expected) in [
             ("-a * b", "((-a) * b)"),
             ("!-a", "(!(-a))"),
             ("a + b + c", "((a + b) + c)"),
@@ -532,7 +532,7 @@
                 "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))",
             ),
         ]
-            l = m.Lexer(input)
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
 
@@ -543,7 +543,7 @@
     end
 
     @testset "Test Parsing Errors" begin
-        for (input, expected) in [
+        for (code, expected) in [
             (
                 "100000000000000000000",
                 ["ERROR: parse error: could not parse 100000000000000000000 as integer"],
@@ -638,10 +638,26 @@
             ),
             ("macro (x) {x", ["ERROR: parse error: braces must be closed"]),
         ]
-            l = m.Lexer(input)
+            l = m.Lexer(code)
             p = m.Parser(l)
             program = m.parse!(p)
             @test map(string, p.errors) == expected
+        end
+    end
+
+    @testset "Test Directly Parsing" begin
+        for (code, expected_output) in [
+            (
+                "100000000000000000000",
+                "ERROR: parser has 1 error\nERROR: parse error: could not parse 100000000000000000000 as integer\n",
+            ),
+        ]
+            c = IOCapture.capture() do
+                program = m.parse(code)
+                @test isnothing(program)
+            end
+
+            @test c.output == expected_output
         end
     end
 end

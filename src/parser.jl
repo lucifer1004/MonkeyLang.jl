@@ -473,10 +473,21 @@ function parse!(p::Parser)
     return program
 end
 
-function parse(input::String)
-    lexer = Lexer(input)
+function parse(code::String; input::IO = stdin, output::IO = stdout)
+    lexer = Lexer(code)
     parser = Parser(lexer)
     program = parse!(parser)
+
+    if !isempty(parser.errors)
+        println(
+            output,
+            ErrorObj(
+                "parser has $(length(parser.errors)) error$(length(parser.errors) == 1 ? "" : "s")",
+            ),
+        )
+        println(output, join(map(string, parser.errors), "\n"))
+        return
+    end
 
     return program
 end

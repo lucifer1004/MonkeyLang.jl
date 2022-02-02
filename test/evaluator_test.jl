@@ -102,8 +102,8 @@
 
     @testset "Test While Statements" begin
         for (code, expected) in [
-            ("let x = 1; while (false) { x = x + 1; }; x", 1),
-            ("let x = 1; let y = 1; while (y > 0) { y = y - 1; x = x + 1; }; x", 2),
+            ("let x = 1; while (false) { x = x + 1; } x", 1),
+            ("let x = 1; let y = 1; while (y > 0) { y = y - 1; x = x + 1; } x", 2),
         ]
             evaluated = m.evaluate(code)
             test_object(evaluated, expected)
@@ -283,51 +283,51 @@
             ("len(\"\")", 0),
             ("len(\"four\")", 4),
             ("len(\"hello world\")", 11),
-            ("len(1),", "argument error: argument to `len` is not supported, got INTEGER"),
+            ("len(1)", "argument error: argument to `len` is not supported, got INTEGER"),
             (
                 "len(\"one\", \"two\")",
                 "argument error: wrong number of arguments. Got 2 instead of 1",
             ),
             (
                 """
-                 let map = fn(arr, f) {
-                   let iter = fn(arr, accumulated) { 
-                     if (len(arr) == 0) {  
-                       accumulated 
-                     } else { 
-                       iter(rest(arr), push(accumulated, f(first(arr)))); 
-                     } 
-                   };
+                let map = fn(arr, f) {
+                    let iter = fn(arr, accumulated) { 
+                        if (len(arr) == 0) {  
+                            accumulated 
+                        } else { 
+                            iter(rest(arr), push(accumulated, f(first(arr)))); 
+                        } 
+                    };
 
-                   iter(arr, []);
-                 };
+                    iter(arr, []);
+                };
 
-                 let a = [1, 2, 3, 4];
-                 let double = fn(x) { x * 2};
-                 map(a, double)[3]
-               """,
+                let a = [1, 2, 3, 4];
+                let double = fn(x) { x * 2 };
+                map(a, double)[3]
+                """,
                 8,
             ),
             (
                 """
-               let reduce = fn(arr, initial, f) {
-                 let iter = fn(arr, result) {
-                   if (len(arr) == 0) {
-                     result
-                   } else { 
-                     iter(rest(arr), f(result, first(arr)))
-                   }
-                 }
+                let reduce = fn(arr, initial, f) {
+                    let iter = fn(arr, result) {
+                        if (len(arr) == 0) {
+                            result
+                        } else { 
+                            iter(rest(arr), f(result, first(arr)))
+                        }
+                    }
 
-                 iter(arr, initial)
-               }
+                    iter(arr, initial)
+                }
 
-               let sum = fn(arr) { 
-                 reduce(arr, 0, fn(initial, el) { initial + el })
-               }
+                let sum = fn(arr) { 
+                    reduce(arr, 0, fn(initial, el) { initial + el })
+                }
 
-               sum([1, 2, 3, 4, 5])
-               """,
+                sum([1, 2, 3, 4, 5])
+                """,
                 15,
             ),
             (
@@ -396,7 +396,7 @@
                 output = IOBuffer(UInt8[], read = true, write = true)
                 evaluated = m.evaluate(code; output = output)
                 test_object(evaluated, nothing)
-                String(output.data) == expected
+                @test String(take!(output)) == expected
             end
         end
     end
@@ -472,7 +472,7 @@
             ("{5: 5}[5]", 5),
             ("{true: 5}[true]", 5),
             ("{false: 5}[false]", 5),
-            ("let a = [1, 2]; {a: 2}[1, 2]", 2),
+            ("let a = [1, 2]; {a: 2}[[1, 2]]", 2),
             ("let a = {1: 2, 3: 4}; {a: 2}[{3: 4, 1: 2}]", 2),
         ]
             evaluated = m.evaluate(code)
@@ -552,6 +552,23 @@
             program = m.define_macros!(env, m.parse(code))
             expanded = m.expand_macros(program, env)
             @test string(expanded) == expected
+        end
+    end
+
+    @testset "String macros" begin
+        for (code, expected, expected_output) in [
+            ("let b = 4; b;", 4, ""),
+            ("puts([1, 2, 3]);", nothing, "[1, 2, 3]\n"),
+            ("let m = macro(x, y) { quote(unquote(y) - unquote(x)) }; m(5, 10);", 5, ""),
+        ]
+            c = IOCapture.capture() do
+                eval(quote
+                    m.@monkey_eval_str($code)
+                end)
+            end
+
+            test_object(c.value, expected)
+            @test c.output == expected_output
         end
     end
 end

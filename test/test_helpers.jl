@@ -148,6 +148,10 @@ function run_compiler_tests(
     test_constants(bc.constants, expected_constants)
 end
 
-function test_vm(input::String, expected)
-    test_object(m.run(input), expected)
+function test_vm(code::String, expected, expected_output::String = "")
+    c = IOCapture.capture() do
+        m.run(code)
+    end
+    test_object(c.value, expected)
+    @test c.output == expected_output
 end
