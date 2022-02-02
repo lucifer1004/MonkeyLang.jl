@@ -1,6 +1,6 @@
 @testset "Test VM" begin
     @testset "Integer Arithmetic" begin
-        for (input, expected) in [
+        for (code, expected) in [
             ("1", 1),
             ("2", 2),
             ("1 + 2", 3),
@@ -18,12 +18,12 @@
             ("-50 + 100 + -50", 0),
             ("(5 + 10 * 2 + 15 / 3) * 2 + -10", 50),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Boolean Expressions" begin
-        for (input, expected) in [
+        for (code, expected) in [
             ("true", true),
             ("false", false),
             ("1 < 2", true),
@@ -54,22 +54,22 @@
             ("\"monkey\"!=\"monkey\"", false),
             ("\"monkey\"!=\"monke\"", true),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Invalid Unary And Binary Expressions" begin
-        for (input, expected) in [
+        for (code, expected) in [
             ("-false", "unsupported type for negation: BOOLEAN"),
             ("2 + false", "type mismatch: left: INTEGER, right: BOOLEAN"),
             ("false + false", "unknown operator: BOOLEAN OpAdd BOOLEAN"),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Conditionals" begin
-        for (input, expected) in [
+        for (code, expected) in [
             ("if (true) {}", nothing),
             ("if (true) { 10 }", 10),
             ("if (true) { 10 } else { 20 }", 10),
@@ -82,51 +82,51 @@
             ("if (false) { 10 }", nothing),
             ("if ((if (false) { 10 })) { 10 } else { 20 }", 20),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Global Let Statements" begin
-        for (input, expected) in [
+        for (code, expected) in [
             ("let one = 1; one", 1),
             ("let one = 1; let two = 2; one + two", 3),
             ("let one = 1; let two = one + one; one + two", 3),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "String Expressions" begin
-        for (input, expected) in [
+        for (code, expected) in [
             ("\"monkey\"", "monkey"),
             ("\"mon\" + \"key\"", "monkey"),
             ("\"mon\" + \"key\" + \"banana\"", "monkeybanana"),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Array Literals" begin
-        for (input, expected) in
+        for (code, expected) in
             [("[]", []), ("[1, 2, 3]", [1, 2, 3]), ("[1 + 2, 3 * 4, 5 + 6]", [3, 12, 11])]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Hash Literals" begin
-        for (input, expected) in [
+        for (code, expected) in [
             ("{1: 2, 2: 3}", Dict(m.IntegerObj(1) => 2, m.IntegerObj(2) => 3)),
             (
                 "{1 + 1: 2 * 2, 3 + 3: 4 * 4}",
                 Dict(m.IntegerObj(2) => 4, m.IntegerObj(6) => 16),
             ),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Index Expressions" begin
-        for (input, expected) in [
+        for (code, expected) in [
             ("[1, 2, 3][1]", 2),
             ("[1, 2, 3][0 + 2]", 3),
             ("[[1, 1, 1]][0][0]", 1),
@@ -140,12 +140,12 @@
             ("let a = [1, 2]; {a: 2}[[1, 2]]", 2),
             ("let a = {1: 2, 3: 4}; {a: 2}[{3: 4, 1: 2}]", 2),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Calling Functions" begin
-        for (input, expected) in [
+        for (code, expected) in [
             ("let fivePlusTen = fn() { 5 + 10; }; fivePlusTen()", 15),
             (
                 """
@@ -165,12 +165,12 @@
                 3,
             ),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Calling Functions With Return Statement" begin
-        for (input, expected) in [
+        for (code, expected) in [
             (
                 """
                 let earlyExit = fn() { return 99; 100; };
@@ -186,12 +186,12 @@
                 99,
             ),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Calling Functions Without Return Value" begin
-        for (input, expected) in [
+        for (code, expected) in [
             (
                 """
                 let noReturn = fn() { };
@@ -209,12 +209,12 @@
                 nothing,
             ),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "First Class Functions" begin
-        for (input, expected) in [
+        for (code, expected) in [
             (
                 """
                 let returnsOne = fn() { 1 };
@@ -234,12 +234,12 @@
                 1,
             ),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Calling Functions With Bindings" begin
-        for (input, expected) in [
+        for (code, expected) in [
             (
                 """
                 let one = fn() { let one = 1; one };
@@ -286,12 +286,12 @@
                 97,
             ),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Calling Functions With Arguments And Bindings" begin
-        for (input, expected) in [
+        for (code, expected) in [
             (
                 """
                 let identity = fn(a) { a; };
@@ -356,22 +356,22 @@
                 50,
             ),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Calling Functions With Wrong Arguments" begin
-        for (input, expected) in [
+        for (code, expected) in [
             ("fn() { 1; }(1);", "wrong number of arguments: expected 0, got 1"),
             ("fn(a) { a; }();", "wrong number of arguments: expected 1, got 0"),
             ("fn(a, b) { a + b; }(1);", "wrong number of arguments: expected 2, got 1"),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Calling Builtin Functions Correctly" begin
-        for (input, expected) in [
+        for (code, expected) in [
             ("len(\"\")", 0),
             ("len(\"four\")", 4),
             ("len(\"hello world\")", 11),
@@ -398,13 +398,17 @@
             ("type(null)", "NULL"),
             ("type(len(1))", "ERROR"),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
+        end
+
+        for (code, expected, expected_output) in [("puts(3)", nothing, "3\n")]
+            test_vm(code, expected, expected_output)
         end
     end
 
     @testset "Calling Builtin Functions Wrongly" begin
-        for (input, expected) in [
-            ("len(1),", "argument error: argument to `len` is not supported, got INTEGER"),
+        for (code, expected) in [
+            ("len(1)", "argument error: argument to `len` is not supported, got INTEGER"),
             (
                 "len(\"one\", \"two\")",
                 "argument error: wrong number of arguments. Got 2 instead of 1",
@@ -441,13 +445,13 @@
             ),
             ("type(1, 2)", "argument error: wrong number of arguments. Got 2 instead of 1"),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "While Statements" begin
         @testset "Plain" begin
-            for (input, expected) in [(
+            for (code, expected) in [(
                 """
                 let x = 1;
                 while (x > 0) {
@@ -457,12 +461,12 @@
                 """,
                 0,
             )]
-                test_vm(input, expected)
+                test_vm(code, expected)
             end
         end
 
         @testset "Nested" begin
-            for (input, expected) in [(
+            for (code, expected) in [(
                 """
                 let a = 6;
                 let b = 0;
@@ -483,12 +487,12 @@
                 """,
                 25,
             )]
-                test_vm(input, expected)
+                test_vm(code, expected)
             end
         end
 
         @testset "Inside Functions" begin
-            for (input, expected) in [(
+            for (code, expected) in [(
                 """
                 let x = 5;
                 let y = 0;
@@ -510,13 +514,13 @@
                 """,
                 150,
             )]
-                test_vm(input, expected)
+                test_vm(code, expected)
             end
         end
     end
 
     @testset "Closures" begin
-        for (input, expected) in [
+        for (code, expected) in [
             (
                 """
                 let newClosure = fn(a) {
@@ -590,12 +594,12 @@
                 99,
             ),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
         end
     end
 
     @testset "Calling Advanced Functions" begin
-        for (input, expected) in [
+        for (code, expected) in [
             (
                 """
                 let map = fn(arr, f) {
@@ -639,7 +643,24 @@
                 15,
             ),
         ]
-            test_vm(input, expected)
+            test_vm(code, expected)
+        end
+    end
+
+    @testset "String macros" begin
+        for (code, expected, expected_output) in [
+            ("let b = 4; b;", 4, ""),
+            ("puts([1, 2, 3]);", nothing, "[1, 2, 3]\n"),
+            ("let m = macro(x, y) { quote(unquote(y) - unquote(x)) }; m(5, 10);", 5, ""),
+        ]
+            c = IOCapture.capture() do
+                eval(quote
+                    m.@monkey_vm_str($code)
+                end)
+            end
+
+            test_object(c.value, expected)
+            @test c.output == expected_output
         end
     end
 end

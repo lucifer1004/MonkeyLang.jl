@@ -93,11 +93,14 @@ fibonacci($upper);
 println("=== Julia native ===")
 @btime fib($upper)
 
-println("=== Using evaluator ===")
+println("=== Using evaluator (naive) ===")
 @btime m.evaluate($naive)
 
-println("=== Using compiler ===")
+println("=== Using compiler (naive) ===")
 @btime m.run($naive)
+
+println("=== Using Julia as the Backend (naive) ===")
+@btime m.Transpilers.JuliaTranspiler.run($naive)
 
 println("=== Using evaluator (tailrec) ===")
 @btime m.evaluate($tailrec)
@@ -105,14 +108,23 @@ println("=== Using evaluator (tailrec) ===")
 println("=== Using compiler (tailrec) ===")
 @btime m.run($tailrec)
 
+println("=== Using Julia as the Backend ===")
+@btime m.Transpilers.JuliaTranspiler.run($tailrec)
+
 println("=== Using evaluator (memoized) ===")
 @btime m.evaluate($memoized)
 
 println("=== Using compiler (memoized) ===")
 @btime m.run($memoized)
 
+println("=== Using Julia as the Backend ===")
+@btime m.Transpilers.JuliaTranspiler.run($memoized)
+
 println("=== Using evaluator (dp) ===")
 @btime m.evaluate($dp)
 
 println("=== Using compiler (dp) ===")
 @btime m.run($dp)
+
+println("=== Using Julia as the Backend ===")
+@btime m.Transpilers.JuliaTranspiler.run($dp)
