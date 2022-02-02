@@ -4,7 +4,7 @@ This is MonkeyLang.jl $MONKEY_VERSION by $MONKEY_AUTHOR.
 
 Usage:
 
-monkey run <file> [--vm]
+monkey run <file> [--vm | --jl]
 monkey repl [--vm]
 """
 
