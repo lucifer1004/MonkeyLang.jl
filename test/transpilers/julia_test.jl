@@ -101,6 +101,7 @@
             ("if (false) { 2 } else { 3 }", 3),
             ("if (3) { 2 } else { 3 }", 2),
             ("if (null) { 2 } else { 3 }", 3),
+            ("let a = 3; let b = 2; if (a + b) { 2 } else { 3 }", 2),
         ]
             ans = eval(t.transpile(m.parse(input)))
             @test ans == expected

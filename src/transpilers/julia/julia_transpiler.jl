@@ -125,13 +125,22 @@ end
 
 transpile(es::MonkeyLang.ExpressionStatement) = transpile(es.expression)
 
-transpile(ls::MonkeyLang.LetStatement)::Expr =
-    Expr(:(=), Symbol(ls.name.value), transpile(ls.value))
+transpile(ls::MonkeyLang.LetStatement)::Expr = begin
+    value = transpile(ls.value)
+
+    if isa(value, Expr) && value.head == :function
+        parameters = value.args[1].args
+        body = value.args[2]
+        Expr(:function, Expr(:call, Symbol(ls.name.value), parameters...), body)
+    else
+        Expr(:(=), Symbol(ls.name.value), value)
+    end
+end
 
 transpile(rs::MonkeyLang.ReturnStatement)::Expr = Expr(:return, transpile(rs.return_value))
 
 transpile(ws::MonkeyLang.WhileStatement)::Expr =
-    Expr(:while, Expr(:call, :__IS_TRUTHY, transpile(ws.condition)), transpile(ws.body))
+    Expr(:while, simplify_condition(ws.condition), transpile(ws.body))
 
 transpile(ie::MonkeyLang.InfixExpression)::Expr = begin
     op = ie.operator == "/" ? "÷" : ie.operator
@@ -185,20 +194,42 @@ transpile(ce::MonkeyLang.CallExpression)::Expr =
 transpile(ce::MonkeyLang.IndexExpression)::Expr =
     Expr(:call, :__WRAPPED_GETINDEX, transpile(ce.left), transpile(ce.index))
 
-transpile(ie::MonkeyLang.IfExpression)::Expr = Expr(
-    :if,
-    Expr(:call, :__IS_TRUTHY, transpile(ie.condition)),
-    transpile(ie.consequence),
-    transpile(ie.alternative),
-)
+transpile(ie::MonkeyLang.IfExpression)::Expr =
+    Expr(
+        :if,
+        simplify_condition(ie.condition),
+        transpile(ie.consequence),
+        transpile(ie.alternative),
+    )
 
-run(code::String; input::IO = stdin, output::IO = stdout) = begin
+transpile(code::String; input::IO = stdin, output::IO = stdout) = begin
     raw_program = MonkeyLang.parse(code; input, output)
     if !isnothing(raw_program)
         macro_env = MonkeyLang.Environment(; input, output)
         program = MonkeyLang.define_macros!(macro_env, raw_program)
         expanded = MonkeyLang.expand_macros(program, macro_env)
-        eval(transpile(expanded; input, output))
+        return transpile(expanded; input, output)
+    end
+end
+
+simplify_condition(condition) = begin
+    condition = transpile(condition)
+
+    if isa(condition, Expr)
+        if !(condition.head == :call && condition.args[1] ∈ [:<, :>, :(==), :!=])
+            condition = Expr(:call, :__IS_TRUTHY, condition)
+        end
+    else
+        condition = condition != false && !isnothing(condition)
+    end
+
+    return condition
+end
+
+run(code::String; input::IO = stdin, output::IO = stdout) = begin
+    julia_program = transpile(code; input, output)
+    if !isnothing(julia_program)
+        eval(julia_program)
     end
 end
 

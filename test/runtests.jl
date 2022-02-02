@@ -22,7 +22,8 @@ const m = MonkeyLang
     include("vm_test.jl")
 
     include("repl_test.jl")
-    include("cli_test.jl")
 
     include("transpilers/transpiler_test.jl")
+
+    include("cli_test.jl")
 end

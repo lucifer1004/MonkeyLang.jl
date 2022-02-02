@@ -8,7 +8,7 @@ const m = MonkeyLang
 
 upper = 35
 
-fib(x) = begin
+function fib(x)
     if x == 0
         0
     else
@@ -26,7 +26,7 @@ let fibonacci = fn(x) {
         0
     } else {
         if (x == 1) {
-            return 1;
+            1
         } else {
             fibonacci(x - 1) + fibonacci(x - 2);
         }

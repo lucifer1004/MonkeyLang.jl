@@ -647,6 +647,17 @@
         end
     end
 
+    @testset "Error handling" begin
+        for (code, expected) in [
+            (
+                "let x = fn(x) { if (x > 0) { x(x - 1) } else { 100 } }; x(23)",
+                "can only call functions or builtins",
+            ),
+        ]
+            test_vm(code, expected)
+        end
+    end
+
     @testset "String macros" begin
         for (code, expected, expected_output) in [
             ("let b = 4; b;", 4, ""),
