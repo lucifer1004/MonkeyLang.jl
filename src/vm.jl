@@ -7,6 +7,7 @@ mutable struct Frame
 end
 
 instructions(f::Frame) = f.cl.fn.instructions
+is_function(f::Frame) = f.cl.fn.is_fn
 
 mutable struct VM
     constants::Vector{Object}
@@ -19,7 +20,7 @@ mutable struct VM
 
     VM(bc::ByteCode, globals::Vector{Object} = Object[]; input = stdin, output = stdout) =
         begin
-            main_fn = CompiledFunctionObj(bc.instructions, 0, 0)
+            main_fn = CompiledFunctionObj(bc.instructions, 0, 0, true)
             main_closure = ClosureObj(main_fn, [])
             main_frame = Frame(main_closure, 0)
             frames = [main_frame]
@@ -49,8 +50,8 @@ push_closure!(vm::VM, id::Int, free_count::Integer) = begin
 end
 
 Base.pop!(vm::VM) = begin
-    if vm.sp == 1
-        return nothing
+    if vm.sp <= 1 || vm.sp > length(vm.stack) + 1
+        error("stack underflow")
     end
     vm.sp -= 1
     return vm.stack[vm.sp]
@@ -233,15 +234,19 @@ run!(vm::VM) = begin
             arg_count = ins[ip+1]
             callee = vm.stack[vm.sp-1-arg_count]
             call!(vm, callee, arg_count)
-        elseif op == OpReturnValue
-            return_value = pop!(vm)
+        elseif OpReturnValue <= op <= OpReturn
+            return_value = op == OpReturnValue ? pop!(vm) : _NULL
             frame = pop_frame!(vm)
+            if op == OpReturnValue
+                while !is_function(frame)
+                    frame = pop_frame!(vm)
+                end
+            end
+            if isempty(vm.frames)
+                return return_value
+            end
             vm.sp = frame.base_ptr - 1
             push!(vm, return_value)
-        elseif op == OpReturn
-            frame = pop_frame!(vm)
-            vm.sp = frame.base_ptr - 1
-            push!(vm, _NULL)
         end
     end
 

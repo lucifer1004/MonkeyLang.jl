@@ -1,4 +1,9 @@
 @testset "Test VM" begin
+    @testset "Unit Test" begin
+        vm = m.VM(m.ByteCode(m.Instructions([]), []))
+        @test_throws ErrorException("stack underflow") m.pop!(vm)
+    end
+
     @testset "Integer Arithmetic" begin
         for (code, expected) in [
             ("1", 1),
@@ -163,6 +168,37 @@
                 c();
                 """,
                 3,
+            ),
+        ]
+            test_vm(code, expected)
+        end
+    end
+
+    @testset "Test Global Return Statements" begin
+        for (code, expected) in [
+            ("return 10;", 10),
+            ("return 10; 9;", 10),
+            ("return 2 * 5; 9;", 10),
+            ("9; return 2 * 5; 9;", 10),
+            (
+                """
+                if (10 > 1) {
+                    if (10 > 1) {
+                        return 10;
+                    }
+
+                    return 1;
+                }
+                """,
+                10,
+            ),
+            (
+                """
+                while (true) {
+                    return 10;
+                }
+                """,
+                10,
             ),
         ]
             test_vm(code, expected)
@@ -492,28 +528,57 @@
         end
 
         @testset "Inside Functions" begin
-            for (code, expected) in [(
-                """
-                let x = 5;
-                let y = 0;
-                while (x > 0) {
-                    x = x - 1;
-                    let z = 5;
-                    let f = fn() {
-                        let w = 1;
-                        while (z > 0) {
-                            w = w * 2;
-                            y = y + z * w;
-                            z = z - 1;
-                            f();
+            for (code, expected) in [
+                (
+                    """
+                    let f = fn(x) {
+                        while (x > 0) {
+                            if (x == 3) {
+                                return 4;
+                            }
+                            x = x - 1;
                         }
                     }
-                    f();
-                }
-                y;
-                """,
-                150,
-            )]
+                    f(4);
+                    """,
+                    4,
+                ),
+                (
+                    """
+                    let f = fn(x) {
+                        while (x > 0) {
+                            if (x == 3) {
+                                return 4;
+                            }
+                            x = x - 1;
+                        }
+                    }
+                    f(2);
+                    """,
+                    nothing,
+                ),
+                (
+                    """
+                    let x = 5;
+                    let y = 0;
+                    while (x > 0) {
+                        x = x - 1;
+                        let z = 5;
+                        let f = fn() {
+                            let w = 1;
+                            while (z > 0) {
+                                w = w * 2;
+                                y = y + z * w;
+                                z = z - 1;
+                                f();
+                            }
+                        }
+                        f();
+                    }
+                    y;
+                    """,
+                    150,
+                )]
                 test_vm(code, expected)
             end
         end

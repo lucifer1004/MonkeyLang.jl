@@ -35,7 +35,7 @@
     len = m.get_builtin_by_name("len")
     return_value = m.ReturnValue(m._TRUE)
     quote_obj = m.QuoteObj(m.NullLiteral(m.Token(m.NULL, "null")))
-    compiled_function_obj = m.CompiledFunctionObj(m.Instructions([]), 0, 0)
+    compiled_function_obj = m.CompiledFunctionObj(m.Instructions([]), 0, 0, true)
     closure_obj = m.ClosureObj(compiled_function_obj, [])
 
     @testset "Is Truthy" begin

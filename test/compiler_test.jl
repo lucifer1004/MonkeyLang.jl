@@ -747,7 +747,8 @@
                         m.make(m.OpGetOuter, 1, 1, 0),
                         m.make(m.OpAdd),
                         m.make(m.OpCall, 1),
-                        m.make(m.OpReturnValue),
+                        m.make(m.OpPop),
+                        m.make(m.OpReturn),
                     ),
                     vcat(
                         m.make(m.OpGetGlobal, 0),
@@ -767,7 +768,8 @@
                         m.make(m.OpCall, 0),
                         m.make(m.OpJump, 23),
                         m.make(m.OpNull),
-                        m.make(m.OpReturnValue),
+                        m.make(m.OpPop),
+                        m.make(m.OpReturn),
                     ),
                 ],
                 [

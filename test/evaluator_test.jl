@@ -118,14 +118,22 @@
             ("9; return 2 * 5; 9;", 10),
             (
                 """
-               if (10 > 1) {
-                 if (10 > 1) {
-                   return 10;
-                 }
+                if (10 > 1) {
+                    if (10 > 1) {
+                        return 10;
+                    }
 
-                 return 1;
-               }
-               """,
+                    return 1;
+                }
+                """,
+                10,
+            ),
+            (
+                """
+                while (true) {
+                    return 10;
+                }
+                """,
                 10,
             ),
         ]
@@ -144,13 +152,13 @@
             ("if (10 > 1) { true + false; }", "unknown operator: BOOLEAN + BOOLEAN"),
             (
                 """
-               if (10 > 1) {
-                 if (10 > 1) {
-                   return true + false;
-                 }
+                if (10 > 1) {
+                    if (10 > 1) {
+                        return true + false;
+                    }
 
-                 return 1;
-               }
+                    return 1;
+                }
                """,
                 "unknown operator: BOOLEAN + BOOLEAN",
             ),
@@ -433,15 +441,15 @@
 
     @testset "Test Hash Literal" begin
         code = """
-          let two = "two";
-          {
+        let two = "two";
+        {
             "one": 10 - 9,
             two: 1 + 1,
             "thr" + "ee": 6 / 2,
             4: 4,
             true: 5,
             false: 6,
-          }
+        }
         """
 
         hash = m.evaluate(code)

@@ -158,7 +158,10 @@ evaluate(node::WhileStatement, env::Environment) = begin
         end
 
         if is_truthy(condition)
-            evaluate(node.body, Environment(env))
+            result = evaluate(node.body, Environment(env))
+            if isa(result, ReturnValue) || isa(result, ErrorObj)
+                return result
+            end
         else
             break
         end

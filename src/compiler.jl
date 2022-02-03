@@ -90,7 +90,6 @@ remove_last_pop!(c::Compiler) =
     end
 
 replace_last_pop_with_return!(c::Compiler) = begin
-    last = last_instruction(c)
     if last_instruction_is(c, OpPop)
         replace_last!(c, make(OpReturnValue))
     end
@@ -193,7 +192,11 @@ compile!(c::Compiler, fl::FunctionLiteral; is_fn::Bool = true) = begin
     end
 
     compile!(c, fl.body)
-    replace_last_pop_with_return!(c)
+
+    if is_fn
+        replace_last_pop_with_return!(c)
+    end
+
     if !last_instruction_is(c, OpReturnValue)
         emit!(c, OpReturn)
     end
@@ -206,7 +209,7 @@ compile!(c::Compiler, fl::FunctionLiteral; is_fn::Bool = true) = begin
         load_symbol!(c, sym)
     end
 
-    fn = CompiledFunctionObj(instructions, local_count, length(fl.parameters))
+    fn = CompiledFunctionObj(instructions, local_count, length(fl.parameters), is_fn)
     emit!(c, OpClosure, add!(c, fn) - 1, length(free_symbols))
 end
 
