@@ -20,8 +20,10 @@ mutable struct SymbolTable
     within_loop::Bool
     free_symbols::Vector{MonkeySymbol}
 
-    SymbolTable(outer = nothing; within_loop = false) =
+    SymbolTable(; outer::Union{SymbolTable,Nothing} = nothing, within_loop::Bool = false) =
         new(Dict(), 0, outer, within_loop, [])
+
+    SymbolTable(s::SymbolTable) = new(copy(s.store), s.definition_count, s.outer, s.within_loop, s.free_symbols)
 end
 
 is_global(s::SymbolTable) = isnothing(s.outer)

@@ -8,10 +8,20 @@ function analyze(code::String; input::IO = stdin, output::IO = stdout)
     end
 end
 
-function analyze(program::Program)
-    symbol_table = SymbolTable()
-    for (i, (name, _)) in enumerate(BUILTINS)
-        define_builtin!(symbol_table, name, i - 1)
+function analyze(program::Program; existing_symbol_table::Union{SymbolTable,Nothing} = nothing, exisiting_env::Union{Environment,Nothing} = nothing)
+    if !isnothing(existing_symbol_table)
+        symbol_table = SymbolTable(existing_symbol_table)
+    else
+        symbol_table = SymbolTable()
+        for (i, (name, _)) in enumerate(BUILTINS)
+            define_builtin!(symbol_table, name, i - 1)
+        end
+
+        if !isnothing(exisiting_env)
+            for key in keys(exisiting_env.store)
+                define!(symbol_table, key)
+            end
+        end
     end
 
     for statement in program.statements
@@ -38,18 +48,18 @@ function analyze(ls::LetStatement, symbol_table::SymbolTable)
     sym, _ = resolve(symbol_table, ls.name.value)
 
     if ls.reassign
+
         if isnothing(sym)
             return ErrorObj("identifier not found: $(ls.name.value)")
         end
 
-        if sym.scope == FunctionScope ||
-           (sym.scope == OuterScope && sym.ptr.scope == FunctionScope)
+        if sym.scope == FunctionScope || (sym.scope == OuterScope && sym.ptr.scope == FunctionScope)
             return ErrorObj(
                 "cannot reassign the current function being defined: $(ls.name.value)",
             )
         end
     else
-        if !isnothing(sym)
+        if !isnothing(sym) && (sym.scope == LocalScope || (is_global(symbol_table) && sym.scope == GlobalScope))
             return ErrorObj("$(ls.name.value) is already defined")
         end
 
@@ -65,7 +75,7 @@ function analyze(ws::WhileStatement, symbol_table::SymbolTable)
         return result
     end
 
-    inner = SymbolTable(symbol_table; within_loop = true)
+    inner = SymbolTable(; outer = symbol_table, within_loop = true)
     return analyze(ws.body, inner)
 end
 
@@ -115,7 +125,7 @@ function analyze(hl::HashLiteral, symbol_table::SymbolTable)
 end
 
 function analyze(fl::FunctionLiteral, symbol_table::SymbolTable)
-    inner = SymbolTable(symbol_table)
+    inner = SymbolTable(; outer = symbol_table)
 
     if !isempty(fl.name)
         define_function!(inner, fl.name)

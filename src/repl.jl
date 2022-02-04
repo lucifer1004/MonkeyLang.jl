@@ -60,13 +60,14 @@ function start_repl(; input::IO = stdin, output::IO = stdout, use_vm::Bool = fal
 
             try
                 expanded = expand_macros(program, macro_env)
-                syntax_check_result = analyze(expanded)
-                if isa(syntax_check_result, ErrorObj)
-                    println(output, syntax_check_result)
-                    continue
-                end
 
                 if use_vm
+                    syntax_check_result = analyze(expanded; existing_symbol_table = symbol_table)
+                    if isa(syntax_check_result, ErrorObj)
+                        println(output, syntax_check_result)
+                        continue
+                    end
+
                     # There should be no compilation errors.
                     c = Compiler(symbol_table, constants)
                     compile!(c, expanded)
@@ -99,6 +100,12 @@ function start_repl(; input::IO = stdin, output::IO = stdout, use_vm::Bool = fal
                         end
                     end
                 else
+                    syntax_check_result = analyze(expanded; exisiting_env = env)
+                    if isa(syntax_check_result, ErrorObj)
+                        println(output, syntax_check_result)
+                        continue
+                    end
+
                     evaluated = evaluate(expanded, env)
                     if !isnothing(evaluated)
                         println(output, evaluated)

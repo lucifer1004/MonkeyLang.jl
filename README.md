@@ -22,6 +22,10 @@
       - [Return](#return)
     - [Variable bindings](#variable-bindings)
     - [Scopes](#scopes)
+      - [Global Scope](#global-scope)
+      - [Local Scope](#local-scope)
+      - [Closure Scope](#closure-scope)
+      - [CurrentClosure Scope](#currentclosure-scope)
     - [Literals](#literals)
       - [INTEGER](#integer)
       - [BOOLEAN](#boolean)
@@ -166,7 +170,7 @@ identity("Monkey");
 
 ### Variable bindings
 
-Variable bindings, such as those supported by many programming languages, are implemented. Variables can be defined using the `let` keyword. Variables cannot be redefined, but they can be reassigned.
+Variable bindings, such as those supported by many programming languages, are implemented. Variables can be defined using the `let` keyword. Variables cannot be redefined in the same scope, but they can be reassigned.
 
 **Format:**
 
@@ -191,7 +195,92 @@ y = x - y;
 
 ### Scopes
 
+In Monkey, there are types of scopes:
 
+#### Global Scope
+
+Variables defined at the top level are visible everywhere, and can be modified from anywhere. 
+
+```julia
+let x = 2; # `x` is a global variable
+
+let f = fn() { 
+  let g = fn() { 
+    x = x + 1; # Modifies the global variable `x`
+    return x; 
+  } 
+  return g; 
+}
+
+let g = f();
+puts(g()); # 3
+puts(g()); # 4
+
+let h = f();
+puts(h()); # 5
+puts(h()); # 6
+```
+
+#### Local Scope
+
+Variables defined within while loops or functions are of this scope. They can be modified from the same scope, or inner while loops' scopes.
+
+```julia
+let x = 1;
+
+while (x > 0) {
+  x = x - 1;
+  let y = 1; # `y` is a local variable
+  while (y > 0) {
+    y = y - 1; # Modifies the local variable `y`
+  }
+  puts(y); # 0
+}
+```
+
+#### Closure Scope
+
+A function captures all non-global variables visible to it as its free variables. These variables can be modified from within the function.
+
+```julia
+let f = fn() { 
+  let x = 2; 
+  let g = fn() { 
+    x = x + 1; # `x` is captured as a free variable
+    return x; 
+  } 
+  return g; 
+}
+
+let g = f();
+puts(g()); # 3
+puts(g()); # 4
+
+let h = f();
+puts(h()); # 3, since in function `f`, `x` remains unchanged.
+puts(h()); # 4
+```
+
+#### CurrentClosure Scope
+
+Specially, a named function being defined is of this scope. It cannot be modified from within its body.
+
+```julia
+let f = fn(x) {
+  f = 3; # ERROR: cannot reassign the current function being defined: f
+}
+```
+
+But redefinition is OK:
+
+```julia
+let f = fn(x) {
+  let f = x + x;
+  puts(f);
+}
+
+f(3); # 6
+```
 
 ### Literals
 

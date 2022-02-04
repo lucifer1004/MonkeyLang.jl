@@ -4,6 +4,7 @@
             ("foobar", "identifier not found: foobar"),
             ("x = 2;", "identifier not found: x"),
             ("let a = 2; let a = 4;", "a is already defined"),
+            ("let f = fn(x) { let x = 3; }", "x is already defined"),
             ("break;", "syntax error: break outside loop"),
             ("continue;", "syntax error: continue outside loop"),
             ("fn () { break; } ", "syntax error: break outside loop"),
