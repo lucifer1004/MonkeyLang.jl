@@ -74,8 +74,10 @@ struct Environment
     input::IO
     output::IO
 
-    Environment(; within_loop = false, input = stdin, output = stdout) = new(Dict(), nothing, within_loop, input, output)
-    Environment(outer::Environment; within_loop = false) = new(Dict(), outer, within_loop, outer.input, outer.output)
+    Environment(; within_loop = false, input = stdin, output = stdout) =
+        new(Dict(), nothing, within_loop, input, output)
+    Environment(outer::Environment; within_loop = false) =
+        new(Dict(), outer, within_loop, outer.input, outer.output)
 end
 
 within_loop(e::Environment) = e.within_loop

@@ -113,7 +113,7 @@ struct FunctionLiteral <: Expression
         token::Token,
         parameters::Vector{Identifier},
         body::BlockStatement;
-        name::String = ""
+        name::String = "",
     ) = new(token, parameters, body, name)
 end
 

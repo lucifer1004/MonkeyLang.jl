@@ -343,10 +343,7 @@ compile!(c::Compiler, ws::WhileStatement) = begin
     # outer variables instead of free variables.
     body = BlockStatement(
         ws.body.token,
-        [
-            ws.body.statements...,
-            ContinueStatement(Token(CONTINUE, "continue"))
-        ],
+        [ws.body.statements..., ContinueStatement(Token(CONTINUE, "continue"))],
     )
     fl = FunctionLiteral(Token(FUNCTION, "fn"), Identifier[], body)
     compile!(c, fl; within_loop = true)

@@ -156,9 +156,11 @@ evaluate(node::ReturnStatement, env::Environment) = begin
     return isa(val, ErrorObj) ? val : ReturnValue(val)
 end
 
-evaluate(::BreakStatement, env::Environment) = within_loop(env) ? BreakObj() : ErrorObj("syntax error: break outside loop")
+evaluate(::BreakStatement, env::Environment) =
+    within_loop(env) ? BreakObj() : ErrorObj("syntax error: break outside loop")
 
-evaluate(::ContinueStatement, env::Environment) = within_loop(env) ? ContinueObj() : ErrorObj("syntax error: continue outside loop")
+evaluate(::ContinueStatement, env::Environment) =
+    within_loop(env) ? ContinueObj() : ErrorObj("syntax error: continue outside loop")
 
 evaluate(node::WhileStatement, env::Environment) = begin
     while true
@@ -189,7 +191,10 @@ evaluate(block::BlockStatement, env::Environment) = begin
 
     for statement in block.statements
         result = evaluate(statement, env)
-        if isa(result, BreakObj) || isa(result, ContinueObj) || isa(result, ReturnValue) || isa(result, ErrorObj)
+        if isa(result, BreakObj) ||
+           isa(result, ContinueObj) ||
+           isa(result, ReturnValue) ||
+           isa(result, ErrorObj)
             return result
         end
     end

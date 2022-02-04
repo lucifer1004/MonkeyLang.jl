@@ -807,13 +807,7 @@
                     continue;
                 }
                 """,
-                [
-                    vcat(
-                        m.make(m.OpBreak),
-                        m.make(m.OpContinue),
-                        m.make(m.OpContinue),
-                    )
-                ],
+                [vcat(m.make(m.OpBreak), m.make(m.OpContinue), m.make(m.OpContinue))],
                 [
                     m.make(m.OpTrue),
                     m.make(m.OpJumpNotTruthy, 16),
