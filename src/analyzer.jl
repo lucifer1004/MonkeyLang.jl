@@ -45,8 +45,9 @@ analyze(es::ExpressionStatement, symbol_table::SymbolTable) =
     analyze(es.expression, symbol_table)
 
 function analyze(ls::LetStatement, symbol_table::SymbolTable)
+    sym, _ = resolve(symbol_table, ls.name.value)
+
     if ls.reassign
-        sym, _ = analyze_resolve(symbol_table, ls.name.value)
 
         if isnothing(sym)
             return ErrorObj("identifier not found: $(ls.name.value)")
@@ -58,18 +59,8 @@ function analyze(ls::LetStatement, symbol_table::SymbolTable)
             )
         end
     else
-        if ls.name.value ∈ keys(symbol_table.store)
-            sym = symbol_table.store[ls.name.value]
-
-            if sym.scope == LocalScope || (is_global(symbol_table) && sym.scope == GlobalScope)
-                return ErrorObj("$(ls.name.value) is already defined")
-            elseif sym.scope == GlobalScope
-                return ErrorObj("cannot redefine global variable $(ls.name.value), since it has been used in the current scope")
-            elseif sym.scope == BuiltinScope
-                return ErrorObj("cannot redefine builtin $(ls.name.value), since it has been used in the current scope")
-            else
-                return ErrorObj("cannot redefine variable $(ls.name.value), since it has been used in the current scope")
-            end
+        if !isnothing(sym) && (sym.scope == LocalScope || (is_global(symbol_table) && sym.scope == GlobalScope))
+            return ErrorObj("$(ls.name.value) is already defined")
         end
 
         define!(symbol_table, ls.name.value)
@@ -104,7 +95,7 @@ function analyze(::ContinueStatement, symbol_table::SymbolTable)
 end
 
 function analyze(ident::Identifier, symbol_table::SymbolTable)
-    sym, _ = analyze_resolve(symbol_table, ident.value)
+    sym, _ = resolve(symbol_table, ident.value)
     if isnothing(sym)
         return ErrorObj("identifier not found: $(ident.value)")
     end
@@ -198,27 +189,6 @@ function analyze(ce::CallExpression, symbol_table::SymbolTable)
         if isa(result, ErrorObj)
             return result
         end
-    end
-end
-
-analyze_resolve(s::SymbolTable, name::String; level::Int = 0) = begin
-    obj = Base.get(s.store, name, nothing)
-    if isnothing(obj) && !isnothing(s.outer)
-        obj, level = analyze_resolve(s.outer, name; level = level + 1)
-
-        if isnothing(obj)
-            return nothing, 0
-        end
-
-        if obj.scope == GlobalScope || obj.scope == BuiltinScope
-            s.store[name] = obj # Mark the usage of global / builtin variables for the analyzer.
-            return obj, level
-        end
-
-        sym = s.within_loop ? define_outer!(s, obj, level) : define_free!(s, obj)
-        return sym, level
-    else
-        return obj, level
     end
 end
 
