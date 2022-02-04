@@ -279,7 +279,7 @@ let f = fn(x) {
   puts(f);
 }
 
-f(3); 
+f(3); # 6
 ```
 
 ### Literals
