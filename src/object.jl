@@ -56,6 +56,10 @@ end
 type_of(::ReturnValue) = RETURN_VALUE
 Base.string(r::ReturnValue) = string(r.value)
 
+struct BreakObj <: Object end
+
+struct ContinueObj <: Object end
+
 struct ErrorObj <: Object
     message::String
 end
@@ -66,12 +70,15 @@ Base.string(e::ErrorObj) = "ERROR: " * e.message
 struct Environment
     store::Dict{String,Object}
     outer::Union{Environment,Nothing}
+    within_loop::Bool
     input::IO
     output::IO
+
+    Environment(; within_loop = false, input = stdin, output = stdout) = new(Dict(), nothing, within_loop, input, output)
+    Environment(outer::Environment; within_loop = false) = new(Dict(), outer, within_loop, outer.input, outer.output)
 end
 
-Environment(; input = stdin, output = stdout) = Environment(Dict(), nothing, input, output)
-Environment(outer::Environment) = Environment(Dict(), outer, outer.input, outer.output)
+within_loop(e::Environment) = e.within_loop
 get(env::Environment, name::String) = begin
     result = Base.get(env.store, name, nothing)
     if isnothing(result) && !isnothing(env.outer)
@@ -162,7 +169,7 @@ struct CompiledFunctionObj <: Object
     instructions::Instructions
     local_count::Int
     param_count::Int
-    is_fn::Bool
+    within_loop::Bool
 end
 
 type_of(::CompiledFunctionObj) = COMPILED_FUNCTION_OBJ

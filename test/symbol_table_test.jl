@@ -60,12 +60,12 @@
         @test m.resolve(l1, "a")[1] == m.MonkeySymbol("a", m.LocalScope, 0, nothing)
         @test m.resolve(l1, "b")[1] == m.MonkeySymbol("b", m.GlobalScope, 1, nothing)
 
-        l2 = m.SymbolTable(l1)
+        l2 = m.SymbolTable(l1; within_loop = true)
         @test m.resolve(l2, "a")[1] ==
               m.MonkeySymbol("a", m.OuterScope, 0, m.SymbolPointer(1, m.LocalScope, 0))
         @test m.resolve(l2, "b")[1] == m.MonkeySymbol("b", m.GlobalScope, 1, nothing)
 
-        l3 = m.SymbolTable(l2)
+        l3 = m.SymbolTable(l2; within_loop = true)
         @test m.resolve(l3, "a")[1] ==
               m.MonkeySymbol("a", m.OuterScope, 0, m.SymbolPointer(2, m.LocalScope, 0))
         @test m.resolve(l3, "b")[1] == m.MonkeySymbol("b", m.GlobalScope, 1, nothing)
@@ -103,7 +103,7 @@
         m.define!(l1, "c")
         m.define!(l1, "d")
 
-        l2 = m.SymbolTable(l1, true)
+        l2 = m.SymbolTable(l1)
         m.define!(l2, "e")
         m.define!(l2, "f")
 
@@ -153,7 +153,7 @@
         l1 = m.SymbolTable(g)
         m.define!(l1, "c")
 
-        l2 = m.SymbolTable(l1, true)
+        l2 = m.SymbolTable(l1)
         m.define!(l2, "e")
         m.define!(l2, "f")
 

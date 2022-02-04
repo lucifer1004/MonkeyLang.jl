@@ -17,11 +17,11 @@ mutable struct SymbolTable
     store::Dict{String,MonkeySymbol}
     definition_count::Int
     outer::Union{SymbolTable,Nothing}
-    is_function::Bool
+    within_loop::Bool
     free_symbols::Vector{MonkeySymbol}
 
-    SymbolTable(outer = nothing, is_function = false) =
-        new(Dict(), 0, outer, is_function, [])
+    SymbolTable(outer = nothing; within_loop = false) =
+        new(Dict(), 0, outer, within_loop, [])
 end
 
 define!(s::SymbolTable, name::String) = begin
@@ -90,7 +90,7 @@ resolve(s::SymbolTable, name::String; level::Int = 0) = begin
             return obj, level
         end
 
-        sym = s.is_function ? define_free!(s, obj) : define_outer!(s, obj, level)
+        sym = s.within_loop ? define_outer!(s, obj, level) : define_free!(s, obj)
         return sym, level
     else
         return obj, level

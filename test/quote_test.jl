@@ -25,7 +25,7 @@
             ("quote(unquote(\"hello\"))", "\"hello\""),
             ("quote(unquote([1, 2, 3]))", "[1, 2, 3]"),
             ("quote(unquote({2 + 3: \"4\" + \"5\"}))", "{5:\"45\"}"),
-            ("quote(unquote(fn(x){x}))", "fn(x) {\n    x\n}"),
+            ("quote(unquote(fn(x){x}))", "fn(x) { x }"),
             ("quote(unquote(quote(4 + 4)))", "(4 + 4)"),
             (
                 "let quotedInfixExpression = quote(4 + 4); quote(unquote(4 + 4) + unquote(quotedInfixExpression))",

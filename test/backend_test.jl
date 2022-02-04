@@ -81,11 +81,8 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
 
     @testset "Array" begin
         @testset "Literal" begin
-            for (code, expected) in [
-                ("[]", []),
-                ("[1, 2, 3]", [1, 2, 3]),
-                ("[1, 2 * 2, 3 + 3]", [1, 4, 6]),
-            ]
+            for (code, expected) in
+                [("[]", []), ("[1, 2, 3]", [1, 2, 3]), ("[1, 2 * 2, 3 + 3]", [1, 4, 6])]
                 check(code, expected)
             end
         end
@@ -113,7 +110,10 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
             for (input, expected) in [
                 ("""{"foo": "bar", true: false}""", Dict("foo" => "bar", true => false)),
                 ("{1: 2, 1: 3, 1: 4}", Dict(1 => 4)),
-                ("{null: [], [2]: null, {3: 5}: {\"1\": 2}}", Dict(nothing => [], [2] => nothing, Dict(3 => 5) => Dict("1" => 2))),
+                (
+                    "{null: [], [2]: null, {3: 5}: {\"1\": 2}}",
+                    Dict(nothing => [], [2] => nothing, Dict(3 => 5) => Dict("1" => 2)),
+                ),
             ]
                 check(input, expected)
             end
@@ -270,9 +270,50 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
                     y;
                     """,
                     150,
-                )]
+                ),
+            ]
                 check(code, expected)
             end
+        end
+    end
+
+    @testset "Break statement" begin
+        for (code, expected) in [(
+            """
+            let a = 2;
+            let b = 0;
+            while (a > 0) {
+                b = b + a;
+                if (a == 2) {
+                    break;
+                }
+                a = a - 1;
+            }
+            b;
+            """,
+            2,
+        )]
+            check(code, expected)
+        end
+    end
+
+    @testset "Continue statement" begin
+        for (code, expected) in [(
+            """
+            let a = 4;
+            let b = 0;
+            while (a > 0) {
+                a = a - 1;
+                if (a == 2) {
+                    continue;
+                }
+                b = b + a;
+            }
+            b;
+            """,
+            4,
+        )]
+            check(code, expected)
         end
     end
 
@@ -346,42 +387,41 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
         end
 
         @testset "Closure" begin
-            for (code, expected) in [
-                ("""
-                let newAdder = fn(x) { 
-                  fn(y) { x + y };
-                }
+            for (code, expected) in [(
+                """
+               let newAdder = fn(x) { 
+                 fn(y) { x + y };
+               }
 
-                let addTwo = newAdder(2);
-                addTwo(2);
-                """, 4),
-            ]
+               let addTwo = newAdder(2);
+               addTwo(2);
+               """,
+                4,
+            )]
 
                 check(code, expected)
             end
         end
 
         @testset "Recursion" begin
-            for (code, expected) in [
-                (
-                    """
-                    let fibonacci = fn(x) {
-                    if (x == 0) {
-                        0
+            for (code, expected) in [(
+                """
+                let fibonacci = fn(x) {
+                if (x == 0) {
+                    0
+                } else {
+                    if (x == 1) {
+                        return 1;
                     } else {
-                        if (x == 1) {
-                            return 1;
-                        } else {
-                            fibonacci(x - 1) + fibonacci(x - 2);
-                        }
-                        }
-                    };
+                        fibonacci(x - 1) + fibonacci(x - 2);
+                    }
+                    }
+                };
 
-                    fibonacci(10);
-                    """,
-                    55,
-                ),
-            ]
+                fibonacci(10);
+                """,
+                55,
+            )]
                 check(code, expected)
             end
         end
@@ -438,10 +478,7 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
         end
 
         @testset "push" begin
-            for (code, expected) in [
-                ("push([], 2)[0]", 2),
-                ("push({2: 3}, 4, 5)[4]", 5),
-            ]
+            for (code, expected) in [("push([], 2)[0]", 2), ("push({2: 3}, 4, 5)[4]", 5)]
                 check(code, expected)
             end
         end
@@ -563,7 +600,10 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
                 ("2(3)", "not a function: INTEGER"),
                 ("fn() { 1; }(1);", "argument error: wrong number of arguments: got 1"),
                 ("fn(a) { a; }();", "argument error: wrong number of arguments: got 0"),
-                ("fn(a, b) { a + b; }(1);", "argument error: wrong number of arguments: got 1"),
+                (
+                    "fn(a, b) { a + b; }(1);",
+                    "argument error: wrong number of arguments: got 1",
+                ),
             ]
                 if check_object
                     check(code, expected, "ERROR: $expected\n")
@@ -587,7 +627,10 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
 
         @testset "Built-in function" begin
             for (code, expected) in [
-                ("len(1)", "argument error: argument to `len` is not supported, got INTEGER"),
+                (
+                    "len(1)",
+                    "argument error: argument to `len` is not supported, got INTEGER",
+                ),
                 (
                     "len(\"one\", \"two\")",
                     "argument error: wrong number of arguments. Got 2 instead of 1",
@@ -600,12 +643,18 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
                     "first(1)",
                     "argument error: argument to `first` is not supported, got INTEGER",
                 ),
-                ("last(1)", "argument error: argument to `last` is not supported, got INTEGER"),
+                (
+                    "last(1)",
+                    "argument error: argument to `last` is not supported, got INTEGER",
+                ),
                 (
                     "last([1, 2], [2])",
                     "argument error: wrong number of arguments. Got 2 instead of 1",
                 ),
-                ("rest(1)", "argument error: argument to `rest` is not supported, got INTEGER"),
+                (
+                    "rest(1)",
+                    "argument error: argument to `rest` is not supported, got INTEGER",
+                ),
                 (
                     "rest([1, 2], [2])",
                     "argument error: wrong number of arguments. Got 2 instead of 1",
@@ -620,9 +669,12 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
                 ),
                 (
                     "push([], 2, 3)",
-                    "argument error: argument to `push` is not supported, got ARRAY"
+                    "argument error: argument to `push` is not supported, got ARRAY",
                 ),
-                ("type(1, 2)", "argument error: wrong number of arguments. Got 2 instead of 1"),
+                (
+                    "type(1, 2)",
+                    "argument error: wrong number of arguments. Got 2 instead of 1",
+                ),
             ]
                 if check_object
                     check(code, expected, "ERROR: $expected\n")

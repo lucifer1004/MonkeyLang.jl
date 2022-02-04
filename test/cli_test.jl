@@ -8,7 +8,10 @@
         (["run", "fixtures/hello_world.mo"], "Hello, world!\n"),
         (["run", "fixtures/hello_world.mo", "--vm"], "Hello, world!\n"),
         (["run", "fixtures/hello_world.mo", "--jl"], "Hello, world!\n"),
-        (["run", "fixtures/hello_world.mo", "--invalid"], "Usage: monkey run <file> [--vm | --jl]\n"),
+        (
+            ["run", "fixtures/hello_world.mo", "--invalid"],
+            "Usage: monkey run <file> [--vm | --jl]\n",
+        ),
         (["repl"], m.REPL_PRELUDE * "\n>> " * m.REPL_FAREWELL * "\n"),
         (["repl", "--vm"], m.REPL_PRELUDE * "\n>> " * m.REPL_FAREWELL * "\n"),
     ]

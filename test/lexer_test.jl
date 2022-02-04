@@ -157,6 +157,10 @@
                     (m.INT, "3"),
                     (m.RPAREN, ")"),
                     (m.SEMICOLON, ";"),
+                    (m.BREAK, "break"),
+                    (m.SEMICOLON, ";"),
+                    (m.CONTINUE, "continue"),
+                    (m.SEMICOLON, ";"),
                     (m.RBRACE, "}"),
                     (m.SEMICOLON, ";"),
                     (m.EOF, ""),
@@ -190,7 +194,7 @@
             null;
             macro(x, y) { x + y; };
 
-            while (true) { puts(3); };
+            while (true) { puts(3); break; continue; };
             """)
 
             for token in expected

@@ -103,7 +103,7 @@
                 ],
                 "0000 OpAdd\n0001 OpGetLocal 1\n0003 OpConstant 2\n0006 OpConstant 65535\n0009 OpClosure 65535 255\n",
             ),
-            ([m.Instructions([UInt8(m.OpIllegal)])], "ERROR: unknown opcode: 34\n"),
+            ([m.Instructions([UInt8(m.OpIllegal)])], "ERROR: unknown opcode: 36\n"),
         ]
             @test string(vcat(instructions...)) == expected
         end

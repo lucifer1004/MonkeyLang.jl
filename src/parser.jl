@@ -71,6 +71,10 @@ function parse_statement!(p::Parser)
         return parse_return_statement!(p)
     elseif p.cur_token.type == WHILE
         return parse_while_statement!(p)
+    elseif p.cur_token.type == BREAK
+        return parse_break_statement!(p)
+    elseif p.cur_token.type == CONTINUE
+        return parse_continue_statement!(p)
     else
         return parse_expression_statement!(p)
     end
@@ -141,6 +145,26 @@ function parse_while_statement!(p::Parser)
     body = parse_block_statement!(p; must_close = true)
 
     return WhileStatement(token, condition, body)
+end
+
+function parse_break_statement!(p::Parser)
+    token = p.cur_token
+
+    if p.peek_token.type == SEMICOLON
+        next_token!(p)
+    end
+
+    return BreakStatement(token)
+end
+
+function parse_continue_statement!(p::Parser)
+    token = p.cur_token
+
+    if p.peek_token.type == SEMICOLON
+        next_token!(p)
+    end
+
+    return ContinueStatement(token)
 end
 
 function parse_expression_statement!(p::Parser)
