@@ -1,10 +1,11 @@
 # CHANGELOG
 
-## [v0.2.0] - Unreleased
+## [v0.2.0] - 2022-02-04
 
 ### Added
 
-- Support `while` loops.
+- Transpile Monkey to Julia `Expr`.
+- Support `while` loops, along with `break` and `continue`.
 - Support mutable variables.
 - `MonkeyLang.jl` can now be built into a standalone executable.
 - Bytecode VM implemented according to [the Compiler Book](https://compilerbook.com). VM powered repl can be used with the newly added `use_vm` option of the `MonkeyLang.start_repl()` function.
@@ -24,7 +25,6 @@
 ### Removed
 
 - Unnecessary GO-style dummy functions for type recognition.
-
 
 ## [v0.1.0] - 2022-01-15
 
