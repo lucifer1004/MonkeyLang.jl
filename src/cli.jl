@@ -42,13 +42,10 @@ function julia_main(; input::IO = stdin, output::IO = stdout)::Cint
                 return 0
             end
         else
-            result = evaluate(code; input, output)
-            if isa(result, ErrorObj)
-                println(output, result)
-            end
+            MonkeyLang.evaluate(code; input, output)
         end
     else
-        start_repl(; input, output, use_vm = "--vm" ∈ ARGS)
+        MonkeyLang.start_repl(; input, output, use_vm = "--vm" ∈ ARGS)
     end
 
     return 0
