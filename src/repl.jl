@@ -60,15 +60,16 @@ function start_repl(; input::IO = stdin, output::IO = stdout, use_vm::Bool = fal
 
             try
                 expanded = expand_macros(program, macro_env)
+                syntax_check_result = analyze(expanded)
+                if isa(syntax_check_result, ErrorObj)
+                    println(output, syntax_check_result)
+                    continue
+                end
+
                 if use_vm
+                    # There should be no compilation errors.
                     c = Compiler(symbol_table, constants)
-                    try
-                        compile!(c, expanded)
-                    catch e
-                        msg = hasproperty(e, :msg) ? e.msg : "unknown error"
-                        println(output, ErrorObj("compilation error: $msg"))
-                        continue
-                    end
+                    compile!(c, expanded)
 
                     vm = VM(bytecode(c), globals; input = input, output = output)
                     result = run!(vm)

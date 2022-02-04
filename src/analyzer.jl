@@ -1,0 +1,193 @@
+function analyze(code::String; input::IO = stdin, output::IO = stdout)
+    raw_program = parse(code; input, output)
+    if !isnothing(raw_program)
+        macro_env = Environment(; input, output)
+        program = define_macros!(macro_env, raw_program)
+        expanded = expand_macros(program, macro_env)
+        return analyze(expanded)
+    end
+end
+
+function analyze(program::Program)
+    symbol_table = SymbolTable()
+    for (i, (name, _)) in enumerate(BUILTINS)
+        define_builtin!(symbol_table, name, i - 1)
+    end
+
+    for statement in program.statements
+        result = analyze(statement, symbol_table)
+        if isa(result, ErrorObj)
+            return result
+        end
+    end
+end
+
+function analyze(bs::BlockStatement, symbol_table::SymbolTable)
+    for statement in bs.statements
+        result = analyze(statement, symbol_table)
+        if isa(result, ErrorObj)
+            return result
+        end
+    end
+end
+
+analyze(es::ExpressionStatement, symbol_table::SymbolTable) =
+    analyze(es.expression, symbol_table)
+
+function analyze(ls::LetStatement, symbol_table::SymbolTable)
+    sym, _ = resolve(symbol_table, ls.name.value)
+
+    if ls.reassign
+        if isnothing(sym)
+            return ErrorObj("identifier not found: $(ls.name.value)")
+        end
+
+        if sym.scope == FunctionScope ||
+           (sym.scope == OuterScope && sym.ptr.scope == FunctionScope)
+            return ErrorObj(
+                "cannot reassign the current function being defined: $(ls.name.value)",
+            )
+        end
+    else
+        if !isnothing(sym)
+            return ErrorObj("$(ls.name.value) is already defined")
+        end
+
+        define!(symbol_table, ls.name.value)
+    end
+
+    return analyze(ls.value, symbol_table)
+end
+
+function analyze(ws::WhileStatement, symbol_table::SymbolTable)
+    result = analyze(ws.condition, symbol_table)
+    if isa(result, ErrorObj)
+        return result
+    end
+
+    inner = SymbolTable(symbol_table; within_loop = true)
+    return analyze(ws.body, inner)
+end
+
+analyze(rs::ReturnStatement, symbol_table::SymbolTable) =
+    analyze(rs.return_value, symbol_table)
+
+function analyze(::BreakStatement, symbol_table::SymbolTable)
+    if !within_loop(symbol_table)
+        return ErrorObj("syntax error: break outside loop")
+    end
+end
+
+function analyze(::ContinueStatement, symbol_table::SymbolTable)
+    if !within_loop(symbol_table)
+        return ErrorObj("syntax error: continue outside loop")
+    end
+end
+
+function analyze(ident::Identifier, symbol_table::SymbolTable)
+    sym, _ = resolve(symbol_table, ident.value)
+    if isnothing(sym)
+        return ErrorObj("identifier not found: $(ident.value)")
+    end
+end
+
+function analyze(al::ArrayLiteral, symbol_table::SymbolTable)
+    for element in al.elements
+        result = analyze(element, symbol_table)
+        if isa(result, ErrorObj)
+            return result
+        end
+    end
+end
+
+function analyze(hl::HashLiteral, symbol_table::SymbolTable)
+    for (key, value) in hl.pairs
+        result = analyze(key, symbol_table)
+        if isa(result, ErrorObj)
+            return result
+        end
+
+        result = analyze(value, symbol_table)
+        if isa(result, ErrorObj)
+            return result
+        end
+    end
+end
+
+function analyze(fl::FunctionLiteral, symbol_table::SymbolTable)
+    inner = SymbolTable(symbol_table)
+
+    if !isempty(fl.name)
+        define_function!(inner, fl.name)
+    end
+
+    for param in fl.parameters
+        define!(inner, param.value)
+    end
+
+    return analyze(fl.body, inner)
+end
+
+function analyze(ie::IfExpression, symbol_table::SymbolTable)
+    result = analyze(ie.condition, symbol_table)
+    if isa(result, ErrorObj)
+        return result
+    end
+
+    result = analyze(ie.consequence, symbol_table)
+    if isa(result, ErrorObj)
+        return result
+    end
+
+    if !isnothing(ie.alternative)
+        return analyze(ie.alternative, symbol_table)
+    end
+end
+
+analyze(pe::PrefixExpression, symbol_table::SymbolTable) = analyze(pe.right, symbol_table)
+
+function analyze(ie::InfixExpression, symbol_table::SymbolTable)
+    result = analyze(ie.left, symbol_table)
+    if isa(result, ErrorObj)
+        return result
+    end
+
+    return analyze(ie.right, symbol_table)
+end
+
+function analyze(ie::IndexExpression, symbol_table::SymbolTable)
+    result = analyze(ie.left, symbol_table)
+    if isa(result, ErrorObj)
+        return result
+    end
+
+    return analyze(ie.index, symbol_table)
+end
+
+function analyze(ce::CallExpression, symbol_table::SymbolTable)
+    if (token_literal(ce.fn) == "quote")
+        return nothing
+    end
+
+    result = analyze(ce.fn, symbol_table)
+    if isa(result, ErrorObj)
+        return result
+    end
+
+    for arg in ce.arguments
+        result = analyze(arg, symbol_table)
+        if isa(result, ErrorObj)
+            return result
+        end
+    end
+end
+
+# The following functions do nothing in the current version.
+
+analyze(il::IntegerLiteral, symbol_table::SymbolTable) = nothing
+
+analyze(sl::StringLiteral, symbol_table::SymbolTable) = nothing
+
+analyze(bl::BooleanLiteral, symbol_table::SymbolTable) = nothing
+
+analyze(::NullLiteral, ::SymbolTable) = nothing

@@ -70,17 +70,13 @@ Base.string(e::ErrorObj) = "ERROR: " * e.message
 struct Environment
     store::Dict{String,Object}
     outer::Union{Environment,Nothing}
-    within_loop::Bool
     input::IO
     output::IO
 
-    Environment(; within_loop = false, input = stdin, output = stdout) =
-        new(Dict(), nothing, within_loop, input, output)
-    Environment(outer::Environment; within_loop = false) =
-        new(Dict(), outer, within_loop, outer.input, outer.output)
+    Environment(; input = stdin, output = stdout) = new(Dict(), nothing, input, output)
+    Environment(outer::Environment) = new(Dict(), outer, outer.input, outer.output)
 end
 
-within_loop(e::Environment) = e.within_loop
 get(env::Environment, name::String) = begin
     result = Base.get(env.store, name, nothing)
     if isnothing(result) && !isnothing(env.outer)
@@ -94,12 +90,10 @@ reassign!(env::Environment, name::String, value::Object) = begin
     if isnothing(result) && !isnothing(env.outer)
         return reassign!(env.outer, name, value)
     end
-    if isnothing(result)
-        return ErrorObj("identifier not found: $name")
-    else
-        set!(env, name, value)
-        return value
-    end
+
+    # The analyzer ensures that the identifier can always be found.
+    set!(env, name, value)
+    return value
 end
 
 struct FunctionObj <: Object

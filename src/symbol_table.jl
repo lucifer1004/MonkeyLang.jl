@@ -24,8 +24,12 @@ mutable struct SymbolTable
         new(Dict(), 0, outer, within_loop, [])
 end
 
+is_global(s::SymbolTable) = isnothing(s.outer)
+
+within_loop(s::SymbolTable) = s.within_loop
+
 define!(s::SymbolTable, name::String) = begin
-    scope = isnothing(s.outer) ? GlobalScope : LocalScope
+    scope = is_global(s) ? GlobalScope : LocalScope
     sym = MonkeySymbol(name, scope, s.definition_count, nothing)
     s.store[name] = sym
     s.definition_count += 1

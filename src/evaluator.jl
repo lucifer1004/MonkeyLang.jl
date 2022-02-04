@@ -9,6 +9,12 @@ evaluate(code::String; input = stdin, output = stdout) = begin
         program = define_macros!(macro_env, raw_program)
         expanded = expand_macros(program, macro_env)
 
+        syntax_check_result = analyze(expanded)
+        if isa(syntax_check_result, ErrorObj)
+            println(output, syntax_check_result)
+            return syntax_check_result
+        end
+
         result = evaluate(expanded, Environment(; input, output))
         if isa(result, ErrorObj)
             println(output, result)
@@ -66,8 +72,6 @@ evaluate(node::Identifier, env::Environment) = begin
     if !isnothing(builtin)
         return builtin
     end
-
-    return ErrorObj("identifier not found: $(node.value)")
 end
 
 evaluate(node::PrefixExpression, env::Environment) = begin
@@ -143,9 +147,6 @@ evaluate(node::LetStatement, env::Environment) = begin
     if node.reassign
         return reassign!(env, node.name.value, val)
     else
-        if !isnothing(get(env, node.name.value))
-            return ErrorObj("$(node.name.value) is already defined")
-        end
         set!(env, node.name.value, val)
     end
     return val
@@ -156,11 +157,9 @@ evaluate(node::ReturnStatement, env::Environment) = begin
     return isa(val, ErrorObj) ? val : ReturnValue(val)
 end
 
-evaluate(::BreakStatement, env::Environment) =
-    within_loop(env) ? BreakObj() : ErrorObj("syntax error: break outside loop")
+evaluate(::BreakStatement, env::Environment) = BreakObj()
 
-evaluate(::ContinueStatement, env::Environment) =
-    within_loop(env) ? ContinueObj() : ErrorObj("syntax error: continue outside loop")
+evaluate(::ContinueStatement, env::Environment) = ContinueObj()
 
 evaluate(node::WhileStatement, env::Environment) = begin
     while true
@@ -170,7 +169,7 @@ evaluate(node::WhileStatement, env::Environment) = begin
         end
 
         if is_truthy(condition)
-            result = evaluate(node.body, Environment(env; within_loop = true))
+            result = evaluate(node.body, Environment(env))
             if isa(result, ReturnValue) || isa(result, ErrorObj)
                 return result
             elseif isa(result, BreakObj)
@@ -330,12 +329,16 @@ evaluate_unquote_calls(quoted::Node, env::Environment) = modify(
             if token_literal(node.fn) == "unquote" && length(node.arguments) >= 1
                 Node(evaluate(node.arguments[1], env))
             else
-                return CallExpression(node.token, modify(node.fn, modifier), map(expression -> modify(expression, modifier), node.arguments))
+                return CallExpression(
+                    node.token,
+                    modify(node.fn, modifier),
+                    map(expression -> modify(expression, modifier), node.arguments),
+                )
             end
         else
             return node
         end
-    end
+    end,
 )
 
 function apply_function(fn::FunctionObj, args::Vector{Object})

@@ -39,8 +39,6 @@ Base.length(c::Compiler) = length(current_scope(c).instructions)
 
 current_scope(c::Compiler) = c.scopes[end]
 
-within_loop(c::Compiler) = c.symbol_table.within_loop
-
 last_instruction(c::Compiler) = last_instruction(current_scope(c))
 
 last_instruction_is(c::Compiler, op::OpCode) = begin
@@ -151,13 +149,7 @@ end
 compile!(c::Compiler, il::IntegerLiteral) =
     emit!(c, OpConstant, add!(c, IntegerObj(il.value)) - 1)
 
-compile!(c::Compiler, il::BooleanLiteral) = begin
-    if il.value
-        emit!(c, OpTrue)
-    else
-        emit!(c, OpFalse)
-    end
-end
+compile!(c::Compiler, il::BooleanLiteral) = emit!(c, il.value ? OpTrue : OpFalse)
 
 compile!(c::Compiler, ::NullLiteral) = emit!(c, OpNull)
 
@@ -216,11 +208,6 @@ end
 
 compile!(c::Compiler, ident::Identifier) = begin
     sym, _ = resolve(c.symbol_table, ident.value)
-
-    if isnothing(sym)
-        error("identifier not found: $(ident.value)")
-    end
-
     load_symbol!(c, sym)
 end
 
@@ -235,11 +222,6 @@ compile!(c::Compiler, ls::LetStatement) = begin
     sym, _ = resolve(c.symbol_table, ls.name.value)
 
     if ls.reassign
-        # Cannot reassign an nonexistent variable
-        if isnothing(sym)
-            error("identifier not found: $(ls.name.value)")
-        end
-
         if sym.scope == GlobalScope
             # Reassign a global variable
             emit!(c, OpSetGlobal, sym.index)
@@ -251,18 +233,9 @@ compile!(c::Compiler, ls::LetStatement) = begin
             emit!(c, OpSetFree, sym.index)
         else
             # Reassign an outer variable (for while loops)
-            if sym.ptr.scope == FunctionScope
-                error("cannot reassign the current function being defined")
-            end
-
             emit!(c, OpSetOuter, sym.ptr.level, Int(sym.ptr.scope), sym.ptr.index)
         end
     else
-        # Cannot redefine variables
-        if !isnothing(sym)
-            error("$(ls.name.value) is already defined")
-        end
-
         sym = define!(c.symbol_table, ls.name.value)
         if sym.scope == GlobalScope
             emit!(c, OpSetGlobal, sym.index)
@@ -381,19 +354,9 @@ compile!(c::Compiler, rs::ReturnStatement) = begin
     emit!(c, OpReturnValue)
 end
 
-compile!(c::Compiler, ::BreakStatement) = begin
-    if !within_loop(c)
-        error("syntax error: break outside loop")
-    end
-    emit!(c, OpBreak)
-end
+compile!(c::Compiler, ::BreakStatement) = emit!(c, OpBreak)
 
-compile!(c::Compiler, ::ContinueStatement) = begin
-    if !within_loop(c)
-        error("syntax error: continue outside loop")
-    end
-    emit!(c, OpContinue)
-end
+compile!(c::Compiler, ::ContinueStatement) = emit!(c, OpContinue)
 
 compile!(c::Compiler, bs::BlockStatement) = begin
     for statement in bs.statements
