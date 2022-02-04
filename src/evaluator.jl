@@ -325,13 +325,18 @@ end
 
 evaluate_unquote_calls(quoted::Node, env::Environment) = modify(
     quoted,
-    (node::Node) ->
-        (!is_unquote_call(node) || length(node.arguments) != 1) ? node :
-        Node(evaluate(node.arguments[1], env)),
+    function modifier(node::Node)
+        if isa(node, CallExpression)
+            if token_literal(node.fn) == "unquote" && length(node.arguments) >= 1
+                Node(evaluate(node.arguments[1], env))
+            else
+                return CallExpression(node.token, modify(node.fn, modifier), map(expression -> modify(expression, modifier), node.arguments))
+            end
+        else
+            return node
+        end
+    end
 )
-
-is_unquote_call(node::Node) = false
-is_unquote_call(node::CallExpression) = token_literal(node.fn) == "unquote"
 
 function apply_function(fn::FunctionObj, args::Vector{Object})
     if length(fn.parameters) != length(args)

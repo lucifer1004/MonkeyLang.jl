@@ -387,19 +387,58 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
         end
 
         @testset "Closure" begin
-            for (code, expected) in [(
-                """
-               let newAdder = fn(x) { 
-                 fn(y) { x + y };
-               }
+            for (code, expected) in [
+                (
+                    """
+                   let newAdder = fn(x) { 
+                     fn(y) { x + y };
+                   }
 
-               let addTwo = newAdder(2);
-               addTwo(2);
-               """,
-                4,
-            )]
+                   let addTwo = newAdder(2);
+                   addTwo(2);
+                   """,
+                    4,
+                ),
+            ]
 
                 check(code, expected)
+            end
+
+            for (code, expected) in [
+                (
+                    """
+                    let a = 2;
+                    let ans = [];
+
+                    let g = fn() {
+                        let b = 2;
+                        let f = fn() {
+                            b = b - 1;
+                            return b;
+                        }
+                        return f;
+                    }
+
+                    let f = g();
+
+                    ans = push(ans, f());
+                    ans = push(ans, f());
+
+                    let ff = g();
+
+                    ans = push(ans, ff());
+                    ans = push(ans, ff());
+
+                    ans;
+                    """,
+                    [1, 0, 1, 0],
+                ),
+            ]
+                if name == "evaluator"
+                    @test_broken check(code, expected)
+                else
+                    check(code, expected)
+                end
             end
         end
 
@@ -556,6 +595,35 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
             ]
                 check(code, expected)
             end
+        end
+    end
+
+    @testset "Macro" begin
+        for (code, expected) in [
+            (
+                """
+                let double_len_macro = macro(x) { quote(len(unquote(x)) * 2); };
+                let double_len = double_len_macro([1, 2, 3]);
+                    double_len;
+                """,
+                6,
+            ),
+            (
+                """
+                let unless = macro(condition, consequence, alternative) {
+                    quote(if (!(unquote(condition))) {
+                        unquote(consequence);
+                    } else {
+                        unquote(alternative);
+                    });
+                };
+
+                unless(10 > 5, "not greater", "greater");
+                """,
+                "greater",
+            ),
+        ]
+            check(code, expected)
         end
     end
 

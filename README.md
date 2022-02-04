@@ -21,6 +21,7 @@
       - [Operators](#operators)
       - [Return](#return)
     - [Variable bindings](#variable-bindings)
+    - [Scopes](#scopes)
     - [Literals](#literals)
       - [INTEGER](#integer)
       - [BOOLEAN](#boolean)
@@ -165,7 +166,7 @@ identity("Monkey");
 
 ### Variable bindings
 
-Variable bindings, such as those supported by many programming languages, are implemented. Variables can be defined using the `let` keyword. Variables cannot be redefined in the same scope, but they can be reassigned.
+Variable bindings, such as those supported by many programming languages, are implemented. Variables can be defined using the `let` keyword. Variables cannot be redefined, but they can be reassigned.
 
 **Format:**
 
@@ -187,6 +188,10 @@ let identity = fn(x) { x };
 x = x + 1;
 y = x - y;
 ```
+
+### Scopes
+
+
 
 ### Literals
 
