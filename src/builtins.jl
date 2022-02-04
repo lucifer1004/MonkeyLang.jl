@@ -152,6 +152,4 @@ get_builtin_by_name(name::String) = begin
             return builtin
         end
     end
-
-    return nothing
 end

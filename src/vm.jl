@@ -75,6 +75,13 @@ run(code::String; input = stdin, output = stdout) = begin
         macro_env = Environment(; input, output)
         program = define_macros!(macro_env, raw_program)
         expanded = expand_macros(program, macro_env)
+
+        syntax_check_result = analyze(expanded)
+        if isa(syntax_check_result, ErrorObj)
+            println(output, syntax_check_result)
+            return syntax_check_result
+        end
+
         c = Compiler()
         compile!(c, expanded)
         vm = VM(bytecode(c), Object[]; input, output)

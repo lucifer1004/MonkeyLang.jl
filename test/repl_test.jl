@@ -43,13 +43,10 @@ using .Threads
     @testset "Use Bytecode VM" begin
         for (raw_input, expected) in [
             (b"1\n2\n", ["1", "2"]),
-            (b"a\n", ["ERROR: compilation error: identifier not found: a"]),
+            (b"a\n", ["ERROR: identifier not found: a"]),
             (
                 b"let b = 1 / 0;\nb;\n",
-                [
-                    "ERROR: divide error: division by zero",
-                    "ERROR: compilation error: identifier not found: b",
-                ],
+                ["ERROR: divide error: division by zero", "ERROR: identifier not found: b"],
             ),
             (
                 b"1 ++ 2\n",

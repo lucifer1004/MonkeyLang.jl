@@ -226,6 +226,13 @@ transpile(code::String; input::IO = stdin, output::IO = stdout) = begin
         macro_env = MonkeyLang.Environment(; input, output)
         program = MonkeyLang.define_macros!(macro_env, raw_program)
         expanded = MonkeyLang.expand_macros(program, macro_env)
+
+        syntax_check_result = MonkeyLang.analyze(expanded)
+        if isa(syntax_check_result, MonkeyLang.ErrorObj)
+            println(output, syntax_check_result)
+            return nothing
+        end
+
         return transpile(expanded; input, output)
     end
 end

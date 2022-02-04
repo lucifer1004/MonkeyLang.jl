@@ -35,6 +35,9 @@ include("ast_modify.jl")
 # Symbol and Symbol Table
 include("symbol_table.jl")
 
+# Analyzer
+include("analyzer.jl")
+
 # Compiler
 include("compiler.jl")
 

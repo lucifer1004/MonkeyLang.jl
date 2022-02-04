@@ -894,35 +894,6 @@
     end
 
     @testset "Error handling" begin
-        for (input, error_message) in [
-            ("break;", "syntax error: break outside loop"),
-            ("let f = fn() { break; }", "syntax error: break outside loop"),
-            ("continue;", "syntax error: continue outside loop"),
-            ("let f = fn() { continue; }", "syntax error: continue outside loop"),
-            ("fn (x) { let x = 3; }", "x is already defined"),
-            ("a", "identifier not found: a"),
-            ("a = 2", "identifier not found: a"),
-            ("let a = 2; let a = 3;", "a is already defined"),
-            (
-                """
-                let f = fn(x) {
-                    while (false) {
-                        f = 2;
-                    }
-
-                    return g;
-                }
-                """,
-                "cannot reassign the current function being defined",
-            ),
-        ]
-            @test_throws ErrorException(error_message) begin
-                program = m.parse(input)
-                c = m.Compiler()
-                m.compile!(c, program)
-            end
-        end
-
         @test_throws ErrorException("unknown operator: &") begin
             c = m.Compiler()
             m.compile!(
