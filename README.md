@@ -504,11 +504,14 @@ puts("World!");
 
 #### `len(<arg>): INTEGER`
 
-For `STRING`, it returns the number of characters. If it's `ARRAY`, it returns the number of elements.
+- For `STRING`, it returns the number of characters.
+- For `ARRAY`, it returns the number of elements.
+- For `HASH`, it returns the number of key-value pairs.
 
 ```julia
 len("Monkey"); # 6
 len([0, 1, 2]); # 3
+len({1: 2, 2: 3}); # 2
 ```
 
 #### `first(<arg: STRING>): STRING | NULL`
