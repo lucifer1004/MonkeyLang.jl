@@ -4,6 +4,7 @@ using .Threads
     @testset "Use Evaluator" begin
         for (raw_input, expected) in [
             (b"1\n2\n", ["1", "2"]),
+            (b"let a = 1;\na;\n", ["1", "1"]),
             (b"a\n", ["ERROR: identifier not found: a"]),
             (b"1 / 0\n", ["ERROR: divide error: division by zero"]),
             (
@@ -43,6 +44,7 @@ using .Threads
     @testset "Use Bytecode VM" begin
         for (raw_input, expected) in [
             (b"1\n2\n", ["1", "2"]),
+            (b"let a = 1;\na;\n", ["1", "1"]),
             (b"a\n", ["ERROR: identifier not found: a"]),
             (
                 b"let b = 1 / 0;\nb;\n",

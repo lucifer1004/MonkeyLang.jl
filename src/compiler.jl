@@ -121,7 +121,7 @@ emit!(c::Compiler, op::OpCode, operands::Vararg{Int})::Int64 = begin
 end
 
 enter_scope!(c::Compiler; within_loop::Bool = false) = begin
-    c.symbol_table = SymbolTable(c.symbol_table; within_loop)
+    c.symbol_table = SymbolTable(; outer = c.symbol_table, within_loop)
     push!(c.scopes, CompilationScope(Instructions([]), []))
 end
 

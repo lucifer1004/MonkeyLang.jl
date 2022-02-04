@@ -4,6 +4,7 @@
             ("foobar", "identifier not found: foobar"),
             ("x = 2;", "identifier not found: x"),
             ("let a = 2; let a = 4;", "a is already defined"),
+            ("let f = fn(x) { let x = 3; }", "x is already defined"),
             ("break;", "syntax error: break outside loop"),
             ("continue;", "syntax error: continue outside loop"),
             ("fn () { break; } ", "syntax error: break outside loop"),
@@ -25,6 +26,42 @@
             (
                 "let f = fn(x) { if (x > 0) { f(x - 1); f = 2; } }",
                 "cannot reassign the current function being defined: f",
+            ),
+            (
+                """
+                let a = 5;
+                let x = 1;
+                let b = 0;
+
+                while (x > 0) {
+                    x = x - 1;
+                    b = b + a;
+                    let a = 9;
+                    b = b + a;
+                }
+                """,
+                "cannot redefine global variable a, since it has been used in the current scope",
+            ),
+            (
+                """
+                let a = len([]);
+                let len = 3;
+                """,
+                "cannot redefine builtin len, since it has been used in the current scope",
+            ),
+            (
+                """
+                let x = 3;
+                while (x > 0) {
+                    x = x - 1;
+                    let y = 2;
+                    while (y > 0) {
+                        y = y - 1;
+                        let y = 3;
+                    }
+                }
+                """,
+                "cannot redefine variable y, since it has been used in the current scope",
             ),
         ]
             test_object(m.analyze(code), expected)

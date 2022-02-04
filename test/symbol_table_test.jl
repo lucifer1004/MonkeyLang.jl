@@ -17,7 +17,7 @@
         b = m.define!(g, "b")
         @test b == expected["b"]
 
-        l1 = m.SymbolTable(g)
+        l1 = m.SymbolTable(; outer = g)
 
         c = m.define!(l1, "c")
         @test c == expected["c"]
@@ -25,7 +25,7 @@
         d = m.define!(l1, "d")
         @test d == expected["d"]
 
-        l2 = m.SymbolTable(l1)
+        l2 = m.SymbolTable(; outer = l1)
 
         e = m.define!(l2, "e")
         @test e == expected["e"]
@@ -52,7 +52,7 @@
         a = m.define!(g, "a")
         b = m.define!(g, "b")
 
-        l1 = m.SymbolTable(g)
+        l1 = m.SymbolTable(; outer = g)
         @test m.resolve(l1, "a")[1] == m.MonkeySymbol("a", m.GlobalScope, 0, nothing)
 
         a1 = m.define!(l1, "a")
@@ -60,12 +60,12 @@
         @test m.resolve(l1, "a")[1] == m.MonkeySymbol("a", m.LocalScope, 0, nothing)
         @test m.resolve(l1, "b")[1] == m.MonkeySymbol("b", m.GlobalScope, 1, nothing)
 
-        l2 = m.SymbolTable(l1; within_loop = true)
+        l2 = m.SymbolTable(; outer = l1, within_loop = true)
         @test m.resolve(l2, "a")[1] ==
               m.MonkeySymbol("a", m.OuterScope, 0, m.SymbolPointer(1, m.LocalScope, 0))
         @test m.resolve(l2, "b")[1] == m.MonkeySymbol("b", m.GlobalScope, 1, nothing)
 
-        l3 = m.SymbolTable(l2; within_loop = true)
+        l3 = m.SymbolTable(; outer = l2, within_loop = true)
         @test m.resolve(l3, "a")[1] ==
               m.MonkeySymbol("a", m.OuterScope, 0, m.SymbolPointer(2, m.LocalScope, 0))
         @test m.resolve(l3, "b")[1] == m.MonkeySymbol("b", m.GlobalScope, 1, nothing)
@@ -80,8 +80,8 @@
         )
 
         g = m.SymbolTable()
-        l1 = m.SymbolTable(g)
-        l2 = m.SymbolTable(l1)
+        l1 = m.SymbolTable(; outer = g)
+        l2 = m.SymbolTable(; outer = l1)
 
         for (i, k) in expected |> keys |> collect |> sort |> enumerate
             m.define_builtin!(g, k, i - 1)
@@ -99,11 +99,11 @@
         m.define!(g, "a")
         m.define!(g, "b")
 
-        l1 = m.SymbolTable(g)
+        l1 = m.SymbolTable(; outer = g)
         m.define!(l1, "c")
         m.define!(l1, "d")
 
-        l2 = m.SymbolTable(l1)
+        l2 = m.SymbolTable(; outer = l1)
         m.define!(l2, "e")
         m.define!(l2, "f")
 
@@ -150,10 +150,10 @@
         g = m.SymbolTable()
         m.define!(g, "a")
 
-        l1 = m.SymbolTable(g)
+        l1 = m.SymbolTable(; outer = g)
         m.define!(l1, "c")
 
-        l2 = m.SymbolTable(l1)
+        l2 = m.SymbolTable(; outer = l1)
         m.define!(l2, "e")
         m.define!(l2, "f")
 
