@@ -39,6 +39,8 @@ Base.length(c::Compiler) = length(current_scope(c).instructions)
 
 current_scope(c::Compiler) = c.scopes[end]
 
+within_loop(c::Compiler) = c.symbol_table.within_loop
+
 last_instruction(c::Compiler) = last_instruction(current_scope(c))
 
 last_instruction_is(c::Compiler, op::OpCode) = begin
@@ -120,8 +122,8 @@ emit!(c::Compiler, op::OpCode, operands::Vararg{Int})::Int64 = begin
     return pos
 end
 
-enter_scope!(c::Compiler; is_fn::Bool = false) = begin
-    c.symbol_table = SymbolTable(c.symbol_table, is_fn)
+enter_scope!(c::Compiler; within_loop::Bool = false) = begin
+    c.symbol_table = SymbolTable(c.symbol_table; within_loop)
     push!(c.scopes, CompilationScope(Instructions([]), []))
 end
 
@@ -180,8 +182,8 @@ compile!(c::Compiler, hl::HashLiteral) = begin
     emit!(c, OpHash, length(ks) * 2)
 end
 
-compile!(c::Compiler, fl::FunctionLiteral; is_fn::Bool = true) = begin
-    enter_scope!(c; is_fn)
+compile!(c::Compiler, fl::FunctionLiteral; within_loop::Bool = false) = begin
+    enter_scope!(c; within_loop)
 
     if !isempty(fl.name)
         define_function!(c.symbol_table, fl.name)
@@ -193,12 +195,11 @@ compile!(c::Compiler, fl::FunctionLiteral; is_fn::Bool = true) = begin
 
     compile!(c, fl.body)
 
-    if is_fn
+    if !within_loop
         replace_last_pop_with_return!(c)
-    end
-
-    if !last_instruction_is(c, OpReturnValue)
-        emit!(c, OpReturn)
+        if !last_instruction_is(c, OpReturnValue)
+            emit!(c, OpReturn)
+        end
     end
 
     free_symbols = c.symbol_table.free_symbols
@@ -209,7 +210,7 @@ compile!(c::Compiler, fl::FunctionLiteral; is_fn::Bool = true) = begin
         load_symbol!(c, sym)
     end
 
-    fn = CompiledFunctionObj(instructions, local_count, length(fl.parameters), is_fn)
+    fn = CompiledFunctionObj(instructions, local_count, length(fl.parameters), within_loop)
     emit!(c, OpClosure, add!(c, fn) - 1, length(free_symbols))
 end
 
@@ -340,16 +341,22 @@ compile!(c::Compiler, ws::WhileStatement) = begin
 
     # Compile body of a while statement to a special closure that resolves 
     # outer variables instead of free variables.
-    fl = FunctionLiteral(Token(FUNCTION, "fn"), Identifier[], ws.body)
-    compile!(c, fl; is_fn = false)
+    body = BlockStatement(
+        ws.body.token,
+        [ws.body.statements..., ContinueStatement(Token(CONTINUE, "continue"))],
+    )
+    fl = FunctionLiteral(Token(FUNCTION, "fn"), Identifier[], body)
+    compile!(c, fl; within_loop = true)
 
-    # Call the closure and discard the return value by a pop
+    # Call the closure and use the return value to detect a break or continue
     emit!(c, OpCall, 0)
+    jump_on_break_pos = emit!(c, OpJumpNotTruthy, 9999)
 
     emit!(c, OpJump, loop_start_pos)
     after_body_pos = length(c)
 
     change_operand!(c, jump_not_truthy_pos, after_body_pos)
+    change_operand!(c, jump_on_break_pos, after_body_pos)
 
     emit!(c, OpNull)
     emit!(c, OpPop)
@@ -372,6 +379,20 @@ end
 compile!(c::Compiler, rs::ReturnStatement) = begin
     compile!(c, rs.return_value)
     emit!(c, OpReturnValue)
+end
+
+compile!(c::Compiler, ::BreakStatement) = begin
+    if !within_loop(c)
+        error("syntax error: break outside loop")
+    end
+    emit!(c, OpBreak)
+end
+
+compile!(c::Compiler, ::ContinueStatement) = begin
+    if !within_loop(c)
+        error("syntax error: continue outside loop")
+    end
+    emit!(c, OpContinue)
 end
 
 compile!(c::Compiler, bs::BlockStatement) = begin

@@ -240,6 +240,32 @@
         end
     end
 
+    @testset "Test Parsing Break Statement" begin
+        for code in ["break", "break;"]
+            l = m.Lexer(code)
+            p = m.Parser(l)
+            program = m.parse!(p)
+
+            check_parser_errors(p)
+
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.BreakStatement)
+        end
+    end
+
+    @testset "Test Parsing Continue Statement" begin
+        for code in ["continue", "continue;"]
+            l = m.Lexer(code)
+            p = m.Parser(l)
+            program = m.parse!(p)
+
+            check_parser_errors(p)
+
+            @test length(program.statements) == 1
+            @test isa(program.statements[1], m.ContinueStatement)
+        end
+    end
+
     @testset "Test Parsing Functional Literal" begin
         for (code) in [("fn(x, y) { x + y; }")]
             l = m.Lexer(code)

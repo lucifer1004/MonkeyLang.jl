@@ -7,7 +7,7 @@ mutable struct Frame
 end
 
 instructions(f::Frame) = f.cl.fn.instructions
-is_function(f::Frame) = f.cl.fn.is_fn
+within_loop(f::Frame) = f.cl.fn.within_loop
 
 mutable struct VM
     constants::Vector{Object}
@@ -20,7 +20,7 @@ mutable struct VM
 
     VM(bc::ByteCode, globals::Vector{Object} = Object[]; input = stdin, output = stdout) =
         begin
-            main_fn = CompiledFunctionObj(bc.instructions, 0, 0, true)
+            main_fn = CompiledFunctionObj(bc.instructions, 0, 0, false)
             main_closure = ClosureObj(main_fn, [])
             main_frame = Frame(main_closure, 0)
             frames = [main_frame]
@@ -91,7 +91,7 @@ end
 run!(vm::VM) = begin
     @debug "Executing instructions:\n$(string(instructions(vm)))"
 
-    while current_frame(vm).ip[] < length(instructions(vm))
+    while current_frame(vm).ip < length(instructions(vm))
         current_frame(vm).ip += 1
         ip = current_frame(vm).ip
         ins = instructions(vm)
@@ -102,7 +102,9 @@ run!(vm::VM) = begin
             if 1 <= const_id <= length(vm.constants)
                 push!(vm, vm.constants[const_id])
             else
-                return ErrorObj("bounds error: attempt to access $(length(vm.constants))-element vector at index [$const_id]")
+                return ErrorObj(
+                    "bounds error: attempt to access $(length(vm.constants))-element vector at index [$const_id]",
+                )
             end
         elseif OpAdd <= op <= OpGreaterThan
             right = pop!(vm)
@@ -245,11 +247,17 @@ run!(vm::VM) = begin
             if isa(err, ErrorObj)
                 return err
             end
+        elseif OpBreak <= op <= OpContinue
+            current_frame(vm).ip += 1
+            return_value = native_bool_to_boolean_obj(op == OpContinue)
+            frame = pop_frame!(vm)
+            vm.sp = frame.base_ptr - 1
+            push!(vm, return_value)
         elseif OpReturnValue <= op <= OpReturn
             return_value = op == OpReturnValue ? pop!(vm) : _NULL
             frame = pop_frame!(vm)
             if op == OpReturnValue
-                while !is_function(frame)
+                while within_loop(frame)
                     frame = pop_frame!(vm)
                 end
             end
@@ -278,7 +286,14 @@ end
 
 execute_binary_operation!(vm::VM, op::OpCode, left::Object, right::Object) = begin
     if type_of(left) != type_of(right)
-        return ErrorObj("type mismatch: " * type_of(left) * " " * OPCODE_STRINGS[op] * " " * type_of(right))
+        return ErrorObj(
+            "type mismatch: " *
+            type_of(left) *
+            " " *
+            OPCODE_STRINGS[op] *
+            " " *
+            type_of(right),
+        )
     end
 
     result = if op == OpEqual
@@ -286,7 +301,14 @@ execute_binary_operation!(vm::VM, op::OpCode, left::Object, right::Object) = beg
     elseif op == OpNotEqual
         native_bool_to_boolean_obj(left != right)
     else
-        return ErrorObj("unknown operator: " * type_of(left) * " " * OPCODE_STRINGS[op] * " " * type_of(right))
+        return ErrorObj(
+            "unknown operator: " *
+            type_of(left) *
+            " " *
+            OPCODE_STRINGS[op] *
+            " " *
+            type_of(right),
+        )
     end
 
     push!(vm, result)
@@ -354,8 +376,7 @@ build_hash!(vm::VM, element_count::Integer)::HashObj = begin
     return HashObj(prs)
 end
 
-call!(::VM, obj::Object, ::Integer) =
-    return ErrorObj("not a function: $(type_of(obj))")
+call!(::VM, obj::Object, ::Integer) = return ErrorObj("not a function: $(type_of(obj))")
 
 call!(vm::VM, cl::ClosureObj, arg_count::Integer) = begin
     if arg_count != cl.fn.param_count

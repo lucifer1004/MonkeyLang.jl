@@ -138,6 +138,10 @@ transpile(bs::MonkeyLang.BlockStatement)::Expr = quote
     $(map(transpile, bs.statements)...)
 end
 
+transpile(::MonkeyLang.BreakStatement)::Expr = Expr(:break)
+
+transpile(::MonkeyLang.ContinueStatement)::Expr = Expr(:continue)
+
 transpile(es::MonkeyLang.ExpressionStatement) = transpile(es.expression)
 
 transpile(ls::MonkeyLang.LetStatement)::Expr = begin
@@ -209,13 +213,12 @@ transpile(ce::MonkeyLang.CallExpression)::Expr =
 transpile(ce::MonkeyLang.IndexExpression)::Expr =
     Expr(:call, :__WRAPPED_GETINDEX, transpile(ce.left), transpile(ce.index))
 
-transpile(ie::MonkeyLang.IfExpression)::Expr =
-    Expr(
-        :if,
-        simplify_condition(ie.condition),
-        transpile(ie.consequence),
-        transpile(ie.alternative),
-    )
+transpile(ie::MonkeyLang.IfExpression)::Expr = Expr(
+    :if,
+    simplify_condition(ie.condition),
+    transpile(ie.consequence),
+    transpile(ie.alternative),
+)
 
 transpile(code::String; input::IO = stdin, output::IO = stdout) = begin
     raw_program = MonkeyLang.parse(code; input, output)

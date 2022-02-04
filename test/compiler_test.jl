@@ -760,7 +760,7 @@
                         m.make(m.OpAdd),
                         m.make(m.OpCall, 1),
                         m.make(m.OpPop),
-                        m.make(m.OpReturn),
+                        m.make(m.OpContinue),
                     ),
                     vcat(
                         m.make(m.OpGetGlobal, 0),
@@ -775,13 +775,14 @@
                         m.make(m.OpGetLocal, 0),
                         m.make(m.OpConstant, 5),
                         m.make(m.OpGreaterThan),
-                        m.make(m.OpJumpNotTruthy, 41),
+                        m.make(m.OpJumpNotTruthy, 44),
                         m.make(m.OpClosure, 7, 0),
                         m.make(m.OpCall, 0),
+                        m.make(m.OpJumpNotTruthy, 44),
                         m.make(m.OpJump, 23),
                         m.make(m.OpNull),
                         m.make(m.OpPop),
-                        m.make(m.OpReturn),
+                        m.make(m.OpContinue),
                     ),
                 ],
                 [
@@ -790,10 +791,30 @@
                     m.make(m.OpGetGlobal, 0),
                     m.make(m.OpConstant, 1),
                     m.make(m.OpGreaterThan),
-                    m.make(m.OpJumpNotTruthy, 25),
+                    m.make(m.OpJumpNotTruthy, 28),
                     m.make(m.OpClosure, 8, 0),
                     m.make(m.OpCall, 0),
+                    m.make(m.OpJumpNotTruthy, 28),
                     m.make(m.OpJump, 6),
+                    m.make(m.OpNull),
+                    m.make(m.OpPop),
+                ],
+            ),
+            (
+                """
+                while (true) { 
+                    break;
+                    continue;
+                }
+                """,
+                [vcat(m.make(m.OpBreak), m.make(m.OpContinue), m.make(m.OpContinue))],
+                [
+                    m.make(m.OpTrue),
+                    m.make(m.OpJumpNotTruthy, 16),
+                    m.make(m.OpClosure, 0, 0),
+                    m.make(m.OpCall, 0),
+                    m.make(m.OpJumpNotTruthy, 16),
+                    m.make(m.OpJump, 0),
                     m.make(m.OpNull),
                     m.make(m.OpPop),
                 ],
@@ -874,6 +895,10 @@
 
     @testset "Error handling" begin
         for (input, error_message) in [
+            ("break;", "syntax error: break outside loop"),
+            ("let f = fn() { break; }", "syntax error: break outside loop"),
+            ("continue;", "syntax error: continue outside loop"),
+            ("let f = fn() { continue; }", "syntax error: continue outside loop"),
             ("fn (x) { let x = 3; }", "x is already defined"),
             ("a", "identifier not found: a"),
             ("a = 2", "identifier not found: a"),

@@ -33,24 +33,30 @@
 
     @testset "Test Stringifying a Complicated Program" begin
         input = """
-          let a = 1;
-          let b = a + 2;
-          let f = if (true) {
+            let a = 1;
+            let b = a + 2;
+            let f = if (true) {
             fn(x) {
-              x + 1;
+                x + 1;
             }
-          } else { 
+            } else { 
             fn(x) { 
-              return x * 2;
+                return x * 2;
             }
-          }
-          let c = f(b);
-          let d = [a, b, c];
-          let e = {a:b};
-          let g = macro(x) {x + x};
+            }
+            let c = f(b);
+            let d = [a, b, c];
+            let e = {a:b};
+            let g = macro(x) {x + x};
+            while (true) {
+                break;
+            }
+            while (false) {
+                continue;
+            }
         """
 
-        expected = "let a = 1;let b = (a + 2);let f = if (true) { fn(x) {\n    (x + 1)\n} } else { fn(x) {\n    return (x * 2);\n} };let c = f(b);let d = [a, b, c];let e = {a:b};let g = macro(x) {(x + x)};"
+        expected = "let a = 1;let b = (a + 2);let f = if (true) { fn(x) { (x + 1) } } else { fn(x) { return (x * 2); } };let c = f(b);let d = [a, b, c];let e = {a:b};let g = macro(x) {(x + x)};while (true) { break; }while (false) { continue; }"
         l = m.Lexer(input)
         p = m.Parser(l)
         program = m.parse!(p)

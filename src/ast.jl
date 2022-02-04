@@ -117,10 +117,8 @@ struct FunctionLiteral <: Expression
     ) = new(token, parameters, body, name)
 end
 
-Base.string(fl::FunctionLiteral) = """
-$(fl.token.literal)$(isempty(fl.name) ? "" : " " * fl.name)($(join(map(string, fl.parameters), ", "))) {
-    $(fl.body)
-}"""
+Base.string(fl::FunctionLiteral) =
+    "$(token_literal(fl))$(isempty(fl.name) ? "" : " " * fl.name)($(join(map(string, fl.parameters), ", "))) { $(fl.body) }"
 
 struct MacroLiteral <: Expression
     token::Token
@@ -129,7 +127,7 @@ struct MacroLiteral <: Expression
 end
 
 Base.string(ml::MacroLiteral) =
-    ml.token.literal *
+    token_literal(ml) *
     "(" *
     join(map(string, ml.parameters), ", ") *
     ") {" *
@@ -151,6 +149,8 @@ struct WhileStatement <: Statement
     body::BlockStatement
 end
 
+Base.string(ws::WhileStatement) = "$(token_literal(ws)) ($(ws.condition)) { $(ws.body) }"
+
 struct LetStatement <: Statement
     token::Token
     name::Identifier
@@ -159,7 +159,7 @@ struct LetStatement <: Statement
 end
 
 Base.string(ls::LetStatement) =
-    (ls.reassign ? "" : ls.token.literal * " ") *
+    (ls.reassign ? "" : token_literal(ls) * " ") *
     string(ls.name) *
     " = " *
     string(ls.value) *
@@ -170,7 +170,19 @@ struct ReturnStatement <: Statement
     return_value::Expression
 end
 
-Base.string(rs::ReturnStatement) = rs.token.literal * " " * string(rs.return_value) * ";"
+Base.string(rs::ReturnStatement) = token_literal(rs) * " " * string(rs.return_value) * ";"
+
+struct BreakStatement <: Statement
+    token::Token
+end
+
+Base.string(bs::BreakStatement) = token_literal(bs) * ";"
+
+struct ContinueStatement <: Statement
+    token::Token
+end
+
+Base.string(cs::ContinueStatement) = token_literal(cs) * ";"
 
 struct ExpressionStatement <: Statement
     token::Token

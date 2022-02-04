@@ -85,7 +85,13 @@ function start_repl(; input::IO = stdin, output::IO = stdout, use_vm::Bool = fal
                                 end
                             end
 
-                            append!(globals, fill(_NULL, symbol_table.definition_count - length(globals)))
+                            append!(
+                                globals,
+                                fill(
+                                    _NULL,
+                                    symbol_table.definition_count - length(globals),
+                                ),
+                            )
                             for name in to_fix
                                 pop!(symbol_table.store, name)
                             end
