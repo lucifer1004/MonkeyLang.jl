@@ -74,6 +74,22 @@ function start_repl(; input::IO = stdin, output::IO = stdout, use_vm::Bool = fal
                     result = run!(vm)
                     if !isnothing(result)
                         println(output, result)
+
+                        # Fix dangling global symbols
+                        if isa(result, ErrorObj)
+                            to_fix = []
+
+                            for (name, sym) in symbol_table.store
+                                if sym.scope == GlobalScope && sym.index >= length(globals)
+                                    push!(to_fix, name)
+                                end
+                            end
+
+                            append!(globals, fill(_NULL, symbol_table.definition_count - length(globals)))
+                            for name in to_fix
+                                pop!(symbol_table.store, name)
+                            end
+                        end
                     end
                 else
                     evaluated = evaluate(expanded, env)

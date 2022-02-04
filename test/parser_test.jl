@@ -1,4 +1,8 @@
 @testset "Test Parser" begin
+    @testset "Empty program" begin
+        @test isnothing(m.parse(""))
+    end
+
     @testset "Test Parsing Let Statements" begin
         for (code, expected_ident, expected_value) in [
             ("let x = 5;", "x", 5),

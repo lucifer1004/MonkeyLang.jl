@@ -100,10 +100,8 @@ function test_object(obj::m.HashObj, expected::Dict)
     @test length(obj.pairs) == length(expected)
 
     for (k, ce) in collect(expected)
-        if isa(k, Int)
-            ca = get(obj.pairs, k, nothing)
-            test_object(ca, ce)
-        end
+        key = m.Object(k)
+        test_object(get(obj.pairs, key, nothing), ce)
     end
 end
 

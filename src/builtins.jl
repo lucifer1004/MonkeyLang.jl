@@ -12,6 +12,8 @@ const BUILTINS = Pair{String,Builtin}[
                 return IntegerObj(length(arg.value))
             elseif isa(arg, ArrayObj)
                 return IntegerObj(length(arg.elements))
+            elseif isa(arg, HashObj)
+                return IntegerObj(length(arg.pairs))
             end
 
             return ErrorObj(

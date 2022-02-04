@@ -8,7 +8,13 @@ evaluate(code::String; input = stdin, output = stdout) = begin
         macro_env = Environment(; input, output)
         program = define_macros!(macro_env, raw_program)
         expanded = expand_macros(program, macro_env)
-        evaluate(expanded, Environment(; input, output))
+
+        result = evaluate(expanded, Environment(; input, output))
+        if isa(result, ErrorObj)
+            println(output, result)
+        end
+
+        return result
     end
 end
 
@@ -137,7 +143,7 @@ evaluate(node::LetStatement, env::Environment) = begin
     if node.reassign
         return reassign!(env, node.name.value, val)
     else
-        if node.name.value ∈ keys(env.store)
+        if !isnothing(get(env, node.name.value))
             return ErrorObj("$(node.name.value) is already defined")
         end
         set!(env, node.name.value, val)
@@ -184,10 +190,6 @@ evaluate(block::BlockStatement, env::Environment) = begin
 end
 
 evaluate(program::Program, env::Environment) = begin
-    if isempty(program.statements)
-        return nothing
-    end
-
     result = _NULL
 
     for statement in program.statements
@@ -319,6 +321,10 @@ is_unquote_call(node::Node) = false
 is_unquote_call(node::CallExpression) = token_literal(node.fn) == "unquote"
 
 function apply_function(fn::FunctionObj, args::Vector{Object})
+    if length(fn.parameters) != length(args)
+        return ErrorObj("argument error: wrong number of arguments: got $(length(args))")
+    end
+
     extended_env = extend_function_environment(fn, args)
     evaluated = evaluate(fn.body, extended_env)
     return unwrap_return_value(evaluated)

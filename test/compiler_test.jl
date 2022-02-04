@@ -125,6 +125,18 @@
     @testset "Conditionals" begin
         for (input, expected_constants, expected_instructions) in [
             (
+                "if (true) {};",
+                [],
+                [
+                    m.make(m.OpTrue),
+                    m.make(m.OpJumpNotTruthy, 8),
+                    m.make(m.OpNull),
+                    m.make(m.OpJump, 9),
+                    m.make(m.OpNull),
+                    m.make(m.OpPop),
+                ],
+            ),
+            (
                 "if (true) { 10 }; 3333",
                 [10, 3333],
                 [
@@ -862,6 +874,7 @@
 
     @testset "Error handling" begin
         for (input, error_message) in [
+            ("fn (x) { let x = 3; }", "x is already defined"),
             ("a", "identifier not found: a"),
             ("a = 2", "identifier not found: a"),
             ("let a = 2; let a = 3;", "a is already defined"),

@@ -474,6 +474,10 @@ function parse!(p::Parser)
 end
 
 function parse(code::String; input::IO = stdin, output::IO = stdout)
+    if isempty(code)
+        return nothing
+    end
+
     lexer = Lexer(code)
     parser = Parser(lexer)
     program = parse!(parser)
@@ -486,7 +490,7 @@ function parse(code::String; input::IO = stdin, output::IO = stdout)
             ),
         )
         println(output, join(map(string, parser.errors), "\n"))
-        return
+        return nothing
     end
 
     return program

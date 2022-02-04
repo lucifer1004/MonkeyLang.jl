@@ -48,6 +48,7 @@ transpile(program::MonkeyLang.Program; input::IO = stdin, output::IO = stdout)::
         error("argument error: argument to `len` is not supported, got $(type(arg))")
     len(s::String) = length(s)
     len(v::Vector) = length(v)
+    len(d::Dict) = length(d)
 
     first(args...) = error(
         "argument error: wrong number of arguments. Got $(length(args)) instead of 1",
@@ -96,25 +97,39 @@ transpile(program::MonkeyLang.Program; input::IO = stdin, output::IO = stdout)::
         try
             $(map(transpile, program.statements)...)
         catch e
-            if isa(e, UndefVarError)
-                println($output, "identifier not found: $(e.var)")
+            msg = if isa(e, UndefVarError)
+                "identifier not found: $(e.var)"
             elseif isa(e, DivideError)
-                println($output, "ERROR: divide error: division by zero")
+                "divide error: division by zero"
             elseif isa(e, MethodError)
                 if !isa(e.f, Function)
-                    println($output, "ERROR: not a function: $(type(e.f))")
+                    "not a function: $(type(e.f))"
                 elseif e.f == __WRAPPED_GETINDEX
                     c = e.args[1]
                     k = e.args[2]
                     if isa(c, Vector)
-                        println($output, "ERROR: unsupported index type: $(type(k))")
+                        "unsupported index type: $(type(k))"
                     else
-                        println($output, "ERROR: index operator not supported: $(type(c))")
+                        "index operator not supported: $(type(c))"
                     end
+                elseif length(e.args) == 1 && e.f ∈ [!, -]
+                    "unknown operator: $(e.f)$(type(e.args[1]))"
+                elseif length(e.args) == 2 && e.f ∈ [+, -, *, /, (==), !=, <, >]
+                    t1 = type(e.args[1])
+                    t2 = type(e.args[2])
+                    if t1 != t2
+                        "type mismatch: $t1 $(e.f) $t2"
+                    else
+                        "unknown operator: $(type(e.args[1])) $(e.f) $(type(e.args[2]))"
+                    end
+                else
+                    "argument error: wrong number of arguments: got $(length(e.args))"
                 end
             else
-                println($output, "ERROR: ", hasproperty(e, :msg) ? e.msg : e)
+                hasproperty(e, :msg) ? e.msg : string(e)
             end
+
+            println($output, "ERROR: $msg")
         end
     end
 end

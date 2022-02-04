@@ -231,9 +231,9 @@ end
 compile!(c::Compiler, ls::LetStatement) = begin
     compile!(c, ls.value)
 
-    if ls.reassign
-        sym, _ = resolve(c.symbol_table, ls.name.value)
+    sym, _ = resolve(c.symbol_table, ls.name.value)
 
+    if ls.reassign
         # Cannot reassign an nonexistent variable
         if isnothing(sym)
             error("identifier not found: $(ls.name.value)")
@@ -258,12 +258,8 @@ compile!(c::Compiler, ls::LetStatement) = begin
         end
     else
         # Cannot redefine variables
-        if ls.name.value ∈ keys(c.symbol_table.store)
-            sym = c.symbol_table.store[ls.name.value]
-            if (isnothing(c.symbol_table.outer) && sym.scope == GlobalScope) ||
-               (!isnothing(c.symbol_table.outer) && sym.scope == LocalScope)
-                error("$(ls.name.value) is already defined")
-            end
+        if !isnothing(sym)
+            error("$(ls.name.value) is already defined")
         end
 
         sym = define!(c.symbol_table, ls.name.value)

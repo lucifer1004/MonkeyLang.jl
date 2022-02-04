@@ -36,6 +36,19 @@ struct Definition
     operand_widths::Vector{Int}
 end
 
+const OPCODE_STRINGS = Dict{OpCode,String}(
+    OpAdd => "+",
+    OpSub => "-",
+    OpMul => "*",
+    OpDiv => "/",
+    OpEqual => "==",
+    OpNotEqual => "!=",
+    OpLessThan => "<",
+    OpGreaterThan => ">",
+    OpMinus => "-",
+    OpBang => "!",
+)
+
 const DEFINITIONS = Dict{OpCode,Definition}(
     OpConstant => Definition("OpConstant", [2]),
     OpAdd => Definition("OpAdd", []),
