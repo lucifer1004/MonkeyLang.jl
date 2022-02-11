@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## [v0.2.1] - Unreleased
+## [v0.2.1] - 2022-02-11
 
 ### Changed
 
