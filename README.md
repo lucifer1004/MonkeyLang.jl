@@ -9,6 +9,7 @@
 **Table of Contents**
 
 - [MonkeyLang](#monkeylang)
+  - [Using Monkey in Julia](#using-monkey-in-julia)
   - [Compile MonkeyLang.jl to a standalone executable](#compile-monkeylangjl-to-a-standalone-executable)
   - [Start the REPL](#start-the-repl)
   - [Documentation](#documentation)
@@ -48,6 +49,30 @@
       - [A custom `map` function](#a-custom-map-function)
       - [A custom `reduce` function](#a-custom-reduce-function)
     - [Macro System](#macro-system)
+
+## Using Monkey in Julia
+
+You can start the REPL within Julia:
+
+```julia
+using MonkeyLang
+
+start_repl()
+```
+
+Or you can evaluate Monkey programs using string macros:
+
+```julia
+using MonkeyLang
+
+a = 2
+
+monkey_eval"let b = $a; puts(b)"
+
+monkey_vm"let c = [$a, $a]; puts(c)"
+
+monkey_julia"let d = {$a: $a}; puts(d)"
+```
 
 ## Compile MonkeyLang.jl to a standalone executable
 

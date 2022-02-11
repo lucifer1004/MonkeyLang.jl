@@ -361,24 +361,22 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
         end
 
         @testset "Redefine" begin
-            for (code, expected) in [
-                (
-                    """
-                    let x = 5;
-                    let y = 1;
-                    let z = 0;
-                    while (y > 0) {
-                        z = z + x;
-                        let x = 9;
-                        z = z + x;
-                        y = y - 1;
-                    }
+            for (code, expected) in [(
+                """
+                let x = 5;
+                let y = 1;
+                let z = 0;
+                while (y > 0) {
                     z = z + x;
-                    z;
-                    """,
-                    19,
-                ),
-            ]
+                    let x = 9;
+                    z = z + x;
+                    y = y - 1;
+                }
+                z = z + x;
+                z;
+                """,
+                19,
+            )]
                 if name == "julia"
                     @test_broken run(code) == expected
                 else
@@ -415,43 +413,43 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
 
         @testset "Closure" begin
             for (code, expected) in [(
-                    """
-                   let newAdder = fn(x) { 
-                     fn(y) { x + y };
-                   }
+                """
+               let newAdder = fn(x) { 
+                 fn(y) { x + y };
+               }
 
-                   let addTwo = newAdder(2);
-                   addTwo(2);
-                   """,
-                    4,
-                ), (
-                    """
-                    let a = 2;
-                    let ans = [];
+               let addTwo = newAdder(2);
+               addTwo(2);
+               """,
+                4,
+            ), (
+                """
+                let a = 2;
+                let ans = [];
 
-                    let g = fn() {
-                        let b = 2;
-                        let f = fn() {
-                            b = b - 1;
-                            return b;
-                        }
-                        return f;
+                let g = fn() {
+                    let b = 2;
+                    let f = fn() {
+                        b = b - 1;
+                        return b;
                     }
+                    return f;
+                }
 
-                    let f = g();
+                let f = g();
 
-                    ans = push(ans, f());
-                    ans = push(ans, f());
+                ans = push(ans, f());
+                ans = push(ans, f());
 
-                    let ff = g();
+                let ff = g();
 
-                    ans = push(ans, ff());
-                    ans = push(ans, ff());
+                ans = push(ans, ff());
+                ans = push(ans, ff());
 
-                    ans;
-                    """,
-                    [1, 0, 1, 0],
-                )]
+                ans;
+                """,
+                [1, 0, 1, 0],
+            )]
                 check(code, expected)
             end
         end

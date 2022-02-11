@@ -1,8 +1,10 @@
 module MonkeyLang
 
+export start_repl, @monkey_eval_str, @monkey_vm_str
+
 using Printf
 
-const MONKEY_VERSION = v"0.2.0"
+const MONKEY_VERSION = v"0.2.1"
 const MONKEY_AUTHOR = "Gabriel Wu"
 
 # Tokens
@@ -49,6 +51,9 @@ include("repl.jl")
 
 # Transpilers
 include("transpilers/transpilers.jl")
+
+using .Transpilers.JuliaTranspiler: @monkey_julia_str
+export @monkey_julia_str
 
 # CLI
 include("cli.jl")
