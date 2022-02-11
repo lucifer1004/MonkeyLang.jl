@@ -66,7 +66,9 @@ current_frame(vm::VM) = vm.frames[end]
 instructions(vm::VM) = instructions(current_frame(vm))
 
 macro monkey_vm_str(code::String)
-    :(run($code))
+    quote
+        run($(esc(Meta.parse("\"$(escape_string(code))\""))))
+    end
 end
 
 run(code::String; input = stdin, output = stdout) = begin

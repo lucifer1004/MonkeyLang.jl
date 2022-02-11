@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v0.2.1] - Unreleased
+
+### Changed
+
+- String macros `@monkey_eval_str`, `@monkey_vm_str` and `@monkey_julia_str` now support string interpolations.
+
 ## [v0.2.0] - 2022-02-04
 
 ### Added

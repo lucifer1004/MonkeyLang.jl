@@ -259,7 +259,9 @@ run(code::String; input::IO = stdin, output::IO = stdout) = begin
 end
 
 macro monkey_julia_str(code::String)
-    :(run($code))
+    quote
+        run($(esc(Meta.parse("\"$(escape_string(code))\""))))
+    end
 end
 
 end

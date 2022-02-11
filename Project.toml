@@ -1,7 +1,7 @@
 name = "MonkeyLang"
 uuid = "2e3b8ffb-b112-4a86-975c-b56a8cdf8971"
 authors = ["Gabriel Wu <wuzihua@pku.edu.cn> and contributors"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"

@@ -43,7 +43,7 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 deps = ["BenchmarkTools", "Printf"]
 path = ".."
 uuid = "2e3b8ffb-b112-4a86-975c-b56a8cdf8971"
-version = "0.2.0"
+version = "0.2.1"
 
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]

@@ -8,7 +8,11 @@ function analyze(code::String; input::IO = stdin, output::IO = stdout)
     end
 end
 
-function analyze(program::Program; existing_symbol_table::Union{SymbolTable,Nothing} = nothing, exisiting_env::Union{Environment,Nothing} = nothing)
+function analyze(
+    program::Program;
+    existing_symbol_table::Union{SymbolTable,Nothing} = nothing,
+    exisiting_env::Union{Environment,Nothing} = nothing,
+)
     if !isnothing(existing_symbol_table)
         symbol_table = SymbolTable(existing_symbol_table)
     else
@@ -53,13 +57,17 @@ function analyze(ls::LetStatement, symbol_table::SymbolTable)
             return ErrorObj("identifier not found: $(ls.name.value)")
         end
 
-        if sym.scope == FunctionScope || (sym.scope == OuterScope && sym.ptr.scope == FunctionScope)
+        if sym.scope == FunctionScope ||
+           (sym.scope == OuterScope && sym.ptr.scope == FunctionScope)
             return ErrorObj(
                 "cannot reassign the current function being defined: $(ls.name.value)",
             )
         end
     else
-        if !isnothing(sym) && (sym.scope == LocalScope || (is_global(symbol_table) && sym.scope == GlobalScope))
+        if !isnothing(sym) && (
+            sym.scope == LocalScope ||
+            (is_global(symbol_table) && sym.scope == GlobalScope)
+        )
             return ErrorObj("$(ls.name.value) is already defined")
         end
 

@@ -62,7 +62,8 @@ function start_repl(; input::IO = stdin, output::IO = stdout, use_vm::Bool = fal
                 expanded = expand_macros(program, macro_env)
 
                 if use_vm
-                    syntax_check_result = analyze(expanded; existing_symbol_table = symbol_table)
+                    syntax_check_result =
+                        analyze(expanded; existing_symbol_table = symbol_table)
                     if isa(syntax_check_result, ErrorObj)
                         println(output, syntax_check_result)
                         continue

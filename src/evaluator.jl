@@ -1,5 +1,7 @@
 macro monkey_eval_str(code::String)
-    :(evaluate($code))
+    quote
+        run($(esc(Meta.parse("\"$(escape_string(code))\""))))
+    end
 end
 
 evaluate(code::String; input = stdin, output = stdout) = begin
