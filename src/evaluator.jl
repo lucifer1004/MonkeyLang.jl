@@ -1,28 +1,30 @@
 macro monkey_eval_str(code::String)
     quote
-        run($(esc(Meta.parse("\"$(escape_string(code))\""))))
+        evaluate($(esc(Meta.parse("\"$(escape_string(code))\""))))
     end
 end
 
-evaluate(code::String; input = stdin, output = stdout) = begin
-    raw_program = parse(code; input, output)
-    if !isnothing(raw_program)
-        macro_env = Environment(; input, output)
-        program = define_macros!(macro_env, raw_program)
-        expanded = expand_macros(program, macro_env)
+function evaluate(code::String; input = stdin, output = stdout)
+    begin
+        raw_program = parse(code; input, output)
+        if !isnothing(raw_program)
+            macro_env = Environment(; input, output)
+            program = define_macros!(macro_env, raw_program)
+            expanded = expand_macros(program, macro_env)
 
-        syntax_check_result = analyze(expanded)
-        if isa(syntax_check_result, ErrorObj)
-            println(output, syntax_check_result)
-            return syntax_check_result
+            syntax_check_result = analyze(expanded)
+            if isa(syntax_check_result, ErrorObj)
+                println(output, syntax_check_result)
+                return syntax_check_result
+            end
+
+            result = evaluate(expanded, Environment(; input, output))
+            if isa(result, ErrorObj)
+                println(output, result)
+            end
+
+            return result
         end
-
-        result = evaluate(expanded, Environment(; input, output))
-        if isa(result, ErrorObj)
-            println(output, result)
-        end
-
-        return result
     end
 end
 
@@ -31,19 +33,22 @@ evaluate(node::ExpressionStatement, env::Environment) = evaluate(node.expression
 evaluate(node::IntegerLiteral, ::Environment) = IntegerObj(node.value)
 evaluate(node::BooleanLiteral, ::Environment) = node.value ? _TRUE : _FALSE
 evaluate(node::StringLiteral, ::Environment) = StringObj(node.value)
-evaluate(node::FunctionLiteral, env::Environment) =
+function evaluate(node::FunctionLiteral, env::Environment)
     FunctionObj(node.parameters, node.body, env)
+end
 
-evaluate(node::ArrayLiteral, env::Environment) = begin
-    elements = evaluate_expressions(node.elements, env)
-    if length(elements) == 1 && isa(elements[1], ErrorObj)
-        return elements[1]
+function evaluate(node::ArrayLiteral, env::Environment)
+    begin
+        elements = evaluate_expressions(node.elements, env)
+        if length(elements) == 1 && isa(elements[1], ErrorObj)
+            return elements[1]
+        end
+        return ArrayObj(elements)
     end
-    return ArrayObj(elements)
 end
 
 evaluate(node::HashLiteral, env::Environment) = begin
-    pairs = Dict{Object,Object}()
+    pairs = Dict{Object, Object}()
 
     for (key_node, value_node) in node.pairs
         key = evaluate(key_node, env)
@@ -76,131 +81,150 @@ evaluate(node::Identifier, env::Environment) = begin
     end
 end
 
-evaluate(node::PrefixExpression, env::Environment) = begin
-    right = evaluate(node.right, env)
-    return isa(right, ErrorObj) ? right : evaluate_prefix_expression(node.operator, right)
-end
-
-evaluate(node::InfixExpression, env::Environment) = begin
-    left = evaluate(node.left, env)
-    if isa(left, ErrorObj)
-        return left
-    end
-    right = evaluate(node.right, env)
-    return isa(right, ErrorObj) ? right :
-           evaluate_infix_expression(node.operator, left, right)
-end
-
-evaluate(node::IfExpression, env::Environment) = begin
-    condition = evaluate(node.condition, env)
-
-    if isa(condition, ErrorObj)
-        return condition
-    elseif is_truthy(condition)
-        return evaluate(node.consequence, env)
-    elseif !isnothing(node.alternative)
-        return evaluate(node.alternative, env)
-    else
-        return _NULL
+function evaluate(node::PrefixExpression, env::Environment)
+    begin
+        right = evaluate(node.right, env)
+        return isa(right, ErrorObj) ? right :
+               evaluate_prefix_expression(node.operator, right)
     end
 end
 
-evaluate(node::CallExpression, env::Environment) = begin
-    # TODO: Currently, `quote()` only processes its first argument
-    if token_literal(node.fn) == "quote"
-        if isempty(node.arguments)
+function evaluate(node::InfixExpression, env::Environment)
+    begin
+        left = evaluate(node.left, env)
+        if isa(left, ErrorObj)
+            return left
+        end
+        right = evaluate(node.right, env)
+        return isa(right, ErrorObj) ? right :
+               evaluate_infix_expression(node.operator, left, right)
+    end
+end
+
+function evaluate(node::IfExpression, env::Environment)
+    begin
+        condition = evaluate(node.condition, env)
+
+        if isa(condition, ErrorObj)
+            return condition
+        elseif is_truthy(condition)
+            return evaluate(node.consequence, env)
+        elseif !isnothing(node.alternative)
+            return evaluate(node.alternative, env)
+        else
             return _NULL
         end
-        return QuoteObj(evaluate_unquote_calls(node.arguments[1], env))
     end
-
-    fn = evaluate(node.fn, env)
-    if isa(fn, ErrorObj)
-        return fn
-    end
-
-    args = evaluate_expressions(node.arguments, env)
-    if length(args) == 1 && isa(args[1], ErrorObj)
-        return args[1]
-    end
-
-    return isa(fn, Builtin) ? apply_builtin(fn, args, env) : apply_function(fn, args)
 end
 
-evaluate(node::IndexExpression, env::Environment) = begin
-    left = evaluate(node.left, env)
-    if isa(left, ErrorObj)
-        return left
-    end
+function evaluate(node::CallExpression, env::Environment)
+    begin
+        # TODO: Currently, `quote()` only processes its first argument
+        if token_literal(node.fn) == "quote"
+            if isempty(node.arguments)
+                return _NULL
+            end
+            return QuoteObj(evaluate_unquote_calls(node.arguments[1], env))
+        end
 
-    index = evaluate(node.index, env)
-    if isa(index, ErrorObj)
-        return index
-    end
+        fn = evaluate(node.fn, env)
+        if isa(fn, ErrorObj)
+            return fn
+        end
 
-    return evaluate_index_expression(left, index)
+        args = evaluate_expressions(node.arguments, env)
+        if length(args) == 1 && isa(args[1], ErrorObj)
+            return args[1]
+        end
+
+        return isa(fn, Builtin) ? apply_builtin(fn, args, env) : apply_function(fn, args)
+    end
 end
 
-evaluate(node::LetStatement, env::Environment) = begin
-    val = evaluate(node.value, env)
-    if isa(val, ErrorObj)
+function evaluate(node::IndexExpression, env::Environment)
+    begin
+        left = evaluate(node.left, env)
+        if isa(left, ErrorObj)
+            return left
+        end
+
+        index = evaluate(node.index, env)
+        if isa(index, ErrorObj)
+            return index
+        end
+
+        return evaluate_index_expression(left, index)
+    end
+end
+
+function evaluate(node::LetStatement, env::Environment)
+    begin
+        val = evaluate(node.value, env)
+        if isa(val, ErrorObj)
+            return val
+        end
+        if node.reassign
+            return reassign!(env, node.name.value, val)
+        else
+            set!(env, node.name.value, val)
+        end
         return val
     end
-    if node.reassign
-        return reassign!(env, node.name.value, val)
-    else
-        set!(env, node.name.value, val)
-    end
-    return val
 end
 
-evaluate(node::ReturnStatement, env::Environment) = begin
-    val = evaluate(node.return_value, env)
-    return isa(val, ErrorObj) ? val : ReturnValue(val)
+function evaluate(node::ReturnStatement, env::Environment)
+    begin
+        val = evaluate(node.return_value, env)
+        return isa(val, ErrorObj) ? val : ReturnValue(val)
+    end
 end
 
 evaluate(::BreakStatement, env::Environment) = BreakObj()
 
 evaluate(::ContinueStatement, env::Environment) = ContinueObj()
 
-evaluate(node::WhileStatement, env::Environment) = begin
-    while true
-        condition = evaluate(node.condition, env)
-        if isa(condition, ErrorObj)
-            return condition
-        end
-
-        if is_truthy(condition)
-            result = evaluate(node.body, Environment(env))
-            if isa(result, ReturnValue) || isa(result, ErrorObj)
-                return result
-            elseif isa(result, BreakObj)
-                break
-            elseif isa(result, ContinueObj)
-                continue
+function evaluate(node::WhileStatement, env::Environment)
+    begin
+        while true
+            condition = evaluate(node.condition, env)
+            if isa(condition, ErrorObj)
+                return condition
             end
-        else
-            break
-        end
-    end
 
-    return _NULL
+            if is_truthy(condition)
+                result = evaluate(node.body, Environment(env))
+                if isa(result, ReturnValue) || isa(result, ErrorObj)
+                    return result
+                elseif isa(result, BreakObj)
+                    break
+                elseif isa(result, ContinueObj)
+                    continue
+                end
+            else
+                break
+            end
+        end
+
+        return _NULL
+    end
 end
 
-evaluate(block::BlockStatement, env::Environment) = begin
-    result = _NULL
+function evaluate(block::BlockStatement, env::Environment)
+    begin
+        result = _NULL
 
-    for statement in block.statements
-        result = evaluate(statement, env)
-        if isa(result, BreakObj) ||
-           isa(result, ContinueObj) ||
-           isa(result, ReturnValue) ||
-           isa(result, ErrorObj)
-            return result
+        for statement in block.statements
+            result = evaluate(statement, env)
+            if isa(result, BreakObj) ||
+               isa(result, ContinueObj) ||
+               isa(result, ReturnValue) ||
+               isa(result, ErrorObj)
+                return result
+            end
         end
-    end
 
-    return result
+        return result
+    end
 end
 
 evaluate(program::Program, env::Environment) = begin
@@ -230,9 +254,8 @@ end
 
 function evaluate_infix_expression(operator::String, left::Object, right::Object)
     if type_of(left) != type_of(right)
-        return ErrorObj(
-            "type mismatch: " * type_of(left) * " " * operator * " " * type_of(right),
-        )
+        return ErrorObj("type mismatch: " * type_of(left) * " " * operator * " " *
+                        type_of(right))
     end
 
     if operator == "=="
@@ -240,9 +263,8 @@ function evaluate_infix_expression(operator::String, left::Object, right::Object
     elseif operator == "!="
         return left != right ? _TRUE : _FALSE
     else
-        return ErrorObj(
-            "unknown operator: " * type_of(left) * " " * operator * " " * type_of(right),
-        )
+        return ErrorObj("unknown operator: " * type_of(left) * " " * operator * " " *
+                        type_of(right))
     end
 end
 
@@ -254,9 +276,8 @@ function evaluate_infix_expression(operator::String, left::StringObj, right::Str
     elseif operator == "!="
         return left.value != right.value ? _TRUE : _FALSE
     else
-        return ErrorObj(
-            "unknown operator: " * type_of(left) * " " * operator * " " * type_of(right),
-        )
+        return ErrorObj("unknown operator: " * type_of(left) * " " * operator * " " *
+                        type_of(right))
     end
 end
 
@@ -281,9 +302,8 @@ function evaluate_infix_expression(operator::String, left::IntegerObj, right::In
     elseif operator == "!="
         return left.value != right.value ? _TRUE : _FALSE
     else
-        return ErrorObj(
-            "unknown operator: " * type_of(left) * " " * operator * " " * type_of(right),
-        )
+        return ErrorObj("unknown operator: " * type_of(left) * " " * operator * " " *
+                        type_of(right))
     end
 end
 
@@ -295,19 +315,24 @@ function evaluate_bang_operator_expression(right::Object)
     end
 end
 
-evaluate_minus_prefix_operator_expression(right::Object) =
+function evaluate_minus_prefix_operator_expression(right::Object)
     ErrorObj("unknown operator: -" * type_of(right))
+end
 evaluate_minus_prefix_operator_expression(right::IntegerObj) = IntegerObj(-right.value)
 
-evaluate_index_expression(left::Object, ::Object) =
+function evaluate_index_expression(left::Object, ::Object)
     ErrorObj("index operator not supported: $(type_of(left))")
-evaluate_index_expression(::ArrayObj, index::Object) =
+end
+function evaluate_index_expression(::ArrayObj, index::Object)
     ErrorObj("unsupported index type: $(type_of(index))")
+end
 evaluate_index_expression(hash::HashObj, key::Object) = Base.get(hash.pairs, key, _NULL)
-evaluate_index_expression(left::ArrayObj, index::IntegerObj) = begin
-    idx = index.value
-    max_idx = length(left.elements) - 1
-    return 0 <= idx <= max_idx ? left.elements[idx+1] : _NULL
+function evaluate_index_expression(left::ArrayObj, index::IntegerObj)
+    begin
+        idx = index.value
+        max_idx = length(left.elements) - 1
+        return 0 <= idx <= max_idx ? left.elements[idx + 1] : _NULL
+    end
 end
 
 function evaluate_expressions(expressions::Vector{Expression}, env::Environment)
@@ -324,24 +349,23 @@ function evaluate_expressions(expressions::Vector{Expression}, env::Environment)
     return results
 end
 
-evaluate_unquote_calls(quoted::Node, env::Environment) = modify(
-    quoted,
-    function modifier(node::Node)
-        if isa(node, CallExpression)
-            if token_literal(node.fn) == "unquote" && length(node.arguments) >= 1
-                Node(evaluate(node.arguments[1], env))
-            else
-                return CallExpression(
-                    node.token,
-                    modify(node.fn, modifier),
-                    map(expression -> modify(expression, modifier), node.arguments),
-                )
-            end
-        else
-            return node
-        end
-    end,
-)
+function evaluate_unquote_calls(quoted::Node, env::Environment)
+    modify(quoted,
+           function modifier(node::Node)
+               if isa(node, CallExpression)
+                   if token_literal(node.fn) == "unquote" && length(node.arguments) >= 1
+                       Node(evaluate(node.arguments[1], env))
+                   else
+                       return CallExpression(node.token,
+                                             modify(node.fn, modifier),
+                                             map(expression -> modify(expression, modifier),
+                                                 node.arguments))
+                   end
+               else
+                   return node
+               end
+           end)
+end
 
 function apply_function(fn::FunctionObj, args::Vector{Object})
     if length(fn.parameters) != length(args)
@@ -354,8 +378,9 @@ function apply_function(fn::FunctionObj, args::Vector{Object})
 end
 
 apply_function(fn::Object, ::Vector{Object}) = ErrorObj("not a function: " * type_of(fn))
-apply_builtin(fn::Builtin, args::Vector{Object}, env::Environment) =
+function apply_builtin(fn::Builtin, args::Vector{Object}, env::Environment)
     fn.fn(args...; env = env)
+end
 
 function extend_function_environment(fn::FunctionObj, args::Vector{Object})
     env = Environment(fn.env)
@@ -378,12 +403,13 @@ end
 Node(::Object) = NullLiteral(Token(NULL, "null"))
 Node(obj::IntegerObj) = IntegerLiteral(Token(INT, string(obj.value)), obj.value)
 Node(obj::StringObj) = StringLiteral(Token(STRING, obj.value), obj.value)
-Node(obj::BooleanObj) =
+function Node(obj::BooleanObj)
     BooleanLiteral(Token(obj.value ? TRUE : FALSE, string(obj.value)), obj.value)
-Node(obj::HashObj) = HashLiteral(
-    Token(LBRACE, "{"),
-    Dict(Node(key) => Node(value) for (key, value) in collect(obj.pairs)),
-)
+end
+function Node(obj::HashObj)
+    HashLiteral(Token(LBRACE, "{"),
+                Dict(Node(key) => Node(value) for (key, value) in collect(obj.pairs)))
+end
 Node(obj::ArrayObj) = ArrayLiteral(Token(LBRACKET, "["), map(Node, obj.elements))
 Node(obj::FunctionObj) = FunctionLiteral(Token(FUNCTION, "fn"), obj.parameters, obj.body)
 Node(obj::QuoteObj) = obj.node
@@ -406,36 +432,36 @@ end
 is_macro_definition(::Node) = false
 is_macro_definition(ls::LetStatement) = isa(ls.value, MacroLiteral)
 
-add_macro!(env::Environment, ls::LetStatement) = begin
-    name = ls.name.value
-    value = ls.value
-    set!(env, name, MacroObj(value.parameters, value.body, env))
+function add_macro!(env::Environment, ls::LetStatement)
+    begin
+        name = ls.name.value
+        value = ls.value
+        set!(env, name, MacroObj(value.parameters, value.body, env))
+    end
 end
 
 function expand_macros(program::Program, env::Environment)
-    return modify(
-        program,
-        (node::Node) -> begin
-            if !isa(node, CallExpression)
-                return node
-            end
+    return modify(program,
+                  (node::Node) -> begin
+                      if !isa(node, CallExpression)
+                          return node
+                      end
 
-            mc = get_macro_call(node, env)
-            if isnothing(mc)
-                return node
-            end
+                      mc = get_macro_call(node, env)
+                      if isnothing(mc)
+                          return node
+                      end
 
-            args = quote_args(node)
-            eval_env = extend_macro_env(mc, args)
-            evaluated = evaluate(mc.body, eval_env)
+                      args = quote_args(node)
+                      eval_env = extend_macro_env(mc, args)
+                      evaluated = evaluate(mc.body, eval_env)
 
-            if !isa(evaluated, QuoteObj)
-                error("macro error: we only support returning AST-nodes from macros")
-            end
+                      if !isa(evaluated, QuoteObj)
+                          error("macro error: we only support returning AST-nodes from macros")
+                      end
 
-            return evaluated.node
-        end,
-    )
+                      return evaluated.node
+                  end)
 end
 
 function get_macro_call(node::CallExpression, env::Environment)

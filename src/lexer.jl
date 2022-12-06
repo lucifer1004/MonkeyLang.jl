@@ -1,6 +1,6 @@
 mutable struct Lexer
     input::String
-    next::Union{Tuple{Char,Int},Nothing}
+    next::Union{Tuple{Char, Int}, Nothing}
 end
 
 Lexer(input::String) = Lexer(input, iterate(input))

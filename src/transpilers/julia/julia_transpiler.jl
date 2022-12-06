@@ -7,22 +7,19 @@ transpile(program::MonkeyLang.Program; input::IO = stdin, output::IO = stdout)::
     __IS_TRUTHY(a) = a != false && a != nothing
     __IS_FALSY(a) = !__IS_TRUTHY(a)
 
-    __WRAPPED_GETINDEX(v::Vector, id::Int) = 0 <= id < length(v) ? v[id+1] : nothing
+    __WRAPPED_GETINDEX(v::Vector, id::Int) = 0 <= id < length(v) ? v[id + 1] : nothing
     __WRAPPED_GETINDEX(d::Dict, key) = get(d, key, nothing)
 
     __WRAPPED_STRING(a) = Base.string(a)
     __WRAPPED_STRING(::Nothing) = "null"
     __WRAPPED_STRING(s::String) = "\"" * s * "\""
-    __WRAPPED_STRING(d::Dict) =
+    function __WRAPPED_STRING(d::Dict)
         "{" *
-        join(
-            map(
-                x -> __WRAPPED_STRING(x.first) * ": " * __WRAPPED_STRING(x.second),
-                collect(d),
-            ),
-            ", ",
-        ) *
+        join(map(x -> __WRAPPED_STRING(x.first) * ": " * __WRAPPED_STRING(x.second),
+                 collect(d)),
+             ", ") *
         "}"
+    end
     __WRAPPED_STRING(v::Vector) = "[" * join(map(__WRAPPED_STRING, v), ", ") * "]"
     Base.:(+)(a::String, b::String) = a * b
 
@@ -30,9 +27,9 @@ transpile(program::MonkeyLang.Program; input::IO = stdin, output::IO = stdout)::
     __JULIA_FIRST = Base.first
     __JULIA_LAST = Base.last
 
-    type(args...) = error(
-        "argument error: wrong number of arguments. Got $(length(args)) instead of 1",
-    )
+    function type(args...)
+        error("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
+    end
     type(::String) = "STRING"
     type(::Int) = "INTEGER"
     type(::Bool) = "BOOLEAN"
@@ -41,47 +38,53 @@ transpile(program::MonkeyLang.Program; input::IO = stdin, output::IO = stdout)::
     type(::Dict) = "HASH"
     type(::Function) = "FUNCTION"
 
-    len(args...) = error(
-        "argument error: wrong number of arguments. Got $(length(args)) instead of 1",
-    )
-    len(arg::Any) =
+    function len(args...)
+        error("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
+    end
+    function len(arg::Any)
         error("argument error: argument to `len` is not supported, got $(type(arg))")
+    end
     len(s::String) = length(s)
     len(v::Vector) = length(v)
     len(d::Dict) = length(d)
 
-    first(args...) = error(
-        "argument error: wrong number of arguments. Got $(length(args)) instead of 1",
-    )
-    first(arg::Any) =
+    function first(args...)
+        error("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
+    end
+    function first(arg::Any)
         error("argument error: argument to `first` is not supported, got $(type(arg))")
+    end
     first(s::String) = length(s) >= 1 ? string(__JULIA_FIRST(s)) : nothing
     first(v::Vector) = length(v) >= 1 ? __JULIA_FIRST(v) : nothing
 
-    last(args...) = error(
-        "argument error: wrong number of arguments. Got $(length(args)) instead of 1",
-    )
-    last(arg::Any) =
+    function last(args...)
+        error("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
+    end
+    function last(arg::Any)
         error("argument error: argument to `last` is not supported, got $(type(arg))")
+    end
     last(s::String) = length(s) >= 1 ? string(__JULIA_LAST(s)) : nothing
     last(v::Vector) = length(v) >= 1 ? __JULIA_LAST(v) : nothing
 
-    rest(args...) = error(
-        "argument error: wrong number of arguments. Got $(length(args)) instead of 1",
-    )
-    rest(arg::Any) =
+    function rest(args...)
+        error("argument error: wrong number of arguments. Got $(length(args)) instead of 1")
+    end
+    function rest(arg::Any)
         error("argument error: argument to `rest` is not supported, got $(type(arg))")
+    end
     rest(s::String) = length(s) >= 1 ? s[iterate(s)[2]:end] : nothing
     rest(v::Vector) = length(v) >= 1 ? v[2:end] : nothing
 
-    push(args...) = error(
-        "argument error: wrong number of arguments. Got $(length(args)) instead of 2 or 3",
-    )
-    push(arg::Any, _) =
+    function push(args...)
+        error("argument error: wrong number of arguments. Got $(length(args)) instead of 2 or 3")
+    end
+    function push(arg::Any, _)
         error("argument error: argument to `push` is not supported, got $(type(arg))")
+    end
     push(v::Vector, ele) = [v..., ele]
-    push(arg::Any, _, _) =
+    function push(arg::Any, _, _)
         error("argument error: argument to `push` is not supported, got $(type(arg))")
+    end
     push(d::Dict, key, val) = Dict(d..., key => val)
 
     puts(args...) =
@@ -158,8 +161,9 @@ end
 
 transpile(rs::MonkeyLang.ReturnStatement)::Expr = Expr(:return, transpile(rs.return_value))
 
-transpile(ws::MonkeyLang.WhileStatement)::Expr =
-    Expr(:while, simplify_condition(ws.condition), transpile(ws.body))
+transpile(ws::MonkeyLang.WhileStatement)::Expr = Expr(:while,
+                                                      simplify_condition(ws.condition),
+                                                      transpile(ws.body))
 
 transpile(ie::MonkeyLang.InfixExpression)::Expr = begin
     op = ie.operator == "/" ? "÷" : ie.operator
@@ -175,7 +179,7 @@ transpile(pe::MonkeyLang.PrefixExpression)::Expr =
 
 transpile(ident::MonkeyLang.Identifier)::Symbol = Symbol(ident.value)
 
-transpile(::Union{Nothing,MonkeyLang.NullLiteral})::Nothing = nothing
+transpile(::Union{Nothing, MonkeyLang.NullLiteral})::Nothing = nothing
 
 transpile(il::MonkeyLang.IntegerLiteral)::Int = il.value
 
@@ -207,54 +211,59 @@ transpile(fl::MonkeyLang.FunctionLiteral)::Expr = begin
     Expr(:function, :(($(params...),)), body)
 end
 
-transpile(ce::MonkeyLang.CallExpression)::Expr =
-    Expr(:call, transpile(ce.fn), map(transpile, ce.arguments)...)
+transpile(ce::MonkeyLang.CallExpression)::Expr = Expr(:call, transpile(ce.fn),
+                                                      map(transpile, ce.arguments)...)
 
-transpile(ce::MonkeyLang.IndexExpression)::Expr =
-    Expr(:call, :__WRAPPED_GETINDEX, transpile(ce.left), transpile(ce.index))
+transpile(ce::MonkeyLang.IndexExpression)::Expr = Expr(:call, :__WRAPPED_GETINDEX,
+                                                       transpile(ce.left),
+                                                       transpile(ce.index))
 
-transpile(ie::MonkeyLang.IfExpression)::Expr = Expr(
-    :if,
-    simplify_condition(ie.condition),
-    transpile(ie.consequence),
-    transpile(ie.alternative),
-)
+transpile(ie::MonkeyLang.IfExpression)::Expr = Expr(:if,
+                                                    simplify_condition(ie.condition),
+                                                    transpile(ie.consequence),
+                                                    transpile(ie.alternative))
 
-transpile(code::String; input::IO = stdin, output::IO = stdout) = begin
-    raw_program = MonkeyLang.parse(code; input, output)
-    if !isnothing(raw_program)
-        macro_env = MonkeyLang.Environment(; input, output)
-        program = MonkeyLang.define_macros!(macro_env, raw_program)
-        expanded = MonkeyLang.expand_macros(program, macro_env)
+function transpile(code::String; input::IO = stdin, output::IO = stdout)
+    begin
+        raw_program = MonkeyLang.parse(code; input, output)
+        if !isnothing(raw_program)
+            macro_env = MonkeyLang.Environment(; input, output)
+            program = MonkeyLang.define_macros!(macro_env, raw_program)
+            expanded = MonkeyLang.expand_macros(program, macro_env)
 
-        syntax_check_result = MonkeyLang.analyze(expanded)
-        if isa(syntax_check_result, MonkeyLang.ErrorObj)
-            println(output, syntax_check_result)
-            return nothing
+            syntax_check_result = MonkeyLang.analyze(expanded)
+            if isa(syntax_check_result, MonkeyLang.ErrorObj)
+                println(output, syntax_check_result)
+                return nothing
+            end
+
+            return transpile(expanded; input, output)
         end
-
-        return transpile(expanded; input, output)
     end
 end
 
-simplify_condition(condition) = begin
-    condition = transpile(condition)
+function simplify_condition(condition)
+    begin
+        condition = transpile(condition)
 
-    if isa(condition, Expr)
-        if !(condition.head == :call && condition.args[1] ∈ [:<, :>, :(==), :!=])
-            condition = Expr(:call, :__IS_TRUTHY, condition)
+        if isa(condition, Expr)
+            if !(condition.head == :call && condition.args[1] ∈ [:<, :>, :(==), :!=])
+                condition = Expr(:call, :__IS_TRUTHY, condition)
+            end
+        else
+            condition = condition != false && !isnothing(condition)
         end
-    else
-        condition = condition != false && !isnothing(condition)
-    end
 
-    return condition
+        return condition
+    end
 end
 
-run(code::String; input::IO = stdin, output::IO = stdout) = begin
-    julia_program = transpile(code; input, output)
-    if !isnothing(julia_program)
-        eval(julia_program)
+function run(code::String; input::IO = stdin, output::IO = stdout)
+    begin
+        julia_program = transpile(code; input, output)
+        if !isnothing(julia_program)
+            eval(julia_program)
+        end
     end
 end
 

@@ -10,3 +10,6 @@
 /*.jl
 /*.mo
 /monkey
+.gitsigners
+.vscode
+Manifest.toml

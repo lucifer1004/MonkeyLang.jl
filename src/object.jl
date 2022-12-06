@@ -68,8 +68,8 @@ type_of(::ErrorObj) = ERROR_OBJ
 Base.string(e::ErrorObj) = "ERROR: " * e.message
 
 struct Environment
-    store::Dict{String,Object}
-    outer::Union{Environment,Nothing}
+    store::Dict{String, Object}
+    outer::Union{Environment, Nothing}
     input::IO
     output::IO
 
@@ -85,15 +85,17 @@ get(env::Environment, name::String) = begin
     return result
 end
 set!(env::Environment, name::String, value::Object) = push!(env.store, name => value)
-reassign!(env::Environment, name::String, value::Object) = begin
-    result = Base.get(env.store, name, nothing)
-    if isnothing(result) && !isnothing(env.outer)
-        return reassign!(env.outer, name, value)
-    end
+function reassign!(env::Environment, name::String, value::Object)
+    begin
+        result = Base.get(env.store, name, nothing)
+        if isnothing(result) && !isnothing(env.outer)
+            return reassign!(env.outer, name, value)
+        end
 
-    # The analyzer ensures that the identifier can always be found.
-    set!(env, name, value)
-    return value
+        # The analyzer ensures that the identifier can always be found.
+        set!(env, name, value)
+        return value
+    end
 end
 
 struct FunctionObj <: Object
@@ -103,8 +105,9 @@ struct FunctionObj <: Object
 end
 
 type_of(::FunctionObj) = FUNCTION_OBJ
-Base.string(f::FunctionObj) =
+function Base.string(f::FunctionObj)
     "fn(" * join(map(string, f.parameters), ", ") * ") {\n" * string(f.body) * "\n}"
+end
 
 struct StringObj <: Object
     value::String
@@ -134,12 +137,13 @@ type_of(::Builtin) = BUILTIN_OBJ
 Base.string(b::Builtin) = "builtin function"
 
 struct HashObj <: Object
-    pairs::Dict{Object,Object}
+    pairs::Dict{Object, Object}
 end
 
 type_of(::HashObj) = HASH_OBJ
-Base.string(h::HashObj) =
+function Base.string(h::HashObj)
     "{" * join(map(x -> string(x[1]) * ":" * string(x[2]), collect(h.pairs)), ", ") * "}"
+end
 Base.:(==)(a::HashObj, b::HashObj) = a.pairs == b.pairs
 Base.hash(h::HashObj) = hash(h.pairs)
 Object(h::Dict) = HashObj(Dict(map(x -> Object(x.first) => Object(x.second), collect(h))))
@@ -158,8 +162,9 @@ struct MacroObj <: Object
 end
 
 type_of(::MacroObj) = MACRO_OBJ
-Base.string(m::MacroObj) =
+function Base.string(m::MacroObj)
     "macro(" * join(map(string, m.parameters), ", ") * ") {\n" * string(m.body) * "\n}"
+end
 
 struct CompiledFunctionObj <: Object
     instructions::Instructions

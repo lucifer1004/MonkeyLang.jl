@@ -8,11 +8,9 @@ function analyze(code::String; input::IO = stdin, output::IO = stdout)
     end
 end
 
-function analyze(
-    program::Program;
-    existing_symbol_table::Union{SymbolTable,Nothing} = nothing,
-    exisiting_env::Union{Environment,Nothing} = nothing,
-)
+function analyze(program::Program;
+                 existing_symbol_table::Union{SymbolTable, Nothing} = nothing,
+                 exisiting_env::Union{Environment, Nothing} = nothing)
     if !isnothing(existing_symbol_table)
         symbol_table = SymbolTable(existing_symbol_table)
     else
@@ -45,29 +43,25 @@ function analyze(bs::BlockStatement, symbol_table::SymbolTable)
     end
 end
 
-analyze(es::ExpressionStatement, symbol_table::SymbolTable) =
+function analyze(es::ExpressionStatement, symbol_table::SymbolTable)
     analyze(es.expression, symbol_table)
+end
 
 function analyze(ls::LetStatement, symbol_table::SymbolTable)
     sym, _ = resolve(symbol_table, ls.name.value)
 
     if ls.reassign
-
         if isnothing(sym)
             return ErrorObj("identifier not found: $(ls.name.value)")
         end
 
         if sym.scope == FunctionScope ||
            (sym.scope == OuterScope && sym.ptr.scope == FunctionScope)
-            return ErrorObj(
-                "cannot reassign the current function being defined: $(ls.name.value)",
-            )
+            return ErrorObj("cannot reassign the current function being defined: $(ls.name.value)")
         end
     else
-        if !isnothing(sym) && (
-            sym.scope == LocalScope ||
-            (is_global(symbol_table) && sym.scope == GlobalScope)
-        )
+        if !isnothing(sym) && (sym.scope == LocalScope ||
+            (is_global(symbol_table) && sym.scope == GlobalScope))
             return ErrorObj("$(ls.name.value) is already defined")
         end
 
@@ -87,8 +81,9 @@ function analyze(ws::WhileStatement, symbol_table::SymbolTable)
     return analyze(ws.body, inner)
 end
 
-analyze(rs::ReturnStatement, symbol_table::SymbolTable) =
+function analyze(rs::ReturnStatement, symbol_table::SymbolTable)
     analyze(rs.return_value, symbol_table)
+end
 
 function analyze(::BreakStatement, symbol_table::SymbolTable)
     if !within_loop(symbol_table)

@@ -1,13 +1,11 @@
 @testset "Test Symbol Table" begin
     @testset "Scope" begin
-        expected = Dict(
-            "a" => m.MonkeySymbol("a", m.GlobalScope, 0, nothing),
-            "b" => m.MonkeySymbol("b", m.GlobalScope, 1, nothing),
-            "c" => m.MonkeySymbol("c", m.LocalScope, 0, nothing),
-            "d" => m.MonkeySymbol("d", m.LocalScope, 1, nothing),
-            "e" => m.MonkeySymbol("e", m.LocalScope, 0, nothing),
-            "f" => m.MonkeySymbol("f", m.LocalScope, 1, nothing),
-        )
+        expected = Dict("a" => m.MonkeySymbol("a", m.GlobalScope, 0, nothing),
+                        "b" => m.MonkeySymbol("b", m.GlobalScope, 1, nothing),
+                        "c" => m.MonkeySymbol("c", m.LocalScope, 0, nothing),
+                        "d" => m.MonkeySymbol("d", m.LocalScope, 1, nothing),
+                        "e" => m.MonkeySymbol("e", m.LocalScope, 0, nothing),
+                        "f" => m.MonkeySymbol("f", m.LocalScope, 1, nothing))
 
         g = m.SymbolTable()
 
@@ -72,12 +70,10 @@
     end
 
     @testset "Builtins" begin
-        expected = Dict(
-            "a" => m.MonkeySymbol("a", m.BuiltinScope, 0, nothing),
-            "c" => m.MonkeySymbol("c", m.BuiltinScope, 1, nothing),
-            "e" => m.MonkeySymbol("e", m.BuiltinScope, 2, nothing),
-            "f" => m.MonkeySymbol("f", m.BuiltinScope, 3, nothing),
-        )
+        expected = Dict("a" => m.MonkeySymbol("a", m.BuiltinScope, 0, nothing),
+                        "c" => m.MonkeySymbol("c", m.BuiltinScope, 1, nothing),
+                        "e" => m.MonkeySymbol("e", m.BuiltinScope, 2, nothing),
+                        "f" => m.MonkeySymbol("f", m.BuiltinScope, 3, nothing))
 
         g = m.SymbolTable()
         l1 = m.SymbolTable(; outer = g)
@@ -108,31 +104,27 @@
         m.define!(l2, "f")
 
         for (table, expected_symbols, expected_free_symbols) in [
-            (
-                l1,
-                [
-                    m.MonkeySymbol("a", m.GlobalScope, 0, nothing),
-                    m.MonkeySymbol("b", m.GlobalScope, 1, nothing),
-                    m.MonkeySymbol("c", m.LocalScope, 0, nothing),
-                    m.MonkeySymbol("d", m.LocalScope, 1, nothing),
-                ],
-                [],
-            ),
-            (
-                l2,
-                [
-                    m.MonkeySymbol("a", m.GlobalScope, 0, nothing),
-                    m.MonkeySymbol("b", m.GlobalScope, 1, nothing),
-                    m.MonkeySymbol("c", m.FreeScope, 0, nothing),
-                    m.MonkeySymbol("d", m.FreeScope, 1, nothing),
-                    m.MonkeySymbol("e", m.LocalScope, 0, nothing),
-                    m.MonkeySymbol("f", m.LocalScope, 1, nothing),
-                ],
-                [
-                    m.MonkeySymbol("c", m.LocalScope, 0, nothing),
-                    m.MonkeySymbol("d", m.LocalScope, 1, nothing),
-                ],
-            ),
+            (l1,
+             [
+                 m.MonkeySymbol("a", m.GlobalScope, 0, nothing),
+                 m.MonkeySymbol("b", m.GlobalScope, 1, nothing),
+                 m.MonkeySymbol("c", m.LocalScope, 0, nothing),
+                 m.MonkeySymbol("d", m.LocalScope, 1, nothing),
+             ],
+             []),
+            (l2,
+             [
+                 m.MonkeySymbol("a", m.GlobalScope, 0, nothing),
+                 m.MonkeySymbol("b", m.GlobalScope, 1, nothing),
+                 m.MonkeySymbol("c", m.FreeScope, 0, nothing),
+                 m.MonkeySymbol("d", m.FreeScope, 1, nothing),
+                 m.MonkeySymbol("e", m.LocalScope, 0, nothing),
+                 m.MonkeySymbol("f", m.LocalScope, 1, nothing),
+             ],
+             [
+                 m.MonkeySymbol("c", m.LocalScope, 0, nothing),
+                 m.MonkeySymbol("d", m.LocalScope, 1, nothing),
+             ]),
         ]
             for sym in expected_symbols
                 @test m.resolve(table, sym.name)[1] == sym

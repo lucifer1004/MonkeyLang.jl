@@ -4,13 +4,9 @@ end
 
 function check_parser_errors(p::m.Parser)
     if !isempty(p.errors)
-        msg = join(
-            vcat(
-                ["parser has $(length(p.errors)) errors"],
-                ["parser error: $x" for x in p.errors],
-            ),
-            "\n",
-        )
+        msg = join(vcat(["parser has $(length(p.errors)) errors"],
+                        ["parser error: $x" for x in p.errors]),
+                   "\n")
         error(msg)
     end
 end
@@ -131,11 +127,9 @@ function test_constants(actual, expected)
     end
 end
 
-function run_compiler_tests(
-    input::String,
-    expected_constants::Vector,
-    expected_instructions::Vector{m.Instructions},
-)
+function run_compiler_tests(input::String,
+                            expected_constants::Vector,
+                            expected_instructions::Vector{m.Instructions})
     program = m.parse(input)
     c = m.Compiler()
     m.compile!(c, program)

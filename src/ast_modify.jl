@@ -1,60 +1,66 @@
 modify(::Nothing, ::Function) = nothing
 modify(node::Node, modifier::Function) = modifier(node)
 
-modify(program::Program, modifier::Function) =
+function modify(program::Program, modifier::Function)
     Program(map(statement -> modify(statement, modifier), program.statements))
+end
 
-modify(node::LetStatement, modifier::Function) =
+function modify(node::LetStatement, modifier::Function)
     LetStatement(node.token, node.name, modify(node.value, modifier), node.reassign)
+end
 
-modify(node::ReturnStatement, modifier::Function) =
+function modify(node::ReturnStatement, modifier::Function)
     ReturnStatement(node.token, modify(node.return_value, modifier))
+end
 
-modify(node::ExpressionStatement, modifier::Function) =
+function modify(node::ExpressionStatement, modifier::Function)
     ExpressionStatement(node.token, modify(node.expression, modifier))
+end
 
-modify(node::BlockStatement, modifier::Function) = BlockStatement(
-    node.token,
-    map(statement -> modify(statement, modifier), node.statements),
-)
+function modify(node::BlockStatement, modifier::Function)
+    BlockStatement(node.token,
+                   map(statement -> modify(statement, modifier), node.statements))
+end
 
-modify(node::PrefixExpression, modifier::Function) =
+function modify(node::PrefixExpression, modifier::Function)
     PrefixExpression(node.token, node.operator, modify(node.right, modifier))
+end
 
-modify(node::InfixExpression, modifier::Function) = InfixExpression(
-    node.token,
-    modify(node.left, modifier),
-    node.operator,
-    modify(node.right, modifier),
-)
+function modify(node::InfixExpression, modifier::Function)
+    InfixExpression(node.token,
+                    modify(node.left, modifier),
+                    node.operator,
+                    modify(node.right, modifier))
+end
 
-modify(node::IfExpression, modifier::Function) = IfExpression(
-    node.token,
-    modify(node.condition, modifier),
-    modify(node.consequence, modifier),
-    modify(node.alternative, modifier),
-)
+function modify(node::IfExpression, modifier::Function)
+    IfExpression(node.token,
+                 modify(node.condition, modifier),
+                 modify(node.consequence, modifier),
+                 modify(node.alternative, modifier))
+end
 
-modify(node::IndexExpression, modifier::Function) =
+function modify(node::IndexExpression, modifier::Function)
     IndexExpression(node.token, modify(node.left, modifier), modify(node.index, modifier))
+end
 
-modify(node::ArrayLiteral, modifier::Function) =
+function modify(node::ArrayLiteral, modifier::Function)
     ArrayLiteral(node.token, map(expression -> modify(expression, modifier), node.elements))
+end
 
-modify(node::HashLiteral, modifier::Function) = HashLiteral(
-    node.token,
-    Dict(
-        modify(key, modifier) => modify(value, modifier) for
-        (key, value) in collect(node.pairs)
-    ),
-)
+function modify(node::HashLiteral, modifier::Function)
+    HashLiteral(node.token,
+                Dict(modify(key, modifier) => modify(value, modifier)
+                     for
+                     (key, value) in collect(node.pairs)))
+end
 
-modify(node::FunctionLiteral, modifier::Function) = FunctionLiteral(
-    node.token,
-    node.parameters,
-    modify(node.body, modifier);
-    name = node.name,
-)
+function modify(node::FunctionLiteral, modifier::Function)
+    FunctionLiteral(node.token,
+                    node.parameters,
+                    modify(node.body, modifier);
+                    name = node.name)
+end
 
 # !!! Do not add the function below.
 # !!! We should not call recursively on `CallExpression`s since we need to actually modify them (the `unquote()` calls).

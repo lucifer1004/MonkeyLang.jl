@@ -46,12 +46,8 @@ function start_repl(; input::IO = stdin, output::IO = stdout, use_vm::Bool = fal
             program = parse!(p)
 
             if !isempty(p.errors)
-                println(
-                    output,
-                    ErrorObj(
-                        "parser has $(length(p.errors)) error$(length(p.errors) == 1 ? "" : "s")",
-                    ),
-                )
+                println(output,
+                        ErrorObj("parser has $(length(p.errors)) error$(length(p.errors) == 1 ? "" : "s")"))
                 println(output, join(map(string, p.errors), "\n"))
                 continue
             end
@@ -62,8 +58,8 @@ function start_repl(; input::IO = stdin, output::IO = stdout, use_vm::Bool = fal
                 expanded = expand_macros(program, macro_env)
 
                 if use_vm
-                    syntax_check_result =
-                        analyze(expanded; existing_symbol_table = symbol_table)
+                    syntax_check_result = analyze(expanded;
+                                                  existing_symbol_table = symbol_table)
                     if isa(syntax_check_result, ErrorObj)
                         println(output, syntax_check_result)
                         continue
@@ -88,13 +84,9 @@ function start_repl(; input::IO = stdin, output::IO = stdout, use_vm::Bool = fal
                                 end
                             end
 
-                            append!(
-                                globals,
-                                fill(
-                                    _NULL,
-                                    symbol_table.definition_count - length(globals),
-                                ),
-                            )
+                            append!(globals,
+                                    fill(_NULL,
+                                         symbol_table.definition_count - length(globals)))
                             for name in to_fix
                                 pop!(symbol_table.store, name)
                             end

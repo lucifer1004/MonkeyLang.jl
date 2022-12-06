@@ -1,3 +1,1 @@
-@testset "Test Transpilers" begin
-    include("julia_test.jl")
-end
+@testset "Test Transpilers" begin include("julia_test.jl") end

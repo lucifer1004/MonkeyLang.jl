@@ -1,32 +1,27 @@
 @testset "Test AST" begin
-    @testset "Test Token Literal" begin
-        for (program, expected) in [
-            (m.Program([]), ""),
-            (
-                m.Program([
-                    m.LetStatement(
-                        m.Token(m.LET, "let"),
-                        m.Identifier(m.Token(m.IDENT, "myVar"), "myVar"),
-                        m.Identifier(m.Token(m.IDENT, "anotherVar"), "anotherVar"),
-                        false,
-                    ),
-                ]),
-                "let",
-            ),
-        ]
-            @test m.token_literal(program) == expected
-        end
-    end
+    @testset "Test Token Literal" begin for (program, expected) in [
+        (m.Program([]), ""),
+        (m.Program([
+                       m.LetStatement(m.Token(m.LET, "let"),
+                                      m.Identifier(m.Token(m.IDENT, "myVar"), "myVar"),
+                                      m.Identifier(m.Token(m.IDENT, "anotherVar"),
+                                                   "anotherVar"),
+                                      false),
+                   ]),
+         "let"),
+    ]
+        @test m.token_literal(program) == expected
+    end end
 
     @testset "Test Stringifying Program" begin
         program = m.Program([
-            m.LetStatement(
-                m.Token(m.LET, "let"),
-                m.Identifier(m.Token(m.IDENT, "myVar"), "myVar"),
-                m.Identifier(m.Token(m.IDENT, "anotherVar"), "anotherVar"),
-                false,
-            ),
-        ])
+                                m.LetStatement(m.Token(m.LET, "let"),
+                                               m.Identifier(m.Token(m.IDENT, "myVar"),
+                                                            "myVar"),
+                                               m.Identifier(m.Token(m.IDENT, "anotherVar"),
+                                                            "anotherVar"),
+                                               false),
+                            ])
 
         @test string(program) == "let myVar = anotherVar;"
     end

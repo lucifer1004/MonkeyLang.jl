@@ -50,8 +50,9 @@ struct InfixExpression <: Expression
     right::Expression
 end
 
-Base.string(ie::InfixExpression) =
+function Base.string(ie::InfixExpression)
     "(" * string(ie.left) * " " * ie.operator * " " * string(ie.right) * ")"
+end
 
 struct BlockStatement <: Statement
     token::Token
@@ -64,13 +65,15 @@ struct IfExpression <: Expression
     token::Token
     condition::Expression
     consequence::BlockStatement
-    alternative::Union{BlockStatement,Nothing}
+    alternative::Union{BlockStatement, Nothing}
 end
 
-Base.string(ie::IfExpression) = begin
-    left = "if (" * string(ie.condition) * ") { " * string(ie.consequence) * " } "
-    return isnothing(ie.alternative) ? left :
-           (left * "else { " * string(ie.alternative) * " }")
+function Base.string(ie::IfExpression)
+    begin
+        left = "if (" * string(ie.condition) * ") { " * string(ie.consequence) * " } "
+        return isnothing(ie.alternative) ? left :
+               (left * "else { " * string(ie.alternative) * " }")
+    end
 end
 
 struct IndexExpression <: Expression
@@ -97,11 +100,12 @@ Base.string(al::ArrayLiteral) = "[" * join(map(string, al.elements), ", ") * "]"
 
 struct HashLiteral <: Expression
     token::Token
-    pairs::Dict{Expression,Expression}
+    pairs::Dict{Expression, Expression}
 end
 
-Base.string(h::HashLiteral) =
+function Base.string(h::HashLiteral)
     "{" * join(map(x -> string(x[1]) * ":" * string(x[2]), collect(h.pairs)), ", ") * "}"
+end
 
 struct FunctionLiteral <: Expression
     token::Token
@@ -109,16 +113,17 @@ struct FunctionLiteral <: Expression
     body::BlockStatement
     name::String
 
-    FunctionLiteral(
-        token::Token,
-        parameters::Vector{Identifier},
-        body::BlockStatement;
-        name::String = "",
-    ) = new(token, parameters, body, name)
+    function FunctionLiteral(token::Token,
+                             parameters::Vector{Identifier},
+                             body::BlockStatement;
+                             name::String = "")
+        new(token, parameters, body, name)
+    end
 end
 
-Base.string(fl::FunctionLiteral) =
+function Base.string(fl::FunctionLiteral)
     "$(token_literal(fl))$(isempty(fl.name) ? "" : " " * fl.name)($(join(map(string, fl.parameters), ", "))) { $(fl.body) }"
+end
 
 struct MacroLiteral <: Expression
     token::Token
@@ -126,13 +131,14 @@ struct MacroLiteral <: Expression
     body::BlockStatement
 end
 
-Base.string(ml::MacroLiteral) =
+function Base.string(ml::MacroLiteral)
     token_literal(ml) *
     "(" *
     join(map(string, ml.parameters), ", ") *
     ") {" *
     string(ml.body) *
     "}"
+end
 
 struct CallExpression <: Expression
     token::Token
@@ -140,8 +146,9 @@ struct CallExpression <: Expression
     arguments::Vector{Expression}
 end
 
-Base.string(ce::CallExpression) =
+function Base.string(ce::CallExpression)
     string(ce.fn) * "(" * join(map(string, ce.arguments), ", ") * ")"
+end
 
 struct WhileStatement <: Statement
     token::Token
@@ -158,12 +165,13 @@ struct LetStatement <: Statement
     reassign::Bool
 end
 
-Base.string(ls::LetStatement) =
+function Base.string(ls::LetStatement)
     (ls.reassign ? "" : token_literal(ls) * " ") *
     string(ls.name) *
     " = " *
     string(ls.value) *
     ";"
+end
 
 struct ReturnStatement <: Statement
     token::Token
