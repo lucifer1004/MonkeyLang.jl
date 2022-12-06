@@ -64,24 +64,20 @@ add!(c::Compiler, ins::Instructions)::Int64 = begin
 end
 
 function replace_last!(c::Compiler, ins::Instructions)
-    begin
-        cs = current_scope(c)
-        last_pos = last_instruction(c).position
-        replace!(c, last_pos, ins)
-        cs.previous_instructions[end] = EmittedInstruction(OpReturnValue, last_pos)
-    end
+    cs = current_scope(c)
+    last_pos = last_instruction(c).position
+    replace!(c, last_pos, ins)
+    cs.previous_instructions[end] = EmittedInstruction(OpReturnValue, last_pos)
 end
 
 function set_last!(c::Compiler, op::OpCode, pos::Int)
-    begin
-        cs = current_scope(c)
-        last = EmittedInstruction(op, pos)
-        if length(cs.previous_instructions) == 2
-            cs.previous_instructions[1] = cs.previous_instructions[2]
-            cs.previous_instructions[2] = last
-        else
-            push!(cs.previous_instructions, last)
-        end
+    cs = current_scope(c)
+    last = EmittedInstruction(op, pos)
+    if length(cs.previous_instructions) == 2
+        cs.previous_instructions[1] = cs.previous_instructions[2]
+        cs.previous_instructions[2] = last
+    else
+        push!(cs.previous_instructions, last)
     end
 end
 
@@ -99,20 +95,18 @@ remove_last_pop!(c::Compiler) =
     end
 
 function replace_last_pop_with_return!(c::Compiler)
-    begin if last_instruction_is(c, OpPop)
+    if last_instruction_is(c, OpPop)
         replace_last!(c, make(OpReturnValue))
-    end end
+    end
 end
 
 function replace!(c::Compiler, pos::Int, new_ins::Instructions)
-    begin
-        cs = current_scope(c)
-        for i in 1:length(new_ins)
-            if pos + i - 1 <= length(cs.instructions)
-                cs.instructions[pos + i - 1] = new_ins[i]
-            else
-                push!(cs.instructions, new_ins[i])
-            end
+    cs = current_scope(c)
+    for i in 1:length(new_ins)
+        if pos + i - 1 <= length(cs.instructions)
+            cs.instructions[pos + i - 1] = new_ins[i]
+        else
+            push!(cs.instructions, new_ins[i])
         end
     end
 end
@@ -132,10 +126,8 @@ emit!(c::Compiler, op::OpCode, operands::Vararg{Int})::Int64 = begin
 end
 
 function enter_scope!(c::Compiler; within_loop::Bool = false)
-    begin
-        c.symbol_table = SymbolTable(; outer = c.symbol_table, within_loop)
-        push!(c.scopes, CompilationScope(Instructions([]), []))
-    end
+    c.symbol_table = SymbolTable(; outer = c.symbol_table, within_loop)
+    push!(c.scopes, CompilationScope(Instructions([]), []))
 end
 
 leave_scope!(c::Compiler)::CompilationScope = begin
@@ -190,38 +182,36 @@ compile!(c::Compiler, hl::HashLiteral) = begin
 end
 
 function compile!(c::Compiler, fl::FunctionLiteral; within_loop::Bool = false)
-    begin
-        enter_scope!(c; within_loop)
+    enter_scope!(c; within_loop)
 
-        if !isempty(fl.name)
-            define_function!(c.symbol_table, fl.name)
-        end
-
-        for param in fl.parameters
-            define!(c.symbol_table, param.value)
-        end
-
-        compile!(c, fl.body)
-
-        if !within_loop
-            replace_last_pop_with_return!(c)
-            if !last_instruction_is(c, OpReturnValue)
-                emit!(c, OpReturn)
-            end
-        end
-
-        free_symbols = c.symbol_table.free_symbols
-        local_count = c.symbol_table.definition_count
-        instructions = leave_scope!(c).instructions
-
-        for sym in free_symbols
-            load_symbol!(c, sym)
-        end
-
-        fn = CompiledFunctionObj(instructions, local_count, length(fl.parameters),
-                                 within_loop)
-        emit!(c, OpClosure, add!(c, fn) - 1, length(free_symbols))
+    if !isempty(fl.name)
+        define_function!(c.symbol_table, fl.name)
     end
+
+    for param in fl.parameters
+        define!(c.symbol_table, param.value)
+    end
+
+    compile!(c, fl.body)
+
+    if !within_loop
+        replace_last_pop_with_return!(c)
+        if !last_instruction_is(c, OpReturnValue)
+            emit!(c, OpReturn)
+        end
+    end
+
+    free_symbols = c.symbol_table.free_symbols
+    local_count = c.symbol_table.definition_count
+    instructions = leave_scope!(c).instructions
+
+    for sym in free_symbols
+        load_symbol!(c, sym)
+    end
+
+    fn = CompiledFunctionObj(instructions, local_count, length(fl.parameters),
+                             within_loop)
+    emit!(c, OpClosure, add!(c, fn) - 1, length(free_symbols))
 end
 
 compile!(c::Compiler, ident::Identifier) = begin
@@ -235,133 +225,123 @@ compile!(c::Compiler, es::ExpressionStatement) = begin
 end
 
 function compile!(c::Compiler, ls::LetStatement)
-    begin
-        compile!(c, ls.value)
+    compile!(c, ls.value)
 
-        sym, _ = resolve(c.symbol_table, ls.name.value)
+    sym, _ = resolve(c.symbol_table, ls.name.value)
 
-        if ls.reassign
-            if sym.scope == GlobalScope
-                # Reassign a global variable
-                emit!(c, OpSetGlobal, sym.index)
-            elseif sym.scope == LocalScope
-                # Reassign a local variable
-                emit!(c, OpSetLocal, sym.index)
-            elseif sym.scope == FreeScope
-                # Reassign a free variable (for functions)
-                emit!(c, OpSetFree, sym.index)
-            else
-                # Reassign an outer variable (for while loops)
-                emit!(c, OpSetOuter, sym.ptr.level, Int(sym.ptr.scope), sym.ptr.index)
-            end
+    if ls.reassign
+        if sym.scope == GlobalScope
+            # Reassign a global variable
+            emit!(c, OpSetGlobal, sym.index)
+        elseif sym.scope == LocalScope
+            # Reassign a local variable
+            emit!(c, OpSetLocal, sym.index)
+        elseif sym.scope == FreeScope
+            # Reassign a free variable (for functions)
+            emit!(c, OpSetFree, sym.index)
         else
-            sym = define!(c.symbol_table, ls.name.value)
-            if sym.scope == GlobalScope
-                emit!(c, OpSetGlobal, sym.index)
-            else
-                emit!(c, OpSetLocal, sym.index)
-            end
+            # Reassign an outer variable (for while loops)
+            emit!(c, OpSetOuter, sym.ptr.level, Int(sym.ptr.scope), sym.ptr.index)
+        end
+    else
+        sym = define!(c.symbol_table, ls.name.value)
+        if sym.scope == GlobalScope
+            emit!(c, OpSetGlobal, sym.index)
+        else
+            emit!(c, OpSetLocal, sym.index)
         end
     end
 end
 
 function compile!(c::Compiler, pe::PrefixExpression)
-    begin
-        compile!(c, pe.right)
+    compile!(c, pe.right)
 
-        if pe.operator == "-"
-            emit!(c, OpMinus)
-        elseif pe.operator == "!"
-            emit!(c, OpBang)
-        else
-            error("unknown operator: $(pe.operator)")
-        end
+    if pe.operator == "-"
+        emit!(c, OpMinus)
+    elseif pe.operator == "!"
+        emit!(c, OpBang)
+    else
+        error("unknown operator: $(pe.operator)")
     end
 end
 
 function compile!(c::Compiler, ie::InfixExpression)
-    begin
-        compile!(c, ie.left)
-        compile!(c, ie.right)
+    compile!(c, ie.left)
+    compile!(c, ie.right)
 
-        if ie.operator == "+"
-            emit!(c, OpAdd)
-        elseif ie.operator == "-"
-            emit!(c, OpSub)
-        elseif ie.operator == "*"
-            emit!(c, OpMul)
-        elseif ie.operator == "/"
-            emit!(c, OpDiv)
-        elseif ie.operator == "=="
-            emit!(c, OpEqual)
-        elseif ie.operator == "!="
-            emit!(c, OpNotEqual)
-        elseif ie.operator == "<"
-            emit!(c, OpLessThan)
-        elseif ie.operator == ">"
-            emit!(c, OpGreaterThan)
-        else
-            error("unknown operator: $(ie.operator)")
-        end
+    if ie.operator == "+"
+        emit!(c, OpAdd)
+    elseif ie.operator == "-"
+        emit!(c, OpSub)
+    elseif ie.operator == "*"
+        emit!(c, OpMul)
+    elseif ie.operator == "/"
+        emit!(c, OpDiv)
+    elseif ie.operator == "=="
+        emit!(c, OpEqual)
+    elseif ie.operator == "!="
+        emit!(c, OpNotEqual)
+    elseif ie.operator == "<"
+        emit!(c, OpLessThan)
+    elseif ie.operator == ">"
+        emit!(c, OpGreaterThan)
+    else
+        error("unknown operator: $(ie.operator)")
     end
 end
 
 function compile!(c::Compiler, ie::IfExpression)
-    begin
-        compile!(c, ie.condition)
-        jump_not_truthy_pos = emit!(c, OpJumpNotTruthy, 9999)
-        compile!(c, ie.consequence)
-        if isempty(ie.consequence.statements)
-            emit!(c, OpNull)
-        else
-            remove_last_pop!(c)
-        end
-
-        jump_pos = emit!(c, OpJump, 9999)
-        after_consequence_pos = length(c)
-        change_operand!(c, jump_not_truthy_pos, after_consequence_pos)
-
-        if isnothing(ie.alternative) || isempty(ie.alternative.statements)
-            emit!(c, OpNull)
-        else
-            compile!(c, ie.alternative)
-            remove_last_pop!(c)
-        end
-
-        after_alternative_pos = length(c)
-        change_operand!(c, jump_pos, after_alternative_pos)
+    compile!(c, ie.condition)
+    jump_not_truthy_pos = emit!(c, OpJumpNotTruthy, 9999)
+    compile!(c, ie.consequence)
+    if isempty(ie.consequence.statements)
+        emit!(c, OpNull)
+    else
+        remove_last_pop!(c)
     end
+
+    jump_pos = emit!(c, OpJump, 9999)
+    after_consequence_pos = length(c)
+    change_operand!(c, jump_not_truthy_pos, after_consequence_pos)
+
+    if isnothing(ie.alternative) || isempty(ie.alternative.statements)
+        emit!(c, OpNull)
+    else
+        compile!(c, ie.alternative)
+        remove_last_pop!(c)
+    end
+
+    after_alternative_pos = length(c)
+    change_operand!(c, jump_pos, after_alternative_pos)
 end
 
 function compile!(c::Compiler, ws::WhileStatement)
-    begin
-        loop_start_pos = length(c)
-        compile!(c, ws.condition)
-        jump_not_truthy_pos = emit!(c, OpJumpNotTruthy, 9999)
+    loop_start_pos = length(c)
+    compile!(c, ws.condition)
+    jump_not_truthy_pos = emit!(c, OpJumpNotTruthy, 9999)
 
-        # Compile body of a while statement to a special closure that resolves 
-        # outer variables instead of free variables.
-        body = BlockStatement(ws.body.token,
-                              [
-                                  ws.body.statements...,
-                                  ContinueStatement(Token(CONTINUE, "continue")),
-                              ])
-        fl = FunctionLiteral(Token(FUNCTION, "fn"), Identifier[], body)
-        compile!(c, fl; within_loop = true)
+    # Compile body of a while statement to a special closure that resolves 
+    # outer variables instead of free variables.
+    body = BlockStatement(ws.body.token,
+                          [
+                              ws.body.statements...,
+                              ContinueStatement(Token(CONTINUE, "continue")),
+                          ])
+    fl = FunctionLiteral(Token(FUNCTION, "fn"), Identifier[], body)
+    compile!(c, fl; within_loop = true)
 
-        # Call the closure and use the return value to detect a break or continue
-        emit!(c, OpCall, 0)
-        jump_on_break_pos = emit!(c, OpJumpNotTruthy, 9999)
+    # Call the closure and use the return value to detect a break or continue
+    emit!(c, OpCall, 0)
+    jump_on_break_pos = emit!(c, OpJumpNotTruthy, 9999)
 
-        emit!(c, OpJump, loop_start_pos)
-        after_body_pos = length(c)
+    emit!(c, OpJump, loop_start_pos)
+    after_body_pos = length(c)
 
-        change_operand!(c, jump_not_truthy_pos, after_body_pos)
-        change_operand!(c, jump_on_break_pos, after_body_pos)
+    change_operand!(c, jump_not_truthy_pos, after_body_pos)
+    change_operand!(c, jump_on_break_pos, after_body_pos)
 
-        emit!(c, OpNull)
-        emit!(c, OpPop)
-    end
+    emit!(c, OpNull)
+    emit!(c, OpPop)
 end
 
 compile!(c::Compiler, ie::IndexExpression) = begin
@@ -387,12 +367,16 @@ compile!(c::Compiler, ::BreakStatement) = emit!(c, OpBreak)
 
 compile!(c::Compiler, ::ContinueStatement) = emit!(c, OpContinue)
 
-compile!(c::Compiler, bs::BlockStatement) = begin for statement in bs.statements
-    compile!(c, statement)
-end end
+function compile!(c::Compiler, bs::BlockStatement)
+    for statement in bs.statements
+        compile!(c, statement)
+    end
+end
 
-compile!(c::Compiler, program::Program) = begin for statement in program.statements
-    compile!(c, statement)
-end end
+function compile!(c::Compiler, program::Program)
+    for statement in program.statements
+        compile!(c, statement)
+    end
+end
 
 bytecode(c::Compiler) = ByteCode(current_scope(c).instructions, c.constants)

@@ -18,9 +18,4 @@ const KEYWORDS = Dict{String, TokenType}("fn" => FUNCTION,
                                          "return" => RETURN,
                                          "macro" => MACRO)
 
-lookup_indent(ident::AbstractString) =
-    if ident in keys(KEYWORDS)
-        KEYWORDS[ident]
-    else
-        IDENT
-    end
+lookup_indent(ident::AbstractString) = ident in keys(KEYWORDS) ? KEYWORDS[ident] : IDENT

@@ -5,26 +5,24 @@ macro monkey_eval_str(code::String)
 end
 
 function evaluate(code::String; input = stdin, output = stdout)
-    begin
-        raw_program = parse(code; input, output)
-        if !isnothing(raw_program)
-            macro_env = Environment(; input, output)
-            program = define_macros!(macro_env, raw_program)
-            expanded = expand_macros(program, macro_env)
+    raw_program = parse(code; input, output)
+    if !isnothing(raw_program)
+        macro_env = Environment(; input, output)
+        program = define_macros!(macro_env, raw_program)
+        expanded = expand_macros(program, macro_env)
 
-            syntax_check_result = analyze(expanded)
-            if isa(syntax_check_result, ErrorObj)
-                println(output, syntax_check_result)
-                return syntax_check_result
-            end
-
-            result = evaluate(expanded, Environment(; input, output))
-            if isa(result, ErrorObj)
-                println(output, result)
-            end
-
-            return result
+        syntax_check_result = analyze(expanded)
+        if isa(syntax_check_result, ErrorObj)
+            println(output, syntax_check_result)
+            return syntax_check_result
         end
+
+        result = evaluate(expanded, Environment(; input, output))
+        if isa(result, ErrorObj)
+            println(output, result)
+        end
+
+        return result
     end
 end
 
@@ -38,13 +36,11 @@ function evaluate(node::FunctionLiteral, env::Environment)
 end
 
 function evaluate(node::ArrayLiteral, env::Environment)
-    begin
-        elements = evaluate_expressions(node.elements, env)
-        if length(elements) == 1 && isa(elements[1], ErrorObj)
-            return elements[1]
-        end
-        return ArrayObj(elements)
+    elements = evaluate_expressions(node.elements, env)
+    if length(elements) == 1 && isa(elements[1], ErrorObj)
+        return elements[1]
     end
+    return ArrayObj(elements)
 end
 
 evaluate(node::HashLiteral, env::Environment) = begin
@@ -67,7 +63,7 @@ evaluate(node::HashLiteral, env::Environment) = begin
     return HashObj(pairs)
 end
 
-evaluate(node::Identifier, env::Environment) = begin
+function evaluate(node::Identifier, env::Environment)
     val = get(env, node.value)
 
     if !isnothing(val)
@@ -82,101 +78,87 @@ evaluate(node::Identifier, env::Environment) = begin
 end
 
 function evaluate(node::PrefixExpression, env::Environment)
-    begin
-        right = evaluate(node.right, env)
-        return isa(right, ErrorObj) ? right :
-               evaluate_prefix_expression(node.operator, right)
-    end
+    right = evaluate(node.right, env)
+    return isa(right, ErrorObj) ? right :
+           evaluate_prefix_expression(node.operator, right)
 end
 
 function evaluate(node::InfixExpression, env::Environment)
-    begin
-        left = evaluate(node.left, env)
-        if isa(left, ErrorObj)
-            return left
-        end
-        right = evaluate(node.right, env)
-        return isa(right, ErrorObj) ? right :
-               evaluate_infix_expression(node.operator, left, right)
+    left = evaluate(node.left, env)
+    if isa(left, ErrorObj)
+        return left
     end
+    right = evaluate(node.right, env)
+    return isa(right, ErrorObj) ? right :
+           evaluate_infix_expression(node.operator, left, right)
 end
 
 function evaluate(node::IfExpression, env::Environment)
-    begin
-        condition = evaluate(node.condition, env)
+    condition = evaluate(node.condition, env)
 
-        if isa(condition, ErrorObj)
-            return condition
-        elseif is_truthy(condition)
-            return evaluate(node.consequence, env)
-        elseif !isnothing(node.alternative)
-            return evaluate(node.alternative, env)
-        else
-            return _NULL
-        end
+    if isa(condition, ErrorObj)
+        return condition
+    elseif is_truthy(condition)
+        return evaluate(node.consequence, env)
+    elseif !isnothing(node.alternative)
+        return evaluate(node.alternative, env)
+    else
+        return _NULL
     end
 end
 
 function evaluate(node::CallExpression, env::Environment)
-    begin
-        # TODO: Currently, `quote()` only processes its first argument
-        if token_literal(node.fn) == "quote"
-            if isempty(node.arguments)
-                return _NULL
-            end
-            return QuoteObj(evaluate_unquote_calls(node.arguments[1], env))
+    # TODO: Currently, `quote()` only processes its first argument
+    if token_literal(node.fn) == "quote"
+        if isempty(node.arguments)
+            return _NULL
         end
-
-        fn = evaluate(node.fn, env)
-        if isa(fn, ErrorObj)
-            return fn
-        end
-
-        args = evaluate_expressions(node.arguments, env)
-        if length(args) == 1 && isa(args[1], ErrorObj)
-            return args[1]
-        end
-
-        return isa(fn, Builtin) ? apply_builtin(fn, args, env) : apply_function(fn, args)
+        return QuoteObj(evaluate_unquote_calls(node.arguments[1], env))
     end
+
+    fn = evaluate(node.fn, env)
+    if isa(fn, ErrorObj)
+        return fn
+    end
+
+    args = evaluate_expressions(node.arguments, env)
+    if length(args) == 1 && isa(args[1], ErrorObj)
+        return args[1]
+    end
+
+    return isa(fn, Builtin) ? apply_builtin(fn, args, env) : apply_function(fn, args)
 end
 
 function evaluate(node::IndexExpression, env::Environment)
-    begin
-        left = evaluate(node.left, env)
-        if isa(left, ErrorObj)
-            return left
-        end
-
-        index = evaluate(node.index, env)
-        if isa(index, ErrorObj)
-            return index
-        end
-
-        return evaluate_index_expression(left, index)
+    left = evaluate(node.left, env)
+    if isa(left, ErrorObj)
+        return left
     end
+
+    index = evaluate(node.index, env)
+    if isa(index, ErrorObj)
+        return index
+    end
+
+    return evaluate_index_expression(left, index)
 end
 
 function evaluate(node::LetStatement, env::Environment)
-    begin
-        val = evaluate(node.value, env)
-        if isa(val, ErrorObj)
-            return val
-        end
-        if node.reassign
-            return reassign!(env, node.name.value, val)
-        else
-            set!(env, node.name.value, val)
-        end
+    val = evaluate(node.value, env)
+    if isa(val, ErrorObj)
         return val
     end
+    if node.reassign
+        return reassign!(env, node.name.value, val)
+    else
+        set!(env, node.name.value, val)
+    end
+    return val
 end
 
 function evaluate(node::ReturnStatement, env::Environment)
-    begin
-        val = evaluate(node.return_value, env)
-        return isa(val, ErrorObj) ? val : ReturnValue(val)
-    end
+    val = evaluate(node.return_value, env)
+    return isa(val, ErrorObj) ? val : ReturnValue(val)
 end
 
 evaluate(::BreakStatement, env::Environment) = BreakObj()
@@ -184,50 +166,46 @@ evaluate(::BreakStatement, env::Environment) = BreakObj()
 evaluate(::ContinueStatement, env::Environment) = ContinueObj()
 
 function evaluate(node::WhileStatement, env::Environment)
-    begin
-        while true
-            condition = evaluate(node.condition, env)
-            if isa(condition, ErrorObj)
-                return condition
-            end
-
-            if is_truthy(condition)
-                result = evaluate(node.body, Environment(env))
-                if isa(result, ReturnValue) || isa(result, ErrorObj)
-                    return result
-                elseif isa(result, BreakObj)
-                    break
-                elseif isa(result, ContinueObj)
-                    continue
-                end
-            else
-                break
-            end
+    while true
+        condition = evaluate(node.condition, env)
+        if isa(condition, ErrorObj)
+            return condition
         end
 
-        return _NULL
+        if is_truthy(condition)
+            result = evaluate(node.body, Environment(env))
+            if isa(result, ReturnValue) || isa(result, ErrorObj)
+                return result
+            elseif isa(result, BreakObj)
+                break
+            elseif isa(result, ContinueObj)
+                continue
+            end
+        else
+            break
+        end
     end
+
+    return _NULL
 end
 
 function evaluate(block::BlockStatement, env::Environment)
-    begin
-        result = _NULL
+    result = _NULL
 
-        for statement in block.statements
-            result = evaluate(statement, env)
-            if isa(result, BreakObj) ||
-               isa(result, ContinueObj) ||
-               isa(result, ReturnValue) ||
-               isa(result, ErrorObj)
-                return result
-            end
+    for statement in block.statements
+        result = evaluate(statement, env)
+        if isa(result, BreakObj) ||
+           isa(result, ContinueObj) ||
+           isa(result, ReturnValue) ||
+           isa(result, ErrorObj)
+            return result
         end
-
-        return result
     end
+
+    return result
 end
 
-evaluate(program::Program, env::Environment) = begin
+function evaluate(program::Program, env::Environment)
     result = _NULL
 
     for statement in program.statements
