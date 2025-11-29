@@ -40,7 +40,7 @@ function read_char!(l::Lexer)
 end
 
 function next_token!(l::Lexer)
-    skip_whitespace!(l)
+    skip_whitespace_and_comments!(l)
     ch = read_char(l)
     if ch == '='
         if peek_char(l) == '='
@@ -136,9 +136,25 @@ function read_string!(l::Lexer)
     return Token(STRING, join(chars, ""))
 end
 
-function skip_whitespace!(l::Lexer)
-    while isspace(read_char(l))
-        read_char!(l)
+function skip_whitespace_and_comments!(l::Lexer)
+    while true
+        ch = read_char(l)
+        if isspace(ch)
+            read_char!(l)
+        elseif ch == '#'
+            skip_comment!(l)
+        else
+            break
+        end
+    end
+end
+
+function skip_comment!(l::Lexer)
+    while true
+        ch = read_char!(l)
+        if isnothing(ch) || ch == '\n'
+            break
+        end
     end
 end
 
