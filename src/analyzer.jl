@@ -9,8 +9,8 @@ function analyze(code::String; input::IO = stdin, output::IO = stdout)
 end
 
 function analyze(program::Program;
-                 existing_symbol_table::Union{SymbolTable, Nothing} = nothing,
-                 exisiting_env::Union{Environment, Nothing} = nothing)
+        existing_symbol_table::Union{SymbolTable, Nothing} = nothing,
+        exisiting_env::Union{Environment, Nothing} = nothing)
     if !isnothing(existing_symbol_table)
         symbol_table = SymbolTable(existing_symbol_table)
     else

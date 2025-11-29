@@ -14,9 +14,10 @@ __WRAPPED_STRING(::Nothing) = "null"
 __WRAPPED_STRING(s::String) = "\"" * s * "\""
 function __WRAPPED_STRING(d::Dict)
     "{" *
-    join(map(x -> __WRAPPED_STRING(x.first) * ": " * __WRAPPED_STRING(x.second),
-             collect(d)),
-         ", ") *
+    join(
+        map(x -> __WRAPPED_STRING(x.first) * ": " * __WRAPPED_STRING(x.second),
+            collect(d)),
+        ", ") *
     "}"
 end
 __WRAPPED_STRING(v::Vector) = "[" * join(map(__WRAPPED_STRING, v), ", ") * "]"
@@ -178,8 +179,8 @@ end
 transpile(rs::MonkeyLang.ReturnStatement)::Expr = Expr(:return, transpile(rs.return_value))
 
 transpile(ws::MonkeyLang.WhileStatement)::Expr = Expr(:while,
-                                                      simplify_condition(ws.condition),
-                                                      transpile(ws.body))
+    simplify_condition(ws.condition),
+    transpile(ws.body))
 
 transpile(ie::MonkeyLang.InfixExpression)::Expr = begin
     op = ie.operator == "/" ? "÷" : ie.operator
@@ -228,16 +229,16 @@ transpile(fl::MonkeyLang.FunctionLiteral)::Expr = begin
 end
 
 transpile(ce::MonkeyLang.CallExpression)::Expr = Expr(:call, transpile(ce.fn),
-                                                      map(transpile, ce.arguments)...)
+    map(transpile, ce.arguments)...)
 
 transpile(ce::MonkeyLang.IndexExpression)::Expr = Expr(:call, :($__WRAPPED_GETINDEX),
-                                                       transpile(ce.left),
-                                                       transpile(ce.index))
+    transpile(ce.left),
+    transpile(ce.index))
 
 transpile(ie::MonkeyLang.IfExpression)::Expr = Expr(:if,
-                                                    simplify_condition(ie.condition),
-                                                    transpile(ie.consequence),
-                                                    transpile(ie.alternative))
+    simplify_condition(ie.condition),
+    transpile(ie.consequence),
+    transpile(ie.alternative))
 
 function transpile(code::String; input::IO = stdin, output::IO = stdout)
     begin

@@ -35,7 +35,7 @@ function init_monkey_repl!(; use_vm::Bool = false, start_key = ')')
     # Initialize global state
     _REPL_USE_VM[] = use_vm
     _REPL_MACRO_ENV[] = Environment()
-    
+
     if use_vm
         _REPL_ENV[] = nothing
         _REPL_CONSTANTS[] = Object[]
@@ -52,12 +52,12 @@ function init_monkey_repl!(; use_vm::Bool = false, start_key = ')')
     end
 
     initrepl(_monkey_repl_parser;
-             prompt_text = MONKEY_PROMPT,
-             prompt_color = :yellow,
-             start_key = start_key,
-             mode_name = :monkey,
-             startup_text = false)
-    
+        prompt_text = MONKEY_PROMPT,
+        prompt_color = :yellow,
+        start_key = start_key,
+        mode_name = :monkey,
+        startup_text = false)
+
     println("Monkey REPL mode initialized. Press '$start_key' to enter Monkey mode.")
     nothing
 end
@@ -65,23 +65,23 @@ end
 function _monkey_repl_parser(code::AbstractString)
     code = String(strip(code))
     isempty(code) && return nothing
-    
+
     # Parse
     l = Lexer(code)
     p = Parser(l)
     program = parse!(p)
-    
+
     if !isempty(p.errors)
         return ErrorObj("parser has $(length(p.errors)) error$(length(p.errors) == 1 ? "" : "s")\n" *
-                       join(map(string, p.errors), "\n"))
+                        join(map(string, p.errors), "\n"))
     end
-    
+
     # Define macros
     program = define_macros!(_REPL_MACRO_ENV[], program)
-    
+
     try
         expanded = expand_macros(program, _REPL_MACRO_ENV[])
-        
+
         if _REPL_USE_VM[]
             return _eval_vm(expanded)
         else
@@ -107,7 +107,7 @@ function _eval_interpreter(program::Program)
     if isa(syntax_check_result, ErrorObj)
         return syntax_check_result
     end
-    
+
     result = evaluate(program, _REPL_ENV[])
     return result
 end
@@ -117,13 +117,13 @@ function _eval_vm(program::Program)
     if isa(syntax_check_result, ErrorObj)
         return syntax_check_result
     end
-    
+
     c = Compiler(_REPL_SYMBOL_TABLE[], _REPL_CONSTANTS[])
     compile!(c, program)
-    
+
     vm = VM(bytecode(c), _REPL_GLOBALS[])
     result = run!(vm)
-    
+
     # Fix dangling global symbols on error
     if isa(result, ErrorObj)
         to_fix = []
@@ -133,12 +133,11 @@ function _eval_vm(program::Program)
             end
         end
         append!(_REPL_GLOBALS[],
-                fill(_NULL, _REPL_SYMBOL_TABLE[].definition_count - length(_REPL_GLOBALS[])))
+            fill(_NULL, _REPL_SYMBOL_TABLE[].definition_count - length(_REPL_GLOBALS[])))
         for name in to_fix
             pop!(_REPL_SYMBOL_TABLE[].store, name)
         end
     end
-    
+
     return result
 end
-

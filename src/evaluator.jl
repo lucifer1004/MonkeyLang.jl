@@ -329,20 +329,20 @@ end
 
 function evaluate_unquote_calls(quoted::Node, env::Environment)
     modify(quoted,
-           function modifier(node::Node)
-               if isa(node, CallExpression)
-                   if token_literal(node.fn) == "unquote" && length(node.arguments) >= 1
-                       Node(evaluate(node.arguments[1], env))
-                   else
-                       return CallExpression(node.token,
-                                             modify(node.fn, modifier),
-                                             map(expression -> modify(expression, modifier),
-                                                 node.arguments))
-                   end
-               else
-                   return node
-               end
-           end)
+        function modifier(node::Node)
+            if isa(node, CallExpression)
+                if token_literal(node.fn) == "unquote" && length(node.arguments) >= 1
+                    Node(evaluate(node.arguments[1], env))
+                else
+                    return CallExpression(node.token,
+                        modify(node.fn, modifier),
+                        map(expression -> modify(expression, modifier),
+                            node.arguments))
+                end
+            else
+                return node
+            end
+        end)
 end
 
 function apply_function(fn::FunctionObj, args::Vector{Object})
@@ -386,10 +386,12 @@ function Node(obj::BooleanObj)
 end
 function Node(obj::HashObj)
     HashLiteral(Token(LBRACE, "{", 0, 0),
-                Dict(Node(key) => Node(value) for (key, value) in collect(obj.pairs)))
+        Dict(Node(key) => Node(value) for (key, value) in collect(obj.pairs)))
 end
 Node(obj::ArrayObj) = ArrayLiteral(Token(LBRACKET, "[", 0, 0), map(Node, obj.elements))
-Node(obj::FunctionObj) = FunctionLiteral(Token(FUNCTION, "fn", 0, 0), obj.parameters, obj.body)
+function Node(obj::FunctionObj)
+    FunctionLiteral(Token(FUNCTION, "fn", 0, 0), obj.parameters, obj.body)
+end
 Node(obj::QuoteObj) = obj.node
 
 # TODO: Currently, only top-level macro definitions are allowed. We don’t walk down the Statements and check the child nodes for more.
@@ -420,26 +422,26 @@ end
 
 function expand_macros(program::Program, env::Environment)
     return modify(program,
-                  (node::Node) -> begin
-                      if !isa(node, CallExpression)
-                          return node
-                      end
+        (node::Node) -> begin
+            if !isa(node, CallExpression)
+                return node
+            end
 
-                      mc = get_macro_call(node, env)
-                      if isnothing(mc)
-                          return node
-                      end
+            mc = get_macro_call(node, env)
+            if isnothing(mc)
+                return node
+            end
 
-                      args = quote_args(node)
-                      eval_env = extend_macro_env(mc, args)
-                      evaluated = evaluate(mc.body, eval_env)
+            args = quote_args(node)
+            eval_env = extend_macro_env(mc, args)
+            evaluated = evaluate(mc.body, eval_env)
 
-                      if !isa(evaluated, QuoteObj)
-                          error("macro error: we only support returning AST-nodes from macros")
-                      end
+            if !isa(evaluated, QuoteObj)
+                error("macro error: we only support returning AST-nodes from macros")
+            end
 
-                      return evaluated.node
-                  end)
+            return evaluated.node
+        end)
 end
 
 function get_macro_call(node::CallExpression, env::Environment)

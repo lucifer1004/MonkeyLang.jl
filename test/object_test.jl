@@ -7,26 +7,26 @@
     error_obj = m.ErrorObj("error")
     arr_obj = m.ArrayObj([m.IntegerObj(1), m.IntegerObj(2)])
     hash_obj = m.HashObj(Dict(m.IntegerObj(1) => m.IntegerObj(2),
-                              m.IntegerObj(3) => m.IntegerObj(4)))
+        m.IntegerObj(3) => m.IntegerObj(4)))
     function_obj = m.FunctionObj([m.Identifier(T(m.IDENT, "x"), "x")],
-                                 m.BlockStatement(T(m.LBRACE, "{"),
-                                                  [
-                                                      m.ExpressionStatement(T(m.IDENT,
-                                                                                    "x"),
-                                                                            m.InfixExpression(T(m.PLUS,
-                                                                                                      "+"),
-                                                                                              m.Identifier(T(m.IDENT,
-                                                                                                                   "x"),
-                                                                                                           "x"),
-                                                                                              "+",
-                                                                                              m.IntegerLiteral(T(m.INT,
-                                                                                                                       "2"),
-                                                                                                               2))),
-                                                  ]),
-                                 m.Environment())
+        m.BlockStatement(T(m.LBRACE, "{"),
+            [
+                m.ExpressionStatement(T(m.IDENT,
+                    "x"),
+                m.InfixExpression(T(m.PLUS,
+                        "+"),
+                    m.Identifier(T(m.IDENT,
+                            "x"),
+                        "x"),
+                    "+",
+                    m.IntegerLiteral(T(m.INT,
+                            "2"),
+                        2)))
+            ]),
+        m.Environment())
     macro_obj = m.MacroObj([m.Identifier(T(m.IDENT, "x"), "x")],
-                           m.BlockStatement(T(m.LBRACE, "{"), []),
-                           m.Environment())
+        m.BlockStatement(T(m.LBRACE, "{"), []),
+        m.Environment())
     len = m.get_builtin_by_name("len")
     return_value = m.ReturnValue(m._TRUE)
     quote_obj = m.QuoteObj(m.NullLiteral(T(m.NULL, "null")))
@@ -106,12 +106,12 @@
         @test arr_obj == m.ArrayObj([m.IntegerObj(1), m.IntegerObj(2)])
         @test arr_obj != m.ArrayObj([m.IntegerObj(2), m.IntegerObj(1)])
         @test hash_obj == m.HashObj(Dict(m.IntegerObj(1) => m.IntegerObj(2),
-                             m.IntegerObj(3) => m.IntegerObj(4)))
+            m.IntegerObj(3) => m.IntegerObj(4)))
         @test hash_obj == m.HashObj(Dict(m.IntegerObj(3) => m.IntegerObj(4),
-                             m.IntegerObj(1) => m.IntegerObj(2)))
+            m.IntegerObj(1) => m.IntegerObj(2)))
         @test hash_obj != m.HashObj(Dict(m.IntegerObj(3) => m.StringObj("4"),
-                             m.IntegerObj(1) => m.IntegerObj(2)))
+            m.IntegerObj(1) => m.IntegerObj(2)))
         @test hash_obj != m.HashObj(Dict(m.IntegerObj(3) => m.IntegerObj(4),
-                             m.IntegerObj(1) => m._TRUE))
+            m.IntegerObj(1) => m._TRUE))
     end
 end

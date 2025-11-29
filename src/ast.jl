@@ -114,9 +114,9 @@ struct FunctionLiteral <: Expression
     name::String
 
     function FunctionLiteral(token::Token,
-                             parameters::Vector{Identifier},
-                             body::BlockStatement;
-                             name::String = "")
+            parameters::Vector{Identifier},
+            body::BlockStatement;
+            name::String = "")
         new(token, parameters, body, name)
     end
 end

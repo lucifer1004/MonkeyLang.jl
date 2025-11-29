@@ -8,16 +8,16 @@ struct Token
 end
 
 const KEYWORDS = Dict{String, TokenType}("fn" => FUNCTION,
-                                         "let" => LET,
-                                         "true" => TRUE,
-                                         "false" => FALSE,
-                                         "null" => NULL,
-                                         "if" => IF,
-                                         "else" => ELSE,
-                                         "while" => WHILE,
-                                         "break" => BREAK,
-                                         "continue" => CONTINUE,
-                                         "return" => RETURN,
-                                         "macro" => MACRO)
+    "let" => LET,
+    "true" => TRUE,
+    "false" => FALSE,
+    "null" => NULL,
+    "if" => IF,
+    "else" => ELSE,
+    "while" => WHILE,
+    "break" => BREAK,
+    "continue" => CONTINUE,
+    "return" => RETURN,
+    "macro" => MACRO)
 
 lookup_indent(ident::AbstractString) = ident in keys(KEYWORDS) ? KEYWORDS[ident] : IDENT

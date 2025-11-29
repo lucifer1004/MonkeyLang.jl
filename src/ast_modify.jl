@@ -19,7 +19,7 @@ end
 
 function modify(node::BlockStatement, modifier::Function)
     BlockStatement(node.token,
-                   map(statement -> modify(statement, modifier), node.statements))
+        map(statement -> modify(statement, modifier), node.statements))
 end
 
 function modify(node::PrefixExpression, modifier::Function)
@@ -28,16 +28,16 @@ end
 
 function modify(node::InfixExpression, modifier::Function)
     InfixExpression(node.token,
-                    modify(node.left, modifier),
-                    node.operator,
-                    modify(node.right, modifier))
+        modify(node.left, modifier),
+        node.operator,
+        modify(node.right, modifier))
 end
 
 function modify(node::IfExpression, modifier::Function)
     IfExpression(node.token,
-                 modify(node.condition, modifier),
-                 modify(node.consequence, modifier),
-                 modify(node.alternative, modifier))
+        modify(node.condition, modifier),
+        modify(node.consequence, modifier),
+        modify(node.alternative, modifier))
 end
 
 function modify(node::IndexExpression, modifier::Function)
@@ -50,16 +50,16 @@ end
 
 function modify(node::HashLiteral, modifier::Function)
     HashLiteral(node.token,
-                Dict(modify(key, modifier) => modify(value, modifier)
-                     for
-                     (key, value) in collect(node.pairs)))
+        Dict(modify(key, modifier) => modify(value, modifier)
+        for
+        (key, value) in collect(node.pairs)))
 end
 
 function modify(node::FunctionLiteral, modifier::Function)
     FunctionLiteral(node.token,
-                    node.parameters,
-                    modify(node.body, modifier);
-                    name = node.name)
+        node.parameters,
+        modify(node.body, modifier);
+        name = node.name)
 end
 
 # !!! Do not add the function below.

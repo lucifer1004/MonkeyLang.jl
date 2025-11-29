@@ -1,15 +1,15 @@
 @enum ExpressionOrder LOWEST EQUALS LESSGREATER SUM PRODUCT PREFIX CALL INDEX
 
 const ORDERS = Dict{TokenType, ExpressionOrder}(EQ => EQUALS,
-                                                NOT_EQ => EQUALS,
-                                                LT => LESSGREATER,
-                                                GT => LESSGREATER,
-                                                PLUS => SUM,
-                                                MINUS => SUM,
-                                                SLASH => PRODUCT,
-                                                ASTERISK => PRODUCT,
-                                                LPAREN => CALL,
-                                                LBRACKET => INDEX)
+    NOT_EQ => EQUALS,
+    LT => LESSGREATER,
+    GT => LESSGREATER,
+    PLUS => SUM,
+    MINUS => SUM,
+    SLASH => PRODUCT,
+    ASTERISK => PRODUCT,
+    LPAREN => CALL,
+    LBRACKET => INDEX)
 
 mutable struct Parser
     l::Lexer
@@ -98,7 +98,7 @@ function parse_let_statement!(p::Parser)
 
     if isa(value, FunctionLiteral)
         value = FunctionLiteral(value.token, value.parameters, value.body;
-                                name = name.value)
+            name = name.value)
     end
 
     if p.peek_token.type == SEMICOLON
@@ -202,7 +202,7 @@ end
 function parse_expression!(p::Parser, order::ExpressionOrder)
     if p.cur_token.type ∉ keys(p.prefix_parse_functions)
         push!(p.errors,
-              ErrorObj("parse error: no prefix parse function for $(p.cur_token.type) found"))
+            ErrorObj("parse error: no prefix parse function for $(p.cur_token.type) found"))
         return nothing
     else
         prefix_fn = p.prefix_parse_functions[p.cur_token.type]
@@ -235,7 +235,7 @@ function parse_integer_literal!(p::Parser)
         return IntegerLiteral(token, value)
     catch
         push!(p.errors,
-              ErrorObj("parse error: could not parse $(p.cur_token.literal) as integer"))
+            ErrorObj("parse error: could not parse $(p.cur_token.literal) as integer"))
         return nothing
     end
 end
@@ -454,7 +454,7 @@ end
 
 function peek_error!(p::Parser, t::TokenType)
     push!(p.errors,
-          ErrorObj("parse error: expected next token to be $t, got $(p.peek_token.type) instead"))
+        ErrorObj("parse error: expected next token to be $t, got $(p.peek_token.type) instead"))
 end
 
 function cur_order(p::Parser)
@@ -502,7 +502,7 @@ function parse(code::String; input::IO = stdin, output::IO = stdout)
 
     if !isempty(parser.errors)
         println(output,
-                ErrorObj("parser has $(length(parser.errors)) error$(length(parser.errors) == 1 ? "" : "s")"))
+            ErrorObj("parser has $(length(parser.errors)) error$(length(parser.errors) == 1 ? "" : "s")"))
         println(output, join(map(string, parser.errors), "\n"))
         return nothing
     end

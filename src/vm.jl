@@ -19,7 +19,7 @@ mutable struct VM
     output::IO
 
     function VM(bc::ByteCode, globals::Vector{Object} = Object[]; input = stdin,
-                output = stdout)
+            output = stdout)
         begin
             main_fn = CompiledFunctionObj(bc.instructions, 0, 0, false)
             main_closure = ClosureObj(main_fn, [])
@@ -286,15 +286,17 @@ function run!(vm::VM)
 end
 
 function execute_unary_operation!(vm::VM, op::OpCode, right::Object)
-    begin if op == OpBang
-        push!(vm, native_bool_to_boolean_obj(!is_truthy(right)))
-    elseif op == OpMinus
-        if isa(right, IntegerObj)
-            push!(vm, IntegerObj(-right.value))
-        else
-            return ErrorObj("unknown operator: -$(type_of(right))")
+    begin
+        if op == OpBang
+            push!(vm, native_bool_to_boolean_obj(!is_truthy(right)))
+        elseif op == OpMinus
+            if isa(right, IntegerObj)
+                push!(vm, IntegerObj(-right.value))
+            else
+                return ErrorObj("unknown operator: -$(type_of(right))")
+            end
         end
-    end end
+    end
 end
 
 function execute_binary_operation!(vm::VM, op::OpCode, left::Object, right::Object)
@@ -401,7 +403,7 @@ end
 function call!(vm::VM, builtin::Builtin, arg_count::Integer)
     args = vm.stack[(vm.sp - arg_count):(vm.sp - 1)]
     result = builtin.fn(args...;
-                        env = Environment(; input = vm.input, output = vm.output))
+        env = Environment(; input = vm.input, output = vm.output))
     if isa(result, ErrorObj)
         return result
     end

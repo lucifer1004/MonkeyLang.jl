@@ -136,19 +136,21 @@ leave_scope!(c::Compiler)::CompilationScope = begin
 end
 
 function load_symbol!(c::Compiler, s::MonkeySymbol)
-    begin if s.scope == GlobalScope
-        emit!(c, OpGetGlobal, s.index)
-    elseif s.scope == LocalScope
-        emit!(c, OpGetLocal, s.index)
-    elseif s.scope == BuiltinScope
-        emit!(c, OpGetBuiltin, s.index)
-    elseif s.scope == FreeScope
-        emit!(c, OpGetFree, s.index)
-    elseif s.scope == OuterScope
-        emit!(c, OpGetOuter, s.ptr.level, Int(s.ptr.scope), s.ptr.index)
-    else
-        emit!(c, OpCurrentClosure)
-    end end
+    begin
+        if s.scope == GlobalScope
+            emit!(c, OpGetGlobal, s.index)
+        elseif s.scope == LocalScope
+            emit!(c, OpGetLocal, s.index)
+        elseif s.scope == BuiltinScope
+            emit!(c, OpGetBuiltin, s.index)
+        elseif s.scope == FreeScope
+            emit!(c, OpGetFree, s.index)
+        elseif s.scope == OuterScope
+            emit!(c, OpGetOuter, s.ptr.level, Int(s.ptr.scope), s.ptr.index)
+        else
+            emit!(c, OpCurrentClosure)
+        end
+    end
 end
 
 function compile!(c::Compiler, il::IntegerLiteral)
@@ -210,7 +212,7 @@ function compile!(c::Compiler, fl::FunctionLiteral; within_loop::Bool = false)
     end
 
     fn = CompiledFunctionObj(instructions, local_count, length(fl.parameters),
-                             within_loop)
+        within_loop)
     emit!(c, OpClosure, add!(c, fn) - 1, length(free_symbols))
 end
 
@@ -323,10 +325,10 @@ function compile!(c::Compiler, ws::WhileStatement)
     # Compile body of a while statement to a special closure that resolves 
     # outer variables instead of free variables.
     body = BlockStatement(ws.body.token,
-                          [
-                              ws.body.statements...,
-                              ContinueStatement(Token(CONTINUE, "continue", 0, 0)),
-                          ])
+        [
+            ws.body.statements...,
+            ContinueStatement(Token(CONTINUE, "continue", 0, 0))
+        ])
     fl = FunctionLiteral(Token(FUNCTION, "fn", 0, 0), Identifier[], body)
     compile!(c, fl; within_loop = true)
 

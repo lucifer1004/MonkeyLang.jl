@@ -21,7 +21,7 @@ mutable struct SymbolTable
     free_symbols::Vector{MonkeySymbol}
 
     function SymbolTable(; outer::Union{SymbolTable, Nothing} = nothing,
-                         within_loop::Bool = false)
+            within_loop::Bool = false)
         new(Dict(), 0, outer, within_loop, [])
     end
 
@@ -60,16 +60,16 @@ function define_outer!(s::SymbolTable, original::MonkeySymbol, level::Int)
        original.scope == FreeScope ||
        original.scope == FunctionScope
         sym = MonkeySymbol(original.name,
-                           OuterScope,
-                           0,
-                           SymbolPointer(level, original.scope, original.index))
+            OuterScope,
+            0,
+            SymbolPointer(level, original.scope, original.index))
     elseif original.scope == OuterScope
         sym = MonkeySymbol(original.name,
-                           OuterScope,
-                           0,
-                           SymbolPointer(level + original.ptr.level,
-                                         original.ptr.scope,
-                                         original.ptr.index))
+            OuterScope,
+            0,
+            SymbolPointer(level + original.ptr.level,
+                original.ptr.scope,
+                original.ptr.index))
     end
     s.store[original.name] = sym
     return sym
