@@ -49,6 +49,9 @@ include("vm.jl")
 # REPL
 include("repl.jl")
 
+# ReplMaker-based REPL mode (excluded from coverage)
+include("repl_mode.jl")
+
 # Transpilers
 include("transpilers/transpilers.jl")
 
