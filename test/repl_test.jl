@@ -22,9 +22,9 @@ using .Threads
         (b"puts(\"Hello, world!\")\n", ["Hello, world!\nnull"]),
     ]
         input = IOBuffer(raw_input)
-        output = IOBuffer(UInt8[], read = true, write = true)
+        output = IOBuffer()
         m.start_repl(input = input, output = output)
-        @test String(output.data) ==
+        @test String(take!(output)) ==
               m.REPL_PRELUDE *
               "\n" *
               join(map(x -> ">> " * x, vcat(expected, [m.REPL_FAREWELL])), "\n") *
@@ -53,9 +53,9 @@ using .Threads
         (b"puts(\"Hello, world!\")\n", ["Hello, world!\nnull"]),
     ]
         input = IOBuffer(raw_input)
-        output = IOBuffer(UInt8[], read = true, write = true)
+        output = IOBuffer()
         m.start_repl(input = input, output = output, use_vm = true)
-        @test String(output.data) ==
+        @test String(take!(output)) ==
               m.REPL_PRELUDE *
               "\n" *
               join(map(x -> ">> " * x, vcat(expected, [m.REPL_FAREWELL])), "\n") *

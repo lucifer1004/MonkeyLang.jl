@@ -13,14 +13,14 @@
     (["repl", "--vm"], m.REPL_PRELUDE * "\n>> " * m.REPL_FAREWELL * "\n"),
 ]
     input = IOBuffer()
-    output = IOBuffer(UInt8[], read = true, write = true)
+    output = IOBuffer()
 
     for arg in args
         push!(ARGS, arg)
     end
 
     m.julia_main(; input = input, output = output)
-    @test String(output.data) == expected_output
+    @test String(take!(output)) == expected_output
 
     for _ in 1:length(args)
         pop!(ARGS)
