@@ -1,4 +1,41 @@
 @testset "Test Lexer" begin
+    @testset "Test comments" begin
+        # Single line comment at end of line
+        l = m.Lexer("1 + 2 # this is a comment")
+        @test m.next_token!(l) == m.Token(m.INT, "1")
+        @test m.next_token!(l) == m.Token(m.PLUS, "+")
+        @test m.next_token!(l) == m.Token(m.INT, "2")
+        @test m.next_token!(l) == m.Token(m.EOF, "")
+
+        # Comment on its own line
+        l = m.Lexer("""
+        # comment line
+        5
+        """)
+        @test m.next_token!(l) == m.Token(m.INT, "5")
+        @test m.next_token!(l) == m.Token(m.EOF, "")
+
+        # Multiple comments
+        l = m.Lexer("""
+        # first comment
+        let x = 5; # inline comment
+        # another comment
+        x
+        """)
+        @test m.next_token!(l) == m.Token(m.LET, "let")
+        @test m.next_token!(l) == m.Token(m.IDENT, "x")
+        @test m.next_token!(l) == m.Token(m.ASSIGN, "=")
+        @test m.next_token!(l) == m.Token(m.INT, "5")
+        @test m.next_token!(l) == m.Token(m.SEMICOLON, ";")
+        @test m.next_token!(l) == m.Token(m.IDENT, "x")
+        @test m.next_token!(l) == m.Token(m.EOF, "")
+
+        # Comment with special characters
+        l = m.Lexer("1 # !@#\$%^&*() 中文 🚀")
+        @test m.next_token!(l) == m.Token(m.INT, "1")
+        @test m.next_token!(l) == m.Token(m.EOF, "")
+    end
+
     @testset "Test basic functions" begin
         l = m.Lexer("1 + 1")
 
