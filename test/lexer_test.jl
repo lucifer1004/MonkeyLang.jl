@@ -1,19 +1,57 @@
 @testset "Test Lexer" begin
+    @testset "Test token position" begin
+        # Single line
+        l = m.Lexer("let x = 5;")
+        t = m.next_token!(l)  # let
+        @test t.line == 1 && t.column == 1
+        t = m.next_token!(l)  # x
+        @test t.line == 1 && t.column == 5
+        t = m.next_token!(l)  # =
+        @test t.line == 1 && t.column == 7
+        t = m.next_token!(l)  # 5
+        @test t.line == 1 && t.column == 9
+        t = m.next_token!(l)  # ;
+        @test t.line == 1 && t.column == 10
+
+        # Multi-line
+        l = m.Lexer("let x = 1;\nlet y = 2;")
+        for _ in 1:5
+            m.next_token!(l)  # skip first line
+        end
+        t = m.next_token!(l)  # let on line 2
+        @test t.line == 2 && t.column == 1
+        t = m.next_token!(l)  # y
+        @test t.line == 2 && t.column == 5
+
+        # With comments
+        l = m.Lexer("# comment\nlet x = 1;")
+        t = m.next_token!(l)  # let (after comment)
+        @test t.line == 2 && t.column == 1
+
+        # String literal position
+        l = m.Lexer("let s = \"hello\";")
+        for _ in 1:3
+            m.next_token!(l)  # skip let, s, =
+        end
+        t = m.next_token!(l)  # "hello"
+        @test t.line == 1 && t.column == 9
+    end
+
     @testset "Test comments" begin
         # Single line comment at end of line
         l = m.Lexer("1 + 2 # this is a comment")
-        @test m.next_token!(l) == m.Token(m.INT, "1")
-        @test m.next_token!(l) == m.Token(m.PLUS, "+")
-        @test m.next_token!(l) == m.Token(m.INT, "2")
-        @test m.next_token!(l) == m.Token(m.EOF, "")
+        test_token(m.next_token!(l), test_token(m.INT, "1"))
+        test_token(m.next_token!(l), test_token(m.PLUS, "+"))
+        test_token(m.next_token!(l), test_token(m.INT, "2"))
+        test_token(m.next_token!(l), test_token(m.EOF, ""))
 
         # Comment on its own line
         l = m.Lexer("""
         # comment line
         5
         """)
-        @test m.next_token!(l) == m.Token(m.INT, "5")
-        @test m.next_token!(l) == m.Token(m.EOF, "")
+        test_token(m.next_token!(l), test_token(m.INT, "5"))
+        test_token(m.next_token!(l), test_token(m.EOF, ""))
 
         # Multiple comments
         l = m.Lexer("""
@@ -22,18 +60,18 @@
         # another comment
         x
         """)
-        @test m.next_token!(l) == m.Token(m.LET, "let")
-        @test m.next_token!(l) == m.Token(m.IDENT, "x")
-        @test m.next_token!(l) == m.Token(m.ASSIGN, "=")
-        @test m.next_token!(l) == m.Token(m.INT, "5")
-        @test m.next_token!(l) == m.Token(m.SEMICOLON, ";")
-        @test m.next_token!(l) == m.Token(m.IDENT, "x")
-        @test m.next_token!(l) == m.Token(m.EOF, "")
+        test_token(m.next_token!(l), test_token(m.LET, "let"))
+        test_token(m.next_token!(l), test_token(m.IDENT, "x"))
+        test_token(m.next_token!(l), test_token(m.ASSIGN, "="))
+        test_token(m.next_token!(l), test_token(m.INT, "5"))
+        test_token(m.next_token!(l), test_token(m.SEMICOLON, ";"))
+        test_token(m.next_token!(l), test_token(m.IDENT, "x"))
+        test_token(m.next_token!(l), test_token(m.EOF, ""))
 
         # Comment with special characters
         l = m.Lexer("1 # !@#\$%^&*() 中文 🚀")
-        @test m.next_token!(l) == m.Token(m.INT, "1")
-        @test m.next_token!(l) == m.Token(m.EOF, "")
+        test_token(m.next_token!(l), test_token(m.INT, "1"))
+        test_token(m.next_token!(l), test_token(m.EOF, ""))
     end
 
     @testset "Test basic functions" begin
@@ -51,7 +89,7 @@
 
     @testset "Test Next Token" begin
         @testset "Simple Test" begin
-            expected = map(x -> m.Token(x...),
+            expected = map(x -> test_token(x...),
                            [
                                (m.ASSIGN, "="),
                                (m.PLUS, "+"),
@@ -77,7 +115,7 @@
         end
 
         @testset "Advanced Test" begin
-            expected = map(x -> m.Token(x...),
+            expected = map(x -> test_token(x...),
                            [
                                (m.LET, "let"),
                                (m.IDENT, "five"),

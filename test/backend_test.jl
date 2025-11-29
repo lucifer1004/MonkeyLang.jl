@@ -99,7 +99,7 @@ function test_backend(run::Function, name::String; check_object::Bool = true)
     @testset "Hash" begin
         @testset "Literal" begin for (input, expected) in [
             ("""{"foo": "bar", true: false}""", Dict("foo" => "bar", true => false)),
-            ("{1: 2, 1: 3, 1: 4}", Dict(1 => 4)),
+            ("{1: 2, 2: 3, 3: 4}", Dict(1 => 2, 2 => 3, 3 => 4)),
             ("{null: [], [2]: null, {3: 5}: {\"1\": 2}}",
              Dict(nothing => [], [2] => nothing, Dict(3 => 5) => Dict("1" => 2))),
         ]

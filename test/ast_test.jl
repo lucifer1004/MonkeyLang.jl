@@ -2,9 +2,9 @@
     @testset "Test Token Literal" begin for (program, expected) in [
         (m.Program([]), ""),
         (m.Program([
-                       m.LetStatement(m.Token(m.LET, "let"),
-                                      m.Identifier(m.Token(m.IDENT, "myVar"), "myVar"),
-                                      m.Identifier(m.Token(m.IDENT, "anotherVar"),
+                       m.LetStatement(T(m.LET, "let"),
+                                      m.Identifier(T(m.IDENT, "myVar"), "myVar"),
+                                      m.Identifier(T(m.IDENT, "anotherVar"),
                                                    "anotherVar"),
                                       false),
                    ]),
@@ -15,10 +15,10 @@
 
     @testset "Test Stringifying Program" begin
         program = m.Program([
-                                m.LetStatement(m.Token(m.LET, "let"),
-                                               m.Identifier(m.Token(m.IDENT, "myVar"),
+                                m.LetStatement(T(m.LET, "let"),
+                                               m.Identifier(T(m.IDENT, "myVar"),
                                                             "myVar"),
-                                               m.Identifier(m.Token(m.IDENT, "anotherVar"),
+                                               m.Identifier(T(m.IDENT, "anotherVar"),
                                                             "anotherVar"),
                                                false),
                             ])

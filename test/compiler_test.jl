@@ -735,18 +735,18 @@
         @test_throws ErrorException("unknown operator: &") begin
             c = m.Compiler()
             m.compile!(c,
-                       m.InfixExpression(m.Token(m.PLUS, "+"),
-                                         m.IntegerLiteral(m.Token(m.INT, "2"), 2),
+                       m.InfixExpression(T(m.PLUS, "+"),
+                                         m.IntegerLiteral(T(m.INT, "2"), 2),
                                          "&",
-                                         m.IntegerLiteral(m.Token(m.INT, "2"), 2)))
+                                         m.IntegerLiteral(T(m.INT, "2"), 2)))
         end
 
         @test_throws ErrorException("unknown operator: +") begin
             c = m.Compiler()
             m.compile!(c,
-                       m.PrefixExpression(m.Token(m.PLUS, "+"),
+                       m.PrefixExpression(T(m.PLUS, "+"),
                                           "+",
-                                          m.IntegerLiteral(m.Token(m.INT, "2"), 2)))
+                                          m.IntegerLiteral(T(m.INT, "2"), 2)))
         end
     end
 end

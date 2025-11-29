@@ -148,9 +148,9 @@ const BUILTINS = [
 - Closures
 - Macro system: `macro`, `quote`, `unquote`
 - Single-line comments: `# this is a comment`
+- Token position tracking: line and column numbers
 
 ### Open Issues (To Be Implemented)
-- `#12`: Token position information
 - `#11`: `const` immutable variables
 - `#4`: `include()` built-in function
 - `#1`: Nested macros
