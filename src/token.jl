@@ -3,6 +3,8 @@
 struct Token
     type::TokenType
     literal::String
+    line::Int
+    column::Int
 end
 
 const KEYWORDS = Dict{String, TokenType}("fn" => FUNCTION,

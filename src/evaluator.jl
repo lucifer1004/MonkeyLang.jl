@@ -378,18 +378,18 @@ function unwrap_return_value(obj::Object)
     end
 end
 
-Node(::Object) = NullLiteral(Token(NULL, "null"))
-Node(obj::IntegerObj) = IntegerLiteral(Token(INT, string(obj.value)), obj.value)
-Node(obj::StringObj) = StringLiteral(Token(STRING, obj.value), obj.value)
+Node(::Object) = NullLiteral(Token(NULL, "null", 0, 0))
+Node(obj::IntegerObj) = IntegerLiteral(Token(INT, string(obj.value), 0, 0), obj.value)
+Node(obj::StringObj) = StringLiteral(Token(STRING, obj.value, 0, 0), obj.value)
 function Node(obj::BooleanObj)
-    BooleanLiteral(Token(obj.value ? TRUE : FALSE, string(obj.value)), obj.value)
+    BooleanLiteral(Token(obj.value ? TRUE : FALSE, string(obj.value), 0, 0), obj.value)
 end
 function Node(obj::HashObj)
-    HashLiteral(Token(LBRACE, "{"),
+    HashLiteral(Token(LBRACE, "{", 0, 0),
                 Dict(Node(key) => Node(value) for (key, value) in collect(obj.pairs)))
 end
-Node(obj::ArrayObj) = ArrayLiteral(Token(LBRACKET, "["), map(Node, obj.elements))
-Node(obj::FunctionObj) = FunctionLiteral(Token(FUNCTION, "fn"), obj.parameters, obj.body)
+Node(obj::ArrayObj) = ArrayLiteral(Token(LBRACKET, "[", 0, 0), map(Node, obj.elements))
+Node(obj::FunctionObj) = FunctionLiteral(Token(FUNCTION, "fn", 0, 0), obj.parameters, obj.body)
 Node(obj::QuoteObj) = obj.node
 
 # TODO: Currently, only top-level macro definitions are allowed. We don’t walk down the Statements and check the child nodes for more.

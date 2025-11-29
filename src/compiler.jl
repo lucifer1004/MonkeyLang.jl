@@ -325,9 +325,9 @@ function compile!(c::Compiler, ws::WhileStatement)
     body = BlockStatement(ws.body.token,
                           [
                               ws.body.statements...,
-                              ContinueStatement(Token(CONTINUE, "continue")),
+                              ContinueStatement(Token(CONTINUE, "continue", 0, 0)),
                           ])
-    fl = FunctionLiteral(Token(FUNCTION, "fn"), Identifier[], body)
+    fl = FunctionLiteral(Token(FUNCTION, "fn", 0, 0), Identifier[], body)
     compile!(c, fl; within_loop = true)
 
     # Call the closure and use the return value to detect a break or continue

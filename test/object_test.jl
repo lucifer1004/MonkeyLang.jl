@@ -8,28 +8,28 @@
     arr_obj = m.ArrayObj([m.IntegerObj(1), m.IntegerObj(2)])
     hash_obj = m.HashObj(Dict(m.IntegerObj(1) => m.IntegerObj(2),
                               m.IntegerObj(3) => m.IntegerObj(4)))
-    function_obj = m.FunctionObj([m.Identifier(m.Token(m.IDENT, "x"), "x")],
-                                 m.BlockStatement(m.Token(m.LBRACE, "{"),
+    function_obj = m.FunctionObj([m.Identifier(T(m.IDENT, "x"), "x")],
+                                 m.BlockStatement(T(m.LBRACE, "{"),
                                                   [
-                                                      m.ExpressionStatement(m.Token(m.IDENT,
+                                                      m.ExpressionStatement(T(m.IDENT,
                                                                                     "x"),
-                                                                            m.InfixExpression(m.Token(m.PLUS,
+                                                                            m.InfixExpression(T(m.PLUS,
                                                                                                       "+"),
-                                                                                              m.Identifier(m.Token(m.IDENT,
+                                                                                              m.Identifier(T(m.IDENT,
                                                                                                                    "x"),
                                                                                                            "x"),
                                                                                               "+",
-                                                                                              m.IntegerLiteral(m.Token(m.INT,
+                                                                                              m.IntegerLiteral(T(m.INT,
                                                                                                                        "2"),
                                                                                                                2))),
                                                   ]),
                                  m.Environment())
-    macro_obj = m.MacroObj([m.Identifier(m.Token(m.IDENT, "x"), "x")],
-                           m.BlockStatement(m.Token(m.LBRACE, "{"), []),
+    macro_obj = m.MacroObj([m.Identifier(T(m.IDENT, "x"), "x")],
+                           m.BlockStatement(T(m.LBRACE, "{"), []),
                            m.Environment())
     len = m.get_builtin_by_name("len")
     return_value = m.ReturnValue(m._TRUE)
-    quote_obj = m.QuoteObj(m.NullLiteral(m.Token(m.NULL, "null")))
+    quote_obj = m.QuoteObj(m.NullLiteral(T(m.NULL, "null")))
     compiled_function_obj = m.CompiledFunctionObj(m.Instructions([]), 0, 0, true)
     closure_obj = m.ClosureObj(compiled_function_obj, [])
 

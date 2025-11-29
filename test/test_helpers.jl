@@ -1,6 +1,13 @@
 function test_token(token::m.Token, expected::m.Token)
-    @test token == expected
+    @test token.type == expected.type
+    @test token.literal == expected.literal
 end
+
+# Helper to create Token for tests (ignoring position)
+test_token(type::m.TokenType, literal::String) = m.Token(type, literal, 0, 0)
+
+# Short alias for creating test tokens
+T(type::m.TokenType, literal::String) = m.Token(type, literal, 0, 0)
 
 function check_parser_errors(p::m.Parser)
     if !isempty(p.errors)
