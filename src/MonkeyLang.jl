@@ -1,6 +1,6 @@
 module MonkeyLang
 
-export start_repl, @monkey_eval_str, @monkey_vm_str
+export start_repl, init_monkey_repl!, @monkey_eval_str, @monkey_vm_str
 
 using Printf
 

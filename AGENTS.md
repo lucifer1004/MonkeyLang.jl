@@ -155,7 +155,6 @@ const BUILTINS = [
 - `#4`: `include()` built-in function
 - `#1`: Nested macros
 - `#27`: Type system
-- `#30`: Use ReplMaker.jl
 
 ## Code Style
 
