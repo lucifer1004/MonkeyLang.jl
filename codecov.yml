@@ -1,0 +1,12 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+    patch:
+      default:
+        target: auto
+
+ignore:
+  - "src/repl_mode.jl"  # Requires active Julia REPL, cannot be tested in CI
+

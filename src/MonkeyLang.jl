@@ -1,6 +1,6 @@
 module MonkeyLang
 
-export start_repl, @monkey_eval_str, @monkey_vm_str
+export start_repl, init_monkey_repl!, @monkey_eval_str, @monkey_vm_str
 
 using Printf
 
@@ -48,6 +48,9 @@ include("vm.jl")
 
 # REPL
 include("repl.jl")
+
+# ReplMaker-based REPL mode (excluded from coverage)
+include("repl_mode.jl")
 
 # Transpilers
 include("transpilers/transpilers.jl")

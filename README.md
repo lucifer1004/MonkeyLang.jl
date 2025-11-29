@@ -12,6 +12,8 @@
   - [Using Monkey in Julia](#using-monkey-in-julia)
   - [Compile MonkeyLang.jl to a standalone executable](#compile-monkeylangjl-to-a-standalone-executable)
   - [Start the REPL](#start-the-repl)
+    - [Standalone REPL](#standalone-repl)
+    - [Monkey Mode in Julia REPL](#monkey-mode-in-julia-repl)
   - [Documentation](#documentation)
     - [Summary](#summary)
     - [Syntax overview](#syntax-overview)
@@ -82,15 +84,17 @@ Clone the repo, and run `make build` in the root directory.
 
 ## Start the REPL
 
-You can start the REPL in a Julia script or in the Julia REPL:
+### Standalone REPL
+
+You can start a standalone Monkey REPL:
 
 ```julia
 import Pkg; Pkg.add("MonkeyLang")
 
 using MonkeyLang
 
-MonkeyLang.start_repl()
-MonkeyLang.start_repl(; use_vm = true) # use VM
+start_repl()
+start_repl(; use_vm = true) # use VM
 ```
 
 You can press `Ctrl-C` or `Ctrl-D` to exit the REPL.
@@ -101,6 +105,20 @@ If you have compiled `MonkeyLang.jl` locally, then you can directly start the RE
 ./monkey repl
 ./monkey repl --vm # use VM
 ```
+
+### Monkey Mode in Julia REPL
+
+You can also use Monkey as a mode in the Julia REPL (powered by [ReplMaker.jl](https://github.com/MasonProtter/ReplMaker.jl)):
+
+```julia
+using MonkeyLang
+
+init_monkey_repl!()              # Press ')' to enter Monkey mode
+init_monkey_repl!(; use_vm=true) # Use VM backend
+init_monkey_repl!(; start_key='$') # Use a different key to enter Monkey mode
+```
+
+Once initialized, press the start key (default `)`) to enter Monkey mode. Press backspace on an empty line to return to Julia mode.
 
 ## Documentation
 

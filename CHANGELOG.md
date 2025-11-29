@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased]
+
+### Added
+
+- Support single-line comments starting with `#`. (#13)
+- Token position tracking (line and column numbers). (#12)
+- Monkey REPL mode in Julia REPL via ReplMaker.jl. Use `init_monkey_repl!()` to enable. (#30)
+
 ## [v0.2.1] - 2022-02-11
 
 ### Changed
