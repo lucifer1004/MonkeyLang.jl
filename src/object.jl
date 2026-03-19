@@ -25,7 +25,7 @@ end
 type_of(::IntegerObj) = INTEGER_OBJ
 Base.string(i::IntegerObj) = string(i.value)
 Base.:(==)(a::IntegerObj, b::IntegerObj) = a.value == b.value
-Base.hash(i::IntegerObj) = hash(i.value)
+Base.hash(i::IntegerObj, h::UInt) = hash(i.value, h)
 Object(i::Int) = IntegerObj(i)
 
 struct BooleanObj <: Object
@@ -38,7 +38,7 @@ is_truthy(b::BooleanObj) = b.value
 type_of(::BooleanObj) = BOOLEAN_OBJ
 Base.string(b::BooleanObj) = string(b.value)
 Base.:(==)(a::BooleanObj, b::BooleanObj) = a.value == b.value
-Base.hash(b::BooleanObj) = hash(b.value)
+Base.hash(b::BooleanObj, h::UInt) = hash(b.value, h)
 Object(b::Bool) = BooleanObj(b)
 
 struct NullObj <: Object end
@@ -116,7 +116,7 @@ end
 type_of(::StringObj) = STRING_OBJ
 Base.string(s::StringObj) = "\"" * string(s.value) * "\""
 Base.:(==)(a::StringObj, b::StringObj) = a.value == b.value
-Base.hash(s::StringObj) = hash(s.value)
+Base.hash(s::StringObj, h::UInt) = hash(s.value, h)
 Object(s::String) = StringObj(s)
 
 struct ArrayObj <: Object
@@ -126,7 +126,7 @@ end
 type_of(::ArrayObj) = ARRAY_OBJ
 Base.string(a::ArrayObj) = "[" * join(map(string, a.elements), ", ") * "]"
 Base.:(==)(a::ArrayObj, b::ArrayObj) = a.elements == b.elements
-Base.hash(a::ArrayObj) = hash(a.elements)
+Base.hash(a::ArrayObj, h::UInt) = hash(a.elements, h)
 Object(a::Vector) = ArrayObj(map(Object, a))
 
 struct Builtin <: Object
@@ -145,7 +145,7 @@ function Base.string(h::HashObj)
     "{" * join(map(x -> string(x[1]) * ":" * string(x[2]), collect(h.pairs)), ", ") * "}"
 end
 Base.:(==)(a::HashObj, b::HashObj) = a.pairs == b.pairs
-Base.hash(h::HashObj) = hash(h.pairs)
+Base.hash(x::HashObj, h::UInt) = hash(x.pairs, h)
 Object(h::Dict) = HashObj(Dict(map(x -> Object(x.first) => Object(x.second), collect(h))))
 
 struct QuoteObj <: Object
