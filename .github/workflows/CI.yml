@@ -27,7 +27,7 @@ jobs:
           - { version: '1.12', os: ubuntu-24.04-arm, arch: aarch64 }
           - { version: 'nightly', os: ubuntu-24.04-arm, arch: aarch64 }
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
@@ -44,7 +44,7 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1.12'
